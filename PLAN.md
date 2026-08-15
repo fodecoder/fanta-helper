@@ -2,17 +2,23 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-## Fase 0 — Scaffolding
+> Stato al 2026-08-15 — `v0.4.0`. Fase 0 completa; Fase 1 al 40% (CRUD lega e
+> import giocatori fatti). Prossima operazione: CRUD manager per lega
+> (prerequisito dell'asta). Codice pronto per l'hosting; manca solo il
+> provisioning dei servizi — vedi [README.md](./README.md) e la nota in coda.
 
-- [ ] Inizializzazione repo e struttura progetto (frontend SPA + backend sottile)
-- [ ] Schema DB su PostgreSQL (Neon): tabelle base e migrazioni
-- [ ] Pipeline di deploy: frontend su Cloudflare Pages, backend su Render, DB su Neon
-- [ ] Configurazione ambienti e variabili (segreti solo lato backend)
+## Fase 0 — Scaffolding  *(completa)*
+
+- [x] Inizializzazione repo e struttura progetto (frontend SPA + backend sottile)
+- [x] Schema DB su PostgreSQL (Neon): tabelle base e migrazioni
+- [x] Pipeline di deploy: frontend su Cloudflare Pages, backend su Render, DB su Neon *(codice/config pronti; provisioning manuale da eseguire)*
+- [x] Configurazione ambienti e variabili (segreti solo lato backend)
 
 ## Fase 1 — MVP  *(obiettivo entro deadline)*
 
-- [ ] CRUD lega con configurazione regole in JSONB (roster, scoring, modificatori)
-- [ ] Import giocatori da CSV quotazioni ufficiali nel pool `player`
+- [x] CRUD lega con configurazione regole in JSONB (roster, scoring, modificatori)
+- [x] Import giocatori da CSV quotazioni ufficiali nel pool `player`
+- [ ] CRUD manager per lega (prerequisito dell'asta: gli acquisti referenziano un manager)
 - [ ] Import valutazioni (JSON) con matching nome→ID e revisione manuale degli unmatched
 - [ ] Schermata asta live: event-log degli acquisti + stato derivato (residuo, slot)
 - [ ] Selettore lega in home

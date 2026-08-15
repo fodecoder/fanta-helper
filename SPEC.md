@@ -126,14 +126,13 @@ Regole di validazione all'import:
 
 ## Palette
 
-Da definire. NON stimare né inventare i colori.
+Valori forniti (derivati dal riferimento del proprietario):
 
-- `Verde principale (Brand/Azioni)`: #2BA756
-- `Blu / Blu Scuro (Sfondi / Header)`: #11246F o #144F89
-- `Arancione (Accenti / Richiami)`: #FF8300 
-- `Verde Scuro (Secondario)`: #077449 
-- `Bianco (Sfondi / Testi)`: #FFFFFF 
+- Verde principale (brand / azioni): `#2BA756`
+- Blu / blu scuro (sfondi / header): `#11246F` o `#144F89`
+- Arancione (accenti / richiami): `#FF8300`
+- Verde scuro (secondario): `#077449`
+- Bianco (sfondi / testi): `#FFFFFF`
 
-> Nota: i valori esatti (hex) vanno derivati da uno screenshot o URL di
-> riferimento fornito dal proprietario. Finché quel riferimento non è
-> disponibile, i colori restano placeholder.
+> Nota: da consolidare come design token (es. variabili CSS) al momento della
+> rifinitura UI (Fase 2). La scelta tra i due blu va fissata sul riferimento reale.

@@ -90,6 +90,21 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
+**Stato (2026-08-15).** Il codice e la configurazione per l'hosting sono pronti:
+health check, CORS parametrizzato, `_redirects` per il routing SPA, lettura di
+`process.env.PORT`, workflow di migrazione automatica su push a `main`. Restano
+solo passi manuali di provisioning (nessun codice):
+
+- [ ] Secret GitHub `NEON_DIRECT_DATABASE_URL` impostato (connessione **diretta** Neon)
+- [ ] Progetto e database Neon creati; migrazioni applicate
+- [ ] Web service Render creato e configurato (build da root del repo)
+- [ ] Progetto Cloudflare Pages creato e configurato (build da root del repo)
+- [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
+- [ ] Push umano su `main` per far girare build/lint/migrazioni del workflow
+
+Le migrazioni automatiche e i redeploy dei servizi si attivano al **push su
+`main`**, che resta un'operazione umana (vedi `CLAUDE.md`).
+
 ### A. Database — Neon
 
 1. Crea un progetto su [neon.tech](https://neon.tech) e un database.
@@ -106,14 +121,22 @@ perché ognuno fornisce un valore di configurazione al successivo.
 5. Configura il secret per l'automazione delle migrazioni (vedi sezione
    "Migrazioni automatiche" sotto).
 
+> **Monorepo — importante.** Sia `server` sia `web` dipendono dal package di
+> workspace `@fanta-helper/shared`, che **non è pubblicato su npm**. Le build di
+> Render e Cloudflare vanno quindi lanciate dalla **root del repo** (dove gli
+> npm workspaces risolvono `@fanta-helper/shared`), non isolando la sottocartella.
+> A runtime il backend è autosufficiente: `tsup` inlina `@fanta-helper/shared`
+> nel bundle (`noExternal`), quindi `server/dist/index.js` non richiede il package
+> a runtime.
+
 ### B. Backend — Render
 
 1. Su [render.com](https://render.com): **New → Web Service**, collega il repo.
 2. Impostazioni del servizio:
-   - **Root Directory**: `server`
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm run start`
-   - **Runtime/Node version**: allineata al progetto (es. via `.node-version`)
+   - **Root Directory**: *(vuoto — la root del repo)*
+   - **Build Command**: `npm ci && npm run build --workspace server`
+   - **Start Command**: `node server/dist/index.js`
+   - **Runtime/Node version**: allineata al progetto (via `.node-version`)
 3. **Environment variables**:
 
    ```
@@ -132,11 +155,11 @@ perché ognuno fornisce un valore di configurazione al successivo.
 ### C. Frontend — Cloudflare Pages
 
 1. Su Cloudflare **Pages → Create → Connect to Git**, seleziona il repo.
-2. Impostazioni di build:
+2. Impostazioni di build (build dalla root del monorepo, output in `web/dist`):
    - **Framework preset**: Vite
-   - **Root directory**: `web`
-   - **Build command**: `npm install && npm run build`
-   - **Build output directory**: `dist`
+   - **Root directory**: *(vuoto — la root del repo)*
+   - **Build command**: `npm ci && npm run build --workspace web`
+   - **Build output directory**: `web/dist`
 3. **Environment variables**:
 
    ```
