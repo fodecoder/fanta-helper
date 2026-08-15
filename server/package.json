@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,15 +8,23 @@
     "build": "tsc --noEmit && tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:migrate": "node-pg-migrate up",
+    "db:migrate:down": "node-pg-migrate down",
+    "db:migrate:create": "node-pg-migrate -j sql create",
+    "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
     "@fanta-helper/shared": "*",
-    "express": "^4.22.2"
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.25",
     "@types/node": "^20.19.43",
+    "@types/pg": "^8.21.0",
+    "node-pg-migrate": "^9.0.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.12"
   }
