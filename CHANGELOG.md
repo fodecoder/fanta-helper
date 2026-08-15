@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-15
+
+### Added
+
+- CSV quotazioni import endpoint (`POST /players/import`) for the shared
+  `player` pool: parses the Fantacalcio.it classic export (`;`-delimited,
+  `R`/`Nome`/`Squadra` columns), normalizes name/team/ruolo, and performs an
+  idempotent `name`+`team` upsert so reimporting the same file never creates
+  duplicates. A new `UNIQUE (name, team)` constraint on `player` backs the
+  upsert; `image_url` is left untouched on update so a later photo backfill
+  is never overwritten by a requotation import.
+- Row-level import report (`inserted`/`updated` counts, `discarded` rows with
+  a reason each for missing fields or an invalid `ruolo`), typed and shared
+  between `server` and `web` via `@fanta-helper/shared`.
+- Import quotazioni screen in the web app: CSV file upload with a report
+  preview, reachable via a simple in-app nav alongside the leagues screen.
+
 ## [0.3.0] - 2026-08-15
 
 ### Added
