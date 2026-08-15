@@ -15,10 +15,6 @@ Documenti di riferimento: [SPEC.md](./SPEC.md) (modello dati e decisioni),
 
 Uso personale, nessun login. Ogni asta è una riga `league` con nome univoco.
 
-> Nota: la struttura del repo (`web/`, `server/`, `shared/`) è quella prevista
-> dall'operazione di scaffolding (vedi PROMPTS.md #1). Finché lo scaffolding non
-> è completo, i comandi seguenti descrivono il setup atteso.
-
 ---
 
 ## Esecuzione in locale

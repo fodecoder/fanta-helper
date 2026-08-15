@@ -12,32 +12,6 @@ dipendenza. Ogni prompt è autosufficiente ma assume che l'agente rispetti
 - Nessun segreto nel client; le chiamate esterne passano dal backend.
 - Prima di modifiche ampie, proponi il piano; non riscrivere in massa.
 
-## 3 — Deploy pipeline (skeleton online)
-
-**Contesto.** Esistono `web` e `server` scheletro e lo schema DB. Voglio la
-pipeline di hosting funzionante PRIMA di costruire le feature, per de-rischiare
-CORS, env e routing SPA quando c'è poco da debuggare.
-
-**Task.** Porta online lo scheletro:
-
-- **Neon**: database di produzione; fornisci le istruzioni per ottenere la
-  connection string (pooled e diretta) e applicare le migrazioni.
-- **Render**: web service dal package `server`; definisci build command, start
-  command e le env var (`DATABASE_URL` pooled, `PORT`, origine CORS del frontend).
-- **Cloudflare Pages**: deploy del package `web`; preset Vite, output `dist`,
-  env `VITE_API_URL` = URL del backend Render. Aggiungi `_redirects`
-  (`/* /index.html 200`) per il routing SPA.
-- Configura CORS lato `server` per accettare il dominio Pages.
-- Il frontend chiama `GET /health` del backend e mostra lo stato della connessione.
-
-**Vincoli.** Nessun secret nel client né nel repo. Documenta ogni step nel
-`README.md` (sezione hosting).
-
-**Done.** SPA raggiungibile via URL Pages che legge con successo `/health` dal
-backend Render collegato a Neon. Commit `chore:`/`docs:` come appropriato.
-
----
-
 ## 4 — CRUD lega + configurazione regole (JSONB)
 
 **Contesto.** Prima feature reale. Una "lega" è una sessione d'asta isolata.
