@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-15
+
+### Added
+
+- Full CRUD REST API for the `league` entity (`GET/POST /leagues`,
+  `GET/PUT/DELETE /leagues/:id`), with request validation via shared Zod
+  schemas and a structured `{ error: { code, message, fields? } }` response
+  contract for `400`/`404`/`409` errors, including a clean `409 CONFLICT`
+  mapping for unique-name violations instead of a raw Postgres error.
+- Zod schemas and inferred types for league payloads and JSONB columns
+  (`roster_config`, `scoring`, `modificatori`) in `@fanta-helper/shared`,
+  used as the single source of truth by both `server` (request validation)
+  and `web` (client-side form validation).
+- League management screen in the web app: a list view (name, n_squadre,
+  budget, edit/delete) and a create/edit form (roster config counters,
+  free-form `scoring`/`modificatori` JSON editors), switching views via
+  local component state.
+
 ## [0.2.0] - 2026-08-15
 
 ### Added

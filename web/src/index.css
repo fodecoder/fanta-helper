@@ -6,3 +6,20 @@ body {
   margin: 0;
   font-family: system-ui, sans-serif;
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid currentColor;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.field-error {
+  color: #ff8300;
+  margin: 0 0 0.5rem;
+}

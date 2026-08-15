@@ -21,11 +21,45 @@ export async function insertLeague(input: Omit<LeagueRow, "id">): Promise<League
     `INSERT INTO league (name, n_squadre, budget, roster_config, scoring, modificatori)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [input.name, input.n_squadre, input.budget, input.roster_config, input.scoring, input.modificatori],
+    [
+      input.name,
+      input.n_squadre,
+      input.budget,
+      input.roster_config,
+      input.scoring,
+      input.modificatori,
+    ],
   );
   const row = result.rows[0];
   if (!row) {
     throw new Error("insertLeague: insert returned no row");
   }
   return row;
+}
+
+export async function updateLeague(
+  id: number,
+  input: Omit<LeagueRow, "id">,
+): Promise<LeagueRow | undefined> {
+  const result = await pool.query<LeagueRow>(
+    `UPDATE league
+     SET name = $2, n_squadre = $3, budget = $4, roster_config = $5, scoring = $6, modificatori = $7
+     WHERE id = $1
+     RETURNING *`,
+    [
+      id,
+      input.name,
+      input.n_squadre,
+      input.budget,
+      input.roster_config,
+      input.scoring,
+      input.modificatori,
+    ],
+  );
+  return result.rows[0];
+}
+
+export async function deleteLeague(id: number): Promise<boolean> {
+  const result = await pool.query("DELETE FROM league WHERE id = $1", [id]);
+  return (result.rowCount ?? 0) > 0;
 }

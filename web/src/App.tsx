@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LeaguesPage } from "./pages/LeaguesPage";
 
 type ConnectionStatus = "checking" | "ok" | "error";
 
@@ -19,6 +20,7 @@ function App() {
     <main>
       <h1>Fanta Helper</h1>
       <p>Backend: {status}</p>
+      <LeaguesPage />
     </main>
   );
 }
