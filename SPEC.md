@@ -128,8 +128,11 @@ Regole di validazione all'import:
 
 Da definire. NON stimare né inventare i colori.
 
-- `--color-...`: TBD
-- `--color-...`: TBD
+- `Verde principale (Brand/Azioni)`: #2BA756
+- `Blu / Blu Scuro (Sfondi / Header)`: #11246F o #144F89
+- `Arancione (Accenti / Richiami)`: #FF8300 
+- `Verde Scuro (Secondario)`: #077449 
+- `Bianco (Sfondi / Testi)`: #FFFFFF 
 
 > Nota: i valori esatti (hex) vanno derivati da uno screenshot o URL di
 > riferimento fornito dal proprietario. Finché quel riferimento non è
