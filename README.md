@@ -107,6 +107,8 @@ perché ognuno fornisce un valore di configurazione al successivo.
    ```
 
 4. Conserva la connection string **pooled** per Render (passo B).
+5. Configura il secret per l'automazione delle migrazioni (vedi sezione
+   "Migrazioni automatiche" sotto).
 
 ### B. Backend — Render
 
@@ -161,9 +163,33 @@ perché ognuno fornisce un valore di configurazione al successivo.
 3. Verifica end-to-end: apri l'URL Pages; la SPA deve leggere `/health` dal
    backend Render collegato a Neon senza errori CORS.
 
+### Migrazioni automatiche
+
+Il workflow [`.github/workflows/db-migrate.yml`](.github/workflows/db-migrate.yml)
+esegue `npm run db:migrate --workspace server` (dopo lint e build) a ogni push
+sul branch `main`, applicando le migrazioni non ancora eseguite sul database
+Neon di produzione. `node-pg-migrate` applica solo le migrazioni mancanti, quindi
+è sicuro che il workflow giri anche quando non ci sono nuove migrazioni.
+
+Per abilitarlo, imposta un **secret** (non una variable: contiene credenziali)
+nel repository GitHub:
+
+```
+Settings → Secrets and variables → Actions → Secrets → New repository secret
+
+Nome:  NEON_DIRECT_DATABASE_URL
+Valore: la connection string DIRETTA di Neon (senza "-pooler"), es.
+        postgres://<user>:<pass>@<host>/<db>?sslmode=require
+```
+
+Usa deliberatamente la connessione **diretta**, non quella pooled di Render:
+Neon instrada la connessione pooled attraverso PgBouncer in modalità
+transaction-pooling, che non supporta il lock di sessione (`pg_advisory_lock`)
+usato da `node-pg-migrate` per evitare run concorrenti.
+
 ### Deploy successivi
 
 Ogni servizio ridistribuisce automaticamente al push del branch collegato
-(il push è un'operazione manuale e umana — vedi CLAUDE.md). Le nuove migrazioni
-vanno applicate esplicitamente con la connessione diretta di Neon prima o durante
-il rilascio del backend.
+(il push è un'operazione manuale e umana — vedi CLAUDE.md). Le migrazioni
+verso Neon sono applicate automaticamente dal workflow sopra a ogni push su
+`main`; non serve più applicarle manualmente in un deploy normale.
