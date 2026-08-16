@@ -21,3 +21,31 @@ export async function insertManager(input: Omit<ManagerRow, "id">): Promise<Mana
   }
   return row;
 }
+
+export async function getManagerById(id: number, leagueId: number): Promise<ManagerRow | undefined> {
+  const result = await pool.query<ManagerRow>(
+    "SELECT * FROM manager WHERE id = $1 AND league_id = $2",
+    [id, leagueId],
+  );
+  return result.rows[0];
+}
+
+export async function updateManager(
+  id: number,
+  leagueId: number,
+  input: Omit<ManagerRow, "id" | "league_id">,
+): Promise<ManagerRow | undefined> {
+  const result = await pool.query<ManagerRow>(
+    `UPDATE manager
+     SET name = $3
+     WHERE id = $1 AND league_id = $2
+     RETURNING *`,
+    [id, leagueId, input.name],
+  );
+  return result.rows[0];
+}
+
+export async function deleteManager(id: number, leagueId: number): Promise<boolean> {
+  const result = await pool.query("DELETE FROM manager WHERE id = $1 AND league_id = $2", [id, leagueId]);
+  return (result.rowCount ?? 0) > 0;
+}

@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-16
+
+### Added
+
+- Full CRUD REST API for the `manager` entity scoped to a league
+  (`GET/POST /leagues/:leagueId/managers`, `PUT/DELETE
+  /leagues/:leagueId/managers/:id`), with request validation via shared Zod
+  schemas and a `409 CONFLICT` mapping for duplicate manager names within a
+  league (`manager_league_name_uk`), extending the existing
+  constraint-based unique-violation mapping in the error handler.
+- Explicit guard against deleting a manager with recorded purchases
+  (`409 CONFLICT`): the `purchase` log stays immutable rather than relying
+  on the database's `ON DELETE CASCADE`, which remains only as a
+  safety net for whole-league deletion.
+- Manager management screen in the web app, reachable from each league row:
+  a list view and a create/edit form, mirroring the league management UI.
+
 ## [0.4.0] - 2026-08-15
 
 ### Added

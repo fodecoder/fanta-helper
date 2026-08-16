@@ -21,3 +21,11 @@ export async function insertPurchase(input: Omit<PurchaseRow, "ts">): Promise<Pu
   }
   return row;
 }
+
+export async function managerHasPurchases(managerId: number, leagueId: number): Promise<boolean> {
+  const result = await pool.query(
+    "SELECT 1 FROM purchase WHERE manager_id = $1 AND league_id = $2 LIMIT 1",
+    [managerId, leagueId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}

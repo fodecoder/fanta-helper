@@ -3,6 +3,7 @@ import cors from "cors";
 import { ROLES } from "@fanta-helper/shared";
 import { leaguesRouter } from "./routes/leagues";
 import { playersRouter } from "./routes/players";
+import { managersRouter } from "./routes/managers";
 import { errorHandler } from "./http/errorHandler";
 
 export function createApp(): Express {
@@ -17,6 +18,7 @@ export function createApp(): Express {
   });
 
   app.use("/leagues", leaguesRouter);
+  app.use("/leagues/:leagueId/managers", managersRouter);
   app.use("/players", playersRouter);
 
   app.use(errorHandler);

@@ -23,9 +23,12 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
   if (isUniqueViolation(err)) {
-    res
-      .status(409)
-      .json({ error: { code: "CONFLICT", message: "a league with this name already exists" } });
+    const constraint = (err as { constraint?: string }).constraint;
+    const message =
+      constraint === "manager_league_name_uk"
+        ? "a manager with this name already exists in this league"
+        : "a league with this name already exists";
+    res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }
   console.error(err);

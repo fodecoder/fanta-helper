@@ -6,10 +6,17 @@ interface LeagueListProps {
   refreshToken: number;
   onCreate: () => void;
   onEdit: (league: League) => void;
+  onManageManagers: (league: League) => void;
   onDeleted: () => void;
 }
 
-export function LeagueList({ refreshToken, onCreate, onEdit, onDeleted }: LeagueListProps) {
+export function LeagueList({
+  refreshToken,
+  onCreate,
+  onEdit,
+  onManageManagers,
+  onDeleted,
+}: LeagueListProps) {
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -79,6 +86,9 @@ export function LeagueList({ refreshToken, onCreate, onEdit, onDeleted }: League
                 <td>
                   <button type="button" onClick={() => onEdit(league)}>
                     Modifica
+                  </button>
+                  <button type="button" onClick={() => onManageManagers(league)}>
+                    Manager
                   </button>
                   <button type="button" onClick={() => handleDelete(league)}>
                     Elimina
