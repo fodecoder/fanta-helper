@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-17
+
+### Added
+
+- New-league form now ships prefilled, editable defaults: roster `3/8/8/6`,
+  `n_squadre = 8`, `budget = 1000`.
+- Structured form for scoring (bonus/malus + goal thresholds) and modifiers,
+  replacing the raw JSON textareas. Defaults follow the standard Fantacalcio
+  (Fantagazzetta) ruleset: gol `+3`, assist `+1`, penalty scored/saved `+2.5`,
+  penalty missed `−2.5`, booking `−0.5`, red card `−1`, own goal `−2`, goal
+  conceded `−1`; goal thresholds `[66, 72, 77, 81, 85, 89]`; defense modifier
+  table `6 → +1`, `6.5 → +3`, `7 → +6`, plus midfield/attack/goalkeeper/captain/
+  formation toggles.
+
+### Changed
+
+- Typed `scoring` and `modificatori` schemas in `shared/src/league.ts` (still
+  stored as JSONB); seed uses the shared defaults.
+
 ## [1.0.0] - 2026-08-17
 
 Chiude la Fase 2 lato codice (rifinitura UI + miniature giocatori, dopo il max

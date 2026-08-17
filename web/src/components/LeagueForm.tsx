@@ -2,8 +2,15 @@ import { useState, type FormEvent } from "react";
 import {
   createLeagueSchema,
   updateLeagueSchema,
+  defaultRosterConfig,
+  defaultScoring,
+  defaultModificatori,
+  DEFAULT_N_SQUADRE,
+  DEFAULT_BUDGET,
   type League,
   type CreateLeagueInput,
+  type ScoringConfig,
+  type ModifiersConfig,
 } from "@fanta-helper/shared";
 import * as leaguesApi from "../api/leagues";
 import { LeaguesApiError } from "../api/leagues";
@@ -15,43 +22,73 @@ interface LeagueFormProps {
   onCancel: () => void;
 }
 
+const SCORING_FIELDS: { key: keyof Omit<ScoringConfig, "fasce_gol">; label: string }[] = [
+  { key: "gol", label: "Gol segnato" },
+  { key: "assist", label: "Assist" },
+  { key: "rigore_segnato", label: "Rigore segnato" },
+  { key: "rigore_parato", label: "Rigore parato" },
+  { key: "rigore_sbagliato", label: "Rigore sbagliato" },
+  { key: "ammonizione", label: "Ammonizione" },
+  { key: "espulsione", label: "Espulsione" },
+  { key: "autorete", label: "Autorete" },
+  { key: "gol_subito", label: "Gol subito (portiere)" },
+];
+
+const MODIFIER_TOGGLES: { key: keyof Omit<ModifiersConfig, "difesa">; label: string }[] = [
+  { key: "centrocampo", label: "Modificatore centrocampo" },
+  { key: "attacco", label: "Modificatore attacco" },
+  { key: "portiere", label: "Modificatore portiere" },
+  { key: "capitano", label: "Regola del capitano" },
+  { key: "modulo", label: "Modificatore di modulo" },
+];
+
+// Deep clone so editing a new league never mutates the shared default objects.
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
-  const [nSquadre, setNSquadre] = useState(initial ? String(initial.n_squadre) : "");
-  const [budget, setBudget] = useState(initial ? String(initial.budget) : "");
-  const [rosterP, setRosterP] = useState(initial ? String(initial.roster_config.P) : "");
-  const [rosterD, setRosterD] = useState(initial ? String(initial.roster_config.D) : "");
-  const [rosterC, setRosterC] = useState(initial ? String(initial.roster_config.C) : "");
-  const [rosterA, setRosterA] = useState(initial ? String(initial.roster_config.A) : "");
-  const [scoringText, setScoringText] = useState(JSON.stringify(initial?.scoring ?? {}, null, 2));
-  const [modificatoriText, setModificatoriText] = useState(
-    JSON.stringify(initial?.modificatori ?? {}, null, 2),
+  const [nSquadre, setNSquadre] = useState(String(initial?.n_squadre ?? DEFAULT_N_SQUADRE));
+  const [budget, setBudget] = useState(String(initial?.budget ?? DEFAULT_BUDGET));
+  const [rosterP, setRosterP] = useState(String(initial?.roster_config.P ?? defaultRosterConfig.P));
+  const [rosterD, setRosterD] = useState(String(initial?.roster_config.D ?? defaultRosterConfig.D));
+  const [rosterC, setRosterC] = useState(String(initial?.roster_config.C ?? defaultRosterConfig.C));
+  const [rosterA, setRosterA] = useState(String(initial?.roster_config.A ?? defaultRosterConfig.A));
+  const [scoring, setScoring] = useState<ScoringConfig>(clone(initial?.scoring ?? defaultScoring));
+  const [fasceText, setFasceText] = useState(
+    (initial?.scoring.fasce_gol ?? defaultScoring.fasce_gol).join(", "),
+  );
+  const [modificatori, setModificatori] = useState<ModifiersConfig>(
+    clone(initial?.modificatori ?? defaultModificatori),
   );
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function parseJsonField(text: string, field: string, errors: Record<string, string>): unknown {
-    try {
-      return JSON.parse(text);
-    } catch {
-      errors[field] = "JSON non valido";
-      return undefined;
-    }
+  function setScoringField(key: keyof Omit<ScoringConfig, "fasce_gol">, raw: string) {
+    setScoring((prev) => ({ ...prev, [key]: Number(raw) }));
+  }
+
+  function setDifesaBand(index: number, field: "media" | "bonus", raw: string) {
+    setModificatori((prev) => {
+      const tabella = prev.difesa.tabella.map((band, i) =>
+        i === index ? { ...band, [field]: Number(raw) } : band,
+      );
+      return { ...prev, difesa: { ...prev.difesa, tabella } };
+    });
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setGeneralError(null);
 
-    const errors: Record<string, string> = {};
-    const scoring = parseJsonField(scoringText, "scoring", errors);
-    const modificatori = parseJsonField(modificatoriText, "modificatori", errors);
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
+    const fasce_gol = fasceText
+      .split(",")
+      .map((piece) => piece.trim())
+      .filter((piece) => piece !== "")
+      .map(Number);
 
     const candidate: CreateLeagueInput = {
       name,
@@ -63,8 +100,8 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
         C: Number(rosterC),
         A: Number(rosterA),
       },
-      scoring: scoring as Record<string, unknown>,
-      modificatori: modificatori as Record<string, unknown>,
+      scoring: { ...scoring, fasce_gol },
+      modificatori,
     };
 
     const schema = initial ? updateLeagueSchema : createLeagueSchema;
@@ -157,21 +194,91 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
           ))}
       </fieldset>
 
-      <label>
-        Scoring (JSON)
-        <textarea value={scoringText} onChange={(e) => setScoringText(e.target.value)} rows={6} />
-      </label>
-      {fieldErrors.scoring && <p className="field-error">{fieldErrors.scoring}</p>}
+      <fieldset>
+        <legend>Punti (bonus / malus)</legend>
+        {SCORING_FIELDS.map(({ key, label }) => (
+          <label key={key}>
+            {label}
+            <input
+              type="number"
+              step="0.5"
+              value={String(scoring[key])}
+              onChange={(e) => setScoringField(key, e.target.value)}
+            />
+          </label>
+        ))}
+        <label>
+          Fasce gol (soglie, separate da virgola)
+          <input value={fasceText} onChange={(e) => setFasceText(e.target.value)} />
+        </label>
+        {Object.entries(fieldErrors)
+          .filter(([key]) => key.startsWith("scoring"))
+          .map(([key, message]) => (
+            <p className="field-error" key={key}>
+              {key}: {message}
+            </p>
+          ))}
+      </fieldset>
 
-      <label>
-        Modificatori (JSON)
-        <textarea
-          value={modificatoriText}
-          onChange={(e) => setModificatoriText(e.target.value)}
-          rows={6}
-        />
-      </label>
-      {fieldErrors.modificatori && <p className="field-error">{fieldErrors.modificatori}</p>}
+      <fieldset>
+        <legend>Modificatori</legend>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={modificatori.difesa.enabled}
+            onChange={(e) =>
+              setModificatori((prev) => ({
+                ...prev,
+                difesa: { ...prev.difesa, enabled: e.target.checked },
+              }))
+            }
+          />
+          Modificatore difesa
+        </label>
+        <div className="difesa-bands">
+          {modificatori.difesa.tabella.map((band, index) => (
+            <span className="difesa-band" key={index}>
+              <label>
+                Media
+                <input
+                  type="number"
+                  step="0.5"
+                  value={String(band.media)}
+                  onChange={(e) => setDifesaBand(index, "media", e.target.value)}
+                />
+              </label>
+              <label>
+                Bonus
+                <input
+                  type="number"
+                  step="0.5"
+                  value={String(band.bonus)}
+                  onChange={(e) => setDifesaBand(index, "bonus", e.target.value)}
+                />
+              </label>
+            </span>
+          ))}
+        </div>
+        {MODIFIER_TOGGLES.map(({ key, label }) => (
+          <label className="checkbox" key={key}>
+            <input
+              type="checkbox"
+              checked={modificatori[key].enabled}
+              onChange={(e) =>
+                setModificatori((prev) => ({ ...prev, [key]: { enabled: e.target.checked } }))
+              }
+            />
+            {label}
+          </label>
+        ))}
+        {Object.entries(fieldErrors)
+          .filter(([key]) => key.startsWith("modificatori"))
+          .map(([key, message]) => (
+            <p className="field-error" key={key}>
+              {key}: {message}
+            </p>
+          ))}
+      </fieldset>
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={submitting}>
