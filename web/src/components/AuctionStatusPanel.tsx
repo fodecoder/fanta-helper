@@ -1,4 +1,5 @@
 import type { ManagerAuctionStatus } from "@fanta-helper/shared";
+import { StatusMessage } from "./StatusMessage";
 
 interface AuctionStatusPanelProps {
   statuses: ManagerAuctionStatus[] | null;
@@ -7,46 +8,50 @@ interface AuctionStatusPanelProps {
 
 export function AuctionStatusPanel({ statuses, loadError }: AuctionStatusPanelProps) {
   return (
-    <section>
+    <section className="card">
       <h2>Stato asta</h2>
 
       {loadError ? (
-        <p role="alert">{loadError}</p>
+        <StatusMessage kind="error">{loadError}</StatusMessage>
       ) : statuses === null ? (
-        <p>Caricamento…</p>
+        <StatusMessage kind="loading">Caricamento…</StatusMessage>
       ) : statuses.length === 0 ? (
-        <p>Nessun manager in questa lega.</p>
+        <StatusMessage kind="empty">Nessun manager in questa lega.</StatusMessage>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Manager</th>
-              <th>Budget</th>
-              <th>Speso</th>
-              <th>Residuo</th>
-              {statuses[0]?.slots.map((slot) => (
-                <th key={slot.ruolo}>Slot {slot.ruolo}</th>
-              ))}
-              <th>Max bid rettificato</th>
-            </tr>
-          </thead>
-          <tbody>
-            {statuses.map((status) => (
-              <tr key={status.managerId}>
-                <td>{status.managerName}</td>
-                <td>{status.budget}</td>
-                <td>{status.spent}</td>
-                <td>{status.residuo}</td>
-                {status.slots.map((slot) => (
-                  <td key={slot.ruolo}>
-                    {slot.used}/{slot.total} (liberi: {slot.free})
-                  </td>
+        <div className="table-wrap table-wrap--scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Manager</th>
+                <th className="num">Budget</th>
+                <th className="num">Speso</th>
+                <th className="num">Residuo</th>
+                {statuses[0]?.slots.map((slot) => (
+                  <th key={slot.ruolo}>Slot {slot.ruolo}</th>
                 ))}
-                <td>{status.adjustedMaxBid}</td>
+                <th className="num">Max bid rettificato</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {statuses.map((status) => (
+                <tr key={status.managerId}>
+                  <td>{status.managerName}</td>
+                  <td className="num">{status.budget}</td>
+                  <td className="num">{status.spent}</td>
+                  <td className="num">{status.residuo}</td>
+                  {status.slots.map((slot) => (
+                    <td key={slot.ruolo} className="num">
+                      {slot.used}/{slot.total} (liberi: {slot.free})
+                    </td>
+                  ))}
+                  <td className="num">
+                    <strong>{status.adjustedMaxBid}</strong>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

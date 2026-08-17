@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-08-17
+
+### Added
+
+- Design tokens for the brand palette as CSS custom properties in
+  `web/src/index.css` (`--color-brand-green`, `--color-header-blue`,
+  `--color-accent-orange`, plus a small derived neutral scale for
+  text/border/background and a spacing/radius scale), replacing the one
+  hardcoded hex value in the codebase. Header blue fixed to `#11246F`
+  (higher contrast, ~13.9:1 on white, versus ~8.4:1 for the alternative
+  `#144F89`).
+- Shared presentational components (`PageHeader`, `StatusMessage`) and
+  component classes (`.app-header`, `.nav-button`, `.card`, `.table-wrap`,
+  `.btn-primary`/`.btn-secondary`, `.status-message`) replacing duplicated
+  "Indietro" headers and loading/error/empty ternaries across Home, Leghe,
+  Manager, Valutazioni and Asta.
+- Consolidated table and form styling across all screens: zebra rows,
+  sticky headers, right-aligned tabular numeric columns. Applied with
+  priority to the Asta screen (purchase log and per-manager derived
+  status), where budget, residuo and max bid rettificato need to be
+  readable at a glance during a live auction.
+- Presentation only: no change to the auction domain invariant, no
+  mutable state field introduced, no new dependency.
+
 ## [0.9.0] - 2026-08-17
 
 ### Added

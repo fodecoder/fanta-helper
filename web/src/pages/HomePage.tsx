@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { League } from "@fanta-helper/shared";
 import * as leaguesApi from "../api/leagues";
 import { LeagueSelector } from "../components/LeagueSelector";
+import { PageHeader } from "../components/PageHeader";
+import { StatusMessage } from "../components/StatusMessage";
 import { ManagersPage } from "./ManagersPage";
 import { ValuationsPage } from "./ValuationsPage";
 import { AuctionPage } from "./AuctionPage";
@@ -54,28 +56,30 @@ export function HomePage() {
   }
 
   return (
-    <section>
-      <h2>Home</h2>
+    <div className="page">
+      <PageHeader title="Home" />
 
-      {loadError ? (
-        <p role="alert">{loadError}</p>
-      ) : leagues === null ? (
-        <p>Caricamento…</p>
-      ) : (
-        <LeagueSelector leagues={leagues} value={activeLeagueId} onChange={handleSelect} />
-      )}
+      <div className="card">
+        {loadError ? (
+          <StatusMessage kind="error">{loadError}</StatusMessage>
+        ) : leagues === null ? (
+          <StatusMessage kind="loading">Caricamento…</StatusMessage>
+        ) : (
+          <LeagueSelector leagues={leagues} value={activeLeagueId} onChange={handleSelect} />
+        )}
+      </div>
 
       {!activeLeague ? (
-        <p>Seleziona una lega per iniziare.</p>
+        <StatusMessage kind="empty">Seleziona una lega per iniziare.</StatusMessage>
       ) : subView === null ? (
-        <nav>
-          <button type="button" onClick={() => setSubView("managers")}>
+        <nav className="nav">
+          <button type="button" className="nav-button" onClick={() => setSubView("managers")}>
             Manager
           </button>
-          <button type="button" onClick={() => setSubView("valuations")}>
+          <button type="button" className="nav-button" onClick={() => setSubView("valuations")}>
             Valutazioni
           </button>
-          <button type="button" onClick={() => setSubView("auction")}>
+          <button type="button" className="nav-button" onClick={() => setSubView("auction")}>
             Asta
           </button>
         </nav>
@@ -86,6 +90,6 @@ export function HomePage() {
       ) : (
         <AuctionPage league={activeLeague} onBack={() => setSubView(null)} />
       )}
-    </section>
+    </div>
   );
 }

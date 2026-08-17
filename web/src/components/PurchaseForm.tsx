@@ -10,6 +10,7 @@ import { PurchasesApiError } from "../api/purchases";
 import * as playersApi from "../api/players";
 import * as managersApi from "../api/managers";
 import * as valuationsApi from "../api/valuations";
+import { StatusMessage } from "./StatusMessage";
 
 interface PurchaseFormProps {
   leagueId: number;
@@ -98,10 +99,10 @@ export function PurchaseForm({
   }
 
   return (
-    <section>
+    <section className="card">
       <h2>Assegna giocatore</h2>
 
-      {error && <p role="alert">{error}</p>}
+      {error && <StatusMessage kind="error">{error}</StatusMessage>}
 
       <form onSubmit={handleSubmit}>
         <label>
@@ -140,8 +141,8 @@ export function PurchaseForm({
         {activeManagerStatus && (
           <p>
             Max bid rettificato per {activeManagerStatus.managerName}:{" "}
-            <strong>{activeManagerStatus.adjustedMaxBid}</strong> (residuo{" "}
-            {activeManagerStatus.residuo})
+            <strong className="highlight-value">{activeManagerStatus.adjustedMaxBid}</strong>{" "}
+            (residuo {activeManagerStatus.residuo})
           </p>
         )}
 
@@ -156,8 +157,8 @@ export function PurchaseForm({
           />
         </label>
 
-        <div>
-          <button type="submit" disabled={submitting}>
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? "Assegnazione in corso…" : "Assegna"}
           </button>
         </div>

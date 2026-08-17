@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Manager } from "@fanta-helper/shared";
 import * as managersApi from "../api/managers";
+import { StatusMessage } from "./StatusMessage";
 
 interface ManagerListProps {
   leagueId: number;
@@ -43,46 +44,58 @@ export function ManagerList({ leagueId, refreshToken, onCreate, onEdit, onDelete
   }
 
   return (
-    <section>
-      <header>
+    <section className="card">
+      <header className="card-header">
         <h2>Manager</h2>
-        <button type="button" onClick={onCreate}>
+        <button type="button" className="btn btn-primary" onClick={onCreate}>
           Nuovo manager
         </button>
       </header>
 
-      {actionError && <p role="alert">{actionError}</p>}
+      {actionError && <StatusMessage kind="error">{actionError}</StatusMessage>}
 
       {loadError ? (
-        <p role="alert">{loadError}</p>
+        <StatusMessage kind="error">{loadError}</StatusMessage>
       ) : managers === null ? (
-        <p>Caricamento…</p>
+        <StatusMessage kind="loading">Caricamento…</StatusMessage>
       ) : managers.length === 0 ? (
-        <p>Nessun manager creato.</p>
+        <StatusMessage kind="empty">Nessun manager creato.</StatusMessage>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {managers.map((manager) => (
-              <tr key={manager.id}>
-                <td>{manager.name}</td>
-                <td>
-                  <button type="button" onClick={() => onEdit(manager)}>
-                    Modifica
-                  </button>
-                  <button type="button" onClick={() => handleDelete(manager)}>
-                    Elimina
-                  </button>
-                </td>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {managers.map((manager) => (
+                <tr key={manager.id}>
+                  <td>{manager.name}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => onEdit(manager)}
+                      >
+                        Modifica
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => handleDelete(manager)}
+                      >
+                        Elimina
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

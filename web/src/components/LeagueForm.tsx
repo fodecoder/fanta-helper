@@ -7,6 +7,7 @@ import {
 } from "@fanta-helper/shared";
 import * as leaguesApi from "../api/leagues";
 import { LeaguesApiError } from "../api/leagues";
+import { StatusMessage } from "./StatusMessage";
 
 interface LeagueFormProps {
   initial?: League;
@@ -106,10 +107,10 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="card" onSubmit={handleSubmit}>
       <h2>{initial ? "Modifica lega" : "Nuova lega"}</h2>
 
-      {generalError && <p role="alert">{generalError}</p>}
+      {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
       <label>
         Nome
@@ -172,11 +173,11 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
       </label>
       {fieldErrors.modificatori && <p className="field-error">{fieldErrors.modificatori}</p>}
 
-      <div>
-        <button type="submit" disabled={submitting}>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? "Salvataggio…" : "Salva"}
         </button>
-        <button type="button" onClick={onCancel} disabled={submitting}>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>
           Annulla
         </button>
       </div>

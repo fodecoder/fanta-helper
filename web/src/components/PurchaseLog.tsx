@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { PurchaseWithDetails } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import { PurchasesApiError } from "../api/purchases";
+import { StatusMessage } from "./StatusMessage";
 
 interface PurchaseLogProps {
   leagueId: number;
@@ -37,11 +38,12 @@ export function PurchaseLog({ leagueId, purchases, loadError, onUndone }: Purcha
   }
 
   return (
-    <section>
-      <header>
+    <section className="card">
+      <header className="card-header">
         <h2>Log acquisti</h2>
         <button
           type="button"
+          className="btn btn-secondary"
           onClick={handleUndoLast}
           disabled={undoing || !purchases || purchases.length === 0}
         >
@@ -49,37 +51,39 @@ export function PurchaseLog({ leagueId, purchases, loadError, onUndone }: Purcha
         </button>
       </header>
 
-      {actionError && <p role="alert">{actionError}</p>}
+      {actionError && <StatusMessage kind="error">{actionError}</StatusMessage>}
 
       {loadError ? (
-        <p role="alert">{loadError}</p>
+        <StatusMessage kind="error">{loadError}</StatusMessage>
       ) : purchases === null ? (
-        <p>Caricamento…</p>
+        <StatusMessage kind="loading">Caricamento…</StatusMessage>
       ) : purchases.length === 0 ? (
-        <p>Nessun acquisto registrato.</p>
+        <StatusMessage kind="empty">Nessun acquisto registrato.</StatusMessage>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Giocatore</th>
-              <th>Squadra</th>
-              <th>Ruolo</th>
-              <th>Manager</th>
-              <th>Prezzo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchases.map((purchase) => (
-              <tr key={`${purchase.league_id}-${purchase.player_id}`}>
-                <td>{purchase.player_name}</td>
-                <td>{purchase.player_team}</td>
-                <td>{purchase.player_ruolo}</td>
-                <td>{purchase.manager_name}</td>
-                <td>{purchase.prezzo}</td>
+        <div className="table-wrap table-wrap--scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Giocatore</th>
+                <th>Squadra</th>
+                <th>Ruolo</th>
+                <th>Manager</th>
+                <th className="num">Prezzo</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {purchases.map((purchase) => (
+                <tr key={`${purchase.league_id}-${purchase.player_id}`}>
+                  <td>{purchase.player_name}</td>
+                  <td>{purchase.player_team}</td>
+                  <td>{purchase.player_ruolo}</td>
+                  <td>{purchase.manager_name}</td>
+                  <td className="num">{purchase.prezzo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

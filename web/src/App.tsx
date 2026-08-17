@@ -22,19 +22,36 @@ function App() {
 
   return (
     <main>
-      <h1>Fanta Helper</h1>
-      <p>Backend: {status}</p>
-      <nav>
-        <button type="button" onClick={() => setView("home")} disabled={view === "home"}>
-          Home
-        </button>
-        <button type="button" onClick={() => setView("leagues")} disabled={view === "leagues"}>
-          Leghe
-        </button>
-        <button type="button" onClick={() => setView("import")} disabled={view === "import"}>
-          Import quotazioni
-        </button>
-      </nav>
+      <header className="app-header">
+        <h1>Fanta Helper</h1>
+        <p className="status">Backend: {status}</p>
+        <nav className="nav">
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setView("home")}
+            disabled={view === "home"}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setView("leagues")}
+            disabled={view === "leagues"}
+          >
+            Leghe
+          </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setView("import")}
+            disabled={view === "import"}
+          >
+            Import quotazioni
+          </button>
+        </nav>
+      </header>
       {view === "home" ? (
         <HomePage />
       ) : view === "leagues" ? (

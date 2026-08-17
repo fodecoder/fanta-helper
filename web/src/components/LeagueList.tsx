@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { League } from "@fanta-helper/shared";
 import * as leaguesApi from "../api/leagues";
+import { StatusMessage } from "./StatusMessage";
 
 interface LeagueListProps {
   refreshToken: number;
@@ -44,50 +45,62 @@ export function LeagueList({ refreshToken, onCreate, onEdit, onDeleted }: League
   }
 
   return (
-    <section>
-      <header>
+    <section className="card">
+      <header className="card-header">
         <h2>Leghe</h2>
-        <button type="button" onClick={onCreate}>
+        <button type="button" className="btn btn-primary" onClick={onCreate}>
           Nuova lega
         </button>
       </header>
 
-      {actionError && <p role="alert">{actionError}</p>}
+      {actionError && <StatusMessage kind="error">{actionError}</StatusMessage>}
 
       {loadError ? (
-        <p role="alert">{loadError}</p>
+        <StatusMessage kind="error">{loadError}</StatusMessage>
       ) : leagues === null ? (
-        <p>Caricamento…</p>
+        <StatusMessage kind="loading">Caricamento…</StatusMessage>
       ) : leagues.length === 0 ? (
-        <p>Nessuna lega creata.</p>
+        <StatusMessage kind="empty">Nessuna lega creata.</StatusMessage>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Squadre</th>
-              <th>Budget</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {leagues.map((league) => (
-              <tr key={league.id}>
-                <td>{league.name}</td>
-                <td>{league.n_squadre}</td>
-                <td>{league.budget}</td>
-                <td>
-                  <button type="button" onClick={() => onEdit(league)}>
-                    Modifica
-                  </button>
-                  <button type="button" onClick={() => handleDelete(league)}>
-                    Elimina
-                  </button>
-                </td>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th className="num">Squadre</th>
+                <th className="num">Budget</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {leagues.map((league) => (
+                <tr key={league.id}>
+                  <td>{league.name}</td>
+                  <td className="num">{league.n_squadre}</td>
+                  <td className="num">{league.budget}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => onEdit(league)}
+                      >
+                        Modifica
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => handleDelete(league)}
+                      >
+                        Elimina
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

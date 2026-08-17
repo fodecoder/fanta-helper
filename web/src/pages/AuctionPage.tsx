@@ -4,6 +4,7 @@ import { PurchaseForm } from "../components/PurchaseForm";
 import { PurchaseLog } from "../components/PurchaseLog";
 import { AuctionStatusPanel } from "../components/AuctionStatusPanel";
 import * as purchasesApi from "../api/purchases";
+import { PageHeader } from "../components/PageHeader";
 
 interface AuctionPageProps {
   league: League;
@@ -53,11 +54,8 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
   );
 
   return (
-    <section>
-      <button type="button" onClick={onBack}>
-        Indietro
-      </button>
-      <h1>Asta — {league.name}</h1>
+    <div className="page">
+      <PageHeader title={`Asta — ${league.name}`} onBack={onBack} />
 
       <PurchaseForm
         leagueId={league.id}
@@ -74,6 +72,6 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
         loadError={loadError}
         onUndone={() => setRefreshToken((t) => t + 1)}
       />
-    </section>
+    </div>
   );
 }

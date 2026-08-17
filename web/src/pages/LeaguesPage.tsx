@@ -9,25 +9,25 @@ export function LeaguesPage() {
   const [view, setView] = useState<View>({ mode: "list" });
   const [refreshToken, setRefreshToken] = useState(0);
 
-  if (view.mode === "list") {
-    return (
-      <LeagueList
-        refreshToken={refreshToken}
-        onCreate={() => setView({ mode: "create" })}
-        onEdit={(league) => setView({ mode: "edit", league })}
-        onDeleted={() => setRefreshToken((t) => t + 1)}
-      />
-    );
-  }
-
   return (
-    <LeagueForm
-      initial={view.mode === "edit" ? view.league : undefined}
-      onSaved={() => {
-        setView({ mode: "list" });
-        setRefreshToken((t) => t + 1);
-      }}
-      onCancel={() => setView({ mode: "list" })}
-    />
+    <div className="page">
+      {view.mode === "list" ? (
+        <LeagueList
+          refreshToken={refreshToken}
+          onCreate={() => setView({ mode: "create" })}
+          onEdit={(league) => setView({ mode: "edit", league })}
+          onDeleted={() => setRefreshToken((t) => t + 1)}
+        />
+      ) : (
+        <LeagueForm
+          initial={view.mode === "edit" ? view.league : undefined}
+          onSaved={() => {
+            setView({ mode: "list" });
+            setRefreshToken((t) => t + 1);
+          }}
+          onCancel={() => setView({ mode: "list" })}
+        />
+      )}
+    </div>
   );
 }

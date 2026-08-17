@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { League, Manager } from "@fanta-helper/shared";
 import { ManagerList } from "../components/ManagerList";
 import { ManagerForm } from "../components/ManagerForm";
+import { PageHeader } from "../components/PageHeader";
 
 type View = { mode: "list" } | { mode: "create" } | { mode: "edit"; manager: Manager };
 
@@ -15,11 +16,8 @@ export function ManagersPage({ league, onBack }: ManagersPageProps) {
   const [refreshToken, setRefreshToken] = useState(0);
 
   return (
-    <section>
-      <button type="button" onClick={onBack}>
-        Indietro
-      </button>
-      <h1>Manager — {league.name}</h1>
+    <div className="page">
+      <PageHeader title={`Manager — ${league.name}`} onBack={onBack} />
 
       {view.mode === "list" ? (
         <ManagerList
@@ -40,6 +38,6 @@ export function ManagersPage({ league, onBack }: ManagersPageProps) {
           onCancel={() => setView({ mode: "list" })}
         />
       )}
-    </section>
+    </div>
   );
 }

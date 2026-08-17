@@ -7,6 +7,7 @@ import {
 } from "@fanta-helper/shared";
 import * as managersApi from "../api/managers";
 import { ManagersApiError } from "../api/managers";
+import { StatusMessage } from "./StatusMessage";
 
 interface ManagerFormProps {
   leagueId: number;
@@ -68,10 +69,10 @@ export function ManagerForm({ leagueId, initial, onSaved, onCancel }: ManagerFor
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="card" onSubmit={handleSubmit}>
       <h2>{initial ? "Modifica manager" : "Nuovo manager"}</h2>
 
-      {generalError && <p role="alert">{generalError}</p>}
+      {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
       <label>
         Nome
@@ -79,11 +80,11 @@ export function ManagerForm({ leagueId, initial, onSaved, onCancel }: ManagerFor
       </label>
       {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
 
-      <div>
-        <button type="submit" disabled={submitting}>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? "Salvataggio…" : "Salva"}
         </button>
-        <button type="button" onClick={onCancel} disabled={submitting}>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>
           Annulla
         </button>
       </div>

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { League, ValuationWithPlayer } from "@fanta-helper/shared";
 import { ValuationImportForm } from "../components/ValuationImportForm";
 import * as valuationsApi from "../api/valuations";
+import { PageHeader } from "../components/PageHeader";
+import { StatusMessage } from "../components/StatusMessage";
 
 interface ValuationsPageProps {
   league: League;
@@ -29,53 +31,54 @@ export function ValuationsPage({ league, onBack }: ValuationsPageProps) {
   }, [league.id, refreshToken]);
 
   return (
-    <section>
-      <button type="button" onClick={onBack}>
-        Indietro
-      </button>
-      <h1>Valutazioni — {league.name}</h1>
+    <div className="page">
+      <PageHeader title={`Valutazioni — ${league.name}`} onBack={onBack} />
 
       <ValuationImportForm leagueId={league.id} onResolved={() => setRefreshToken((t) => t + 1)} />
 
-      <h2>Valutazioni correnti</h2>
-      {loadError ? (
-        <p role="alert">{loadError}</p>
-      ) : valuations === null ? (
-        <p>Caricamento…</p>
-      ) : valuations.length === 0 ? (
-        <p>Nessuna valutazione importata.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Squadra</th>
-              <th>Ruolo</th>
-              <th>Tier</th>
-              <th>Target</th>
-              <th>Fair value</th>
-              <th>Max bid</th>
-              <th>Panic price</th>
-              <th>Confidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            {valuations.map((valuation) => (
-              <tr key={valuation.player_id}>
-                <td>{valuation.name}</td>
-                <td>{valuation.team}</td>
-                <td>{valuation.ruolo}</td>
-                <td>{valuation.tier}</td>
-                <td>{valuation.target}</td>
-                <td>{valuation.fair_value}</td>
-                <td>{valuation.max_bid}</td>
-                <td>{valuation.panic_price}</td>
-                <td>{valuation.confidence}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
+      <section className="card">
+        <h2>Valutazioni correnti</h2>
+        {loadError ? (
+          <StatusMessage kind="error">{loadError}</StatusMessage>
+        ) : valuations === null ? (
+          <StatusMessage kind="loading">Caricamento…</StatusMessage>
+        ) : valuations.length === 0 ? (
+          <StatusMessage kind="empty">Nessuna valutazione importata.</StatusMessage>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Squadra</th>
+                  <th>Ruolo</th>
+                  <th>Tier</th>
+                  <th className="num">Target</th>
+                  <th className="num">Fair value</th>
+                  <th className="num">Max bid</th>
+                  <th className="num">Panic price</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {valuations.map((valuation) => (
+                  <tr key={valuation.player_id}>
+                    <td>{valuation.name}</td>
+                    <td>{valuation.team}</td>
+                    <td>{valuation.ruolo}</td>
+                    <td>{valuation.tier}</td>
+                    <td className="num">{valuation.target}</td>
+                    <td className="num">{valuation.fair_value}</td>
+                    <td className="num">{valuation.max_bid}</td>
+                    <td className="num">{valuation.panic_price}</td>
+                    <td>{valuation.confidence}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

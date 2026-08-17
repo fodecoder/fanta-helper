@@ -3,6 +3,7 @@ import type { Player, UnmatchedValuation, ValuationImportReport } from "@fanta-h
 import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import * as playersApi from "../api/players";
+import { StatusMessage } from "./StatusMessage";
 
 interface ValuationImportFormProps {
   leagueId: number;
@@ -77,15 +78,17 @@ function UnmatchedRow({ leagueId, entry, players, onAssigned, onDiscarded }: Unm
             </option>
           ))}
         </select>
-        {error && <p role="alert">{error}</p>}
+        {error && <p className="field-error">{error}</p>}
       </td>
       <td>
-        <button type="button" onClick={handleAssign} disabled={submitting}>
-          Assegna
-        </button>
-        <button type="button" onClick={onDiscarded} disabled={submitting}>
-          Scarta
-        </button>
+        <div className="row-actions">
+          <button type="button" className="btn btn-primary" onClick={handleAssign} disabled={submitting}>
+            Assegna
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onDiscarded} disabled={submitting}>
+            Scarta
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -143,10 +146,10 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
   }
 
   return (
-    <section>
+    <section className="card">
       <h2>Import valutazioni</h2>
 
-      {generalError && <p role="alert">{generalError}</p>}
+      {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
       <form onSubmit={handleSubmit}>
         <label>
@@ -157,8 +160,8 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
         </label>
-        <div>
-          <button type="submit" disabled={submitting}>
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? "Import in corso…" : "Importa"}
           </button>
         </div>
@@ -172,34 +175,36 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
       )}
 
       {unmatched.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Squadra</th>
-              <th>Ruolo</th>
-              <th>Tier</th>
-              <th>Motivo</th>
-              <th>Assegna a</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {unmatched.map((entry, index) => (
-              <UnmatchedRow
-                key={`${entry.name}-${entry.team}-${index}`}
-                leagueId={leagueId}
-                entry={entry}
-                players={players ?? []}
-                onAssigned={() => {
-                  setUnmatched((rows) => rows.filter((_, i) => i !== index));
-                  onResolved();
-                }}
-                onDiscarded={() => setUnmatched((rows) => rows.filter((_, i) => i !== index))}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Squadra</th>
+                <th>Ruolo</th>
+                <th>Tier</th>
+                <th>Motivo</th>
+                <th>Assegna a</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {unmatched.map((entry, index) => (
+                <UnmatchedRow
+                  key={`${entry.name}-${entry.team}-${index}`}
+                  leagueId={leagueId}
+                  entry={entry}
+                  players={players ?? []}
+                  onAssigned={() => {
+                    setUnmatched((rows) => rows.filter((_, i) => i !== index));
+                    onResolved();
+                  }}
+                  onDiscarded={() => setUnmatched((rows) => rows.filter((_, i) => i !== index))}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
