@@ -38,7 +38,7 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
   return (
     <section>
       <button type="button" onClick={onBack}>
-        Torna alle leghe
+        Indietro
       </button>
       <h1>Asta — {league.name}</h1>
 

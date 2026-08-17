@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-17
+
+### Added
+
+- League selector on a new Home screen (`HomePage`, `LeagueSelector`), setting
+  an active league that Manager, Valutazioni, and Asta all read from — reusing
+  the existing `ManagersPage`/`ValuationsPage`/`AuctionPage` components
+  unchanged. Selection is UI-side state only, never a persisted domain field.
+- Deep-link support via a `?league=<id>` query parameter, read on load to
+  preselect the active league and kept in sync with `history.replaceState` as
+  the selection changes, with no new routing dependency.
+- `Leghe` is now purely CRUD (create/edit/delete): the per-row
+  Manager/Valutazioni/Asta shortcuts are removed now that Home is the single
+  operational entry point for those screens.
+
 ## [0.7.0] - 2026-08-17
 
 ### Added

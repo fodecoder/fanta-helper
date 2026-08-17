@@ -31,7 +31,7 @@ export function ValuationsPage({ league, onBack }: ValuationsPageProps) {
   return (
     <section>
       <button type="button" onClick={onBack}>
-        Torna alle leghe
+        Indietro
       </button>
       <h1>Valutazioni — {league.name}</h1>
 

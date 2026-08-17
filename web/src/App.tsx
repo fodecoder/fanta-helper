@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import { HomePage } from "./pages/HomePage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
 
 type ConnectionStatus = "checking" | "ok" | "error";
-type View = "leagues" | "import";
+type View = "home" | "leagues" | "import";
 
 function App() {
   const [status, setStatus] = useState<ConnectionStatus>("checking");
-  const [view, setView] = useState<View>("leagues");
+  const [view, setView] = useState<View>("home");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -24,6 +25,9 @@ function App() {
       <h1>Fanta Helper</h1>
       <p>Backend: {status}</p>
       <nav>
+        <button type="button" onClick={() => setView("home")} disabled={view === "home"}>
+          Home
+        </button>
         <button type="button" onClick={() => setView("leagues")} disabled={view === "leagues"}>
           Leghe
         </button>
@@ -31,7 +35,13 @@ function App() {
           Import quotazioni
         </button>
       </nav>
-      {view === "leagues" ? <LeaguesPage /> : <PlayerImportPage />}
+      {view === "home" ? (
+        <HomePage />
+      ) : view === "leagues" ? (
+        <LeaguesPage />
+      ) : (
+        <PlayerImportPage />
+      )}
     </main>
   );
 }

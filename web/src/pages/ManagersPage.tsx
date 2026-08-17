@@ -17,7 +17,7 @@ export function ManagersPage({ league, onBack }: ManagersPageProps) {
   return (
     <section>
       <button type="button" onClick={onBack}>
-        Torna alle leghe
+        Indietro
       </button>
       <h1>Manager — {league.name}</h1>
 
