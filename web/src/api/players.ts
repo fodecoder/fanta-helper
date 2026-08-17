@@ -33,3 +33,17 @@ export function importPlayersCsv(csvText: string): Promise<PlayerImportReport> {
     body: csvText,
   }).then((res) => handle<PlayerImportReport>(res));
 }
+
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+// Accetta sia CSV sia xlsx: il tipo si deduce dall'estensione del file e il
+// backend distingue in base al Content-Type (testo vs binario).
+export async function importPlayersFile(file: File): Promise<PlayerImportReport> {
+  const isXlsx = /\.xlsx?$/i.test(file.name);
+  const res = await fetch(`${BASE_URL}/import`, {
+    method: "POST",
+    headers: { "Content-Type": isXlsx ? XLSX_MIME : "text/csv" },
+    body: isXlsx ? await file.arrayBuffer() : await file.text(),
+  });
+  return handle<PlayerImportReport>(res);
+}

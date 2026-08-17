@@ -1,28 +1,16 @@
-import { parse } from "csv-parse/sync";
 import { ROLES } from "@fanta-helper/shared";
 import type { PlayerImportReport, DiscardedPlayerRow } from "@fanta-helper/shared";
 import { upsertPlayer } from "../db/players";
 import { ApiError } from "../http/errors";
+import { cell, parseCsvRows, parseXlsxRows, rowsToRecords } from "./fileRows";
 
 const REQUIRED_COLUMNS = ["R", "Nome", "Squadra"] as const;
 
-export async function importPlayersFromCsv(raw: string): Promise<PlayerImportReport> {
-  const records = parse(raw, {
-    delimiter: ";",
-    columns: true,
-    bom: true,
-    trim: true,
-    skip_empty_lines: true,
-  }) as Record<string, string>[];
-
+async function importPlayersFromRecords(
+  records: Record<string, string>[],
+): Promise<PlayerImportReport> {
   if (records.length === 0) {
-    throw ApiError.badRequest("CSV has no data rows");
-  }
-
-  const header = Object.keys(records[0]!);
-  const missingColumns = REQUIRED_COLUMNS.filter((column) => !header.includes(column));
-  if (missingColumns.length > 0) {
-    throw ApiError.badRequest(`CSV is missing required columns: ${missingColumns.join(", ")}`);
+    throw ApiError.badRequest("file has no data rows");
   }
 
   let inserted = 0;
@@ -31,9 +19,9 @@ export async function importPlayersFromCsv(raw: string): Promise<PlayerImportRep
 
   for (const [index, record] of records.entries()) {
     const rowNumber = index + 1;
-    const name = (record.Nome ?? "").trim();
-    const team = (record.Squadra ?? "").trim();
-    const ruolo = (record.R ?? "").trim().toUpperCase();
+    const name = cell(record.Nome);
+    const team = cell(record.Squadra);
+    const ruolo = cell(record.R).toUpperCase();
 
     if (name === "") {
       discarded.push({ row: rowNumber, name, team, ruolo, reason: "nome mancante" });
@@ -67,4 +55,12 @@ export async function importPlayersFromCsv(raw: string): Promise<PlayerImportRep
   }
 
   return { inserted, updated, discarded };
+}
+
+export async function importPlayersFromCsv(raw: string): Promise<PlayerImportReport> {
+  return importPlayersFromRecords(rowsToRecords(parseCsvRows(raw), REQUIRED_COLUMNS));
+}
+
+export async function importPlayersFromXlsx(buffer: Buffer): Promise<PlayerImportReport> {
+  return importPlayersFromRecords(rowsToRecords(parseXlsxRows(buffer), REQUIRED_COLUMNS));
 }

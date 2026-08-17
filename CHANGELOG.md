@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-17
+
+### Added
+
+- Quotazioni import now accepts **xlsx** in addition to CSV (SheetJS). The parser
+  detects the header row, tolerating a leading title row, and requires columns
+  `R`, `Nome`, `Squadra`.
+
+### Changed
+
+- Extracted a shared `fileRows` helper (CSV/xlsx row extraction + header
+  detection) and refactored the player import around it. The `/players/import`
+  route accepts both text (CSV) and binary (xlsx) bodies.
+
+### Note
+
+- SheetJS `xlsx@0.18.5` (the npm build) carries known advisories (prototype
+  pollution / ReDoS). Acceptable here: import runs on locally chosen, trusted
+  files. Revisit if the app ever ingests untrusted spreadsheets.
+
 ## [1.2.0] - 2026-08-17
 
 ### Added

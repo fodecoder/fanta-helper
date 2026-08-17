@@ -13,7 +13,7 @@ export function PlayerImportPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!file) {
-      setGeneralError("seleziona un file CSV");
+      setGeneralError("seleziona un file CSV o xlsx");
       return;
     }
 
@@ -21,8 +21,7 @@ export function PlayerImportPage() {
     setReport(null);
     setSubmitting(true);
     try {
-      const csvText = await file.text();
-      const result = await playersApi.importPlayersCsv(csvText);
+      const result = await playersApi.importPlayersFile(file);
       setReport(result);
     } catch (err) {
       setGeneralError(
@@ -48,10 +47,10 @@ export function PlayerImportPage() {
 
         <form onSubmit={handleSubmit}>
           <label>
-            File CSV
+            File CSV o xlsx
             <input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </label>
