@@ -7,10 +7,10 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 > asta live, selettore lega). **Fase 2 completa** (codice): max bid rettificato,
 > rifinitura UI, miniature giocatori. **Fase 2.1 completa** (correzioni
 > pre-release): default di lega, form modificatori/punti, manager automatici,
-> import xlsx, griglia portieri, `render.yaml`. Codice pronto per l'hosting
-> (build/lint/test verdi); manca il provisioning di Render e Cloudflare Pages —
-> vedi [README.md](./README.md) e la nota in coda. Il rilascio in produzione si
-> considera chiuso solo a provisioning e push completati.
+> import xlsx, griglia portieri, `render.yaml`. **Hosting in produzione**: Neon
+> + Render + Cloudflare Pages attivi, app funzionante end-to-end. Prossimo lavoro
+> in [Fase 4](#fase-4--assistenza-allasta-e-dati-serie-a) (assistenza all'asta e
+> dati Serie A) — prompt in [PROMPTS.md](./PROMPTS.md).
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -47,6 +47,21 @@ Punti emersi prima del provisioning di Render/Cloudflare.
       in consultazione nell'asta
 - [x] `render.yaml` (Blueprint del backend) alla root
 
+## Fase 4 — Assistenza all'asta e dati Serie A  *(pianificata)*
+
+Funzionalità che aiutano la decisione durante l'asta e portano dati Serie A nel
+portale. Prompt operativi 19–22 in `PROMPTS.md`.
+
+- [ ] **Giocatori desiderati (wishlist)** per-lega: aggiungi/rimuovi obiettivi,
+      evidenziati in asta
+- [ ] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
+      ruolo dalle valutazioni in-app; arricchimento opzionale da API stats
+      esterna (API-Football free) via backend, con cache e rate-limit
+- [ ] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
+      estrazione e/o integrazione esterna; visualizzazione a tab
+- [ ] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
+      formazioni): stessa pipeline di ingest
+
 ## Fase 3 — v2  *(successiva)*
 
 - [ ] LLM in-app via API Anthropic: genera/aggiorna valutazioni
@@ -62,18 +77,15 @@ Rilascio 1.0.0 = Fase 2 completa + servizi in produzione.
 - [x] Rifinitura UI
 - [x] Miniature giocatori
 
-**Provisioning** (manuale, nessun codice — dettaglio in README.md) — **in corso**
+**Provisioning** (manuale, nessun codice — dettaglio in README.md) — **completo**
 
 - [x] Neon: progetto e database creati
-- [x] Secret GitHub per le migrazioni impostato *(verifica che il nome sia
-      esattamente `NEON_DIRECT_DATABASE_URL` e che sia la connessione **diretta**,
-      non pooled: il workflow usa `pg_advisory_lock`, incompatibile con PgBouncer)*
-- [ ] Render: web service (build dalla root del repo) — Blueprint pronto in
-      [`render.yaml`](./render.yaml)
-- [ ] Cloudflare Pages: progetto (build dalla root, output `web/dist`)
-- [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
-- [ ] Push umano su `main` per far girare workflow (lint/build/migrazioni) e i redeploy
+- [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
+      connessione **diretta** non pooled)
+- [x] Render: web service (build dalla root del repo, Blueprint [`render.yaml`](./render.yaml))
+- [x] Cloudflare Pages: progetto (build dalla root, output `web/dist`)
+- [x] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
+- [x] Push umano su `main`: workflow (lint/build/migrazioni) e redeploy eseguiti
 
-Codice taggato fino a `v1.4.0`; il rilascio in produzione si considera chiuso
-solo a provisioning e push completati (operazione manuale e umana, vedi
-CLAUDE.md).
+Rilascio `v1.4.0` **in produzione**: app funzionante end-to-end. Il prossimo
+lavoro è la Fase 4.

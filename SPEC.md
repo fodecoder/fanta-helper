@@ -175,6 +175,47 @@ Regole di validazione all'import:
 - Il matching `name`+`team` → `player_id`: i match ambigui o assenti finiscono
   in una lista unmatched per revisione manuale, non vengono inventati.
 
+## Estensioni pianificate (Fase 4)
+
+Modello previsto, **non ancora implementato** (prompt 19–22 in `PROMPTS.md`).
+Vale sempre l'invariante: nessuno di questi dati è stato mutabile dell'asta; il
+residuo/slot restano funzione del log `purchase`.
+
+### `wishlist` — giocatori desiderati (per-lega)
+
+| campo       | tipo | note                                          |
+|-------------|------|-----------------------------------------------|
+| `league_id` | FK   | → `league.id`                                 |
+| `player_id` | FK   | → `player.id`                                 |
+| `priority`  | int  | ordinamento desiderato (nullable)             |
+| `note`      | text | nullable                                      |
+
+Lista di supporto (obiettivi d'asta), evidenziata nella schermata Asta. Non
+influenza lo stato derivato. Univoca per `(league_id, player_id)`.
+
+### Dati Serie A — probabili formazioni e calci piazzati (globali)
+
+Riferimento globale come `goalkeeper_grid` (non per-lega). Ingest via **upload
+screenshot** con estrazione (OCR/LLM → dati strutturati e/o immagine conservata)
+e/o **integrazione esterna** (fragile; da isolare dietro il backend). Import a
+sostituzione (snapshot).
+
+- `probable_lineup`: `(team, player_name, ruolo?, stato)` — `stato` es.
+  titolare/panchina/ballottaggio.
+- `set_piece_taker`: `(team, tipo, player_name, rank)` — `tipo` ∈
+  `rigore | punizione | corner`, `rank` = gerarchia (1 = primo tiratore).
+
+I rigoristi/tiratori si mostrano nella stessa vista delle formazioni.
+
+### API stats esterna (opzionale, solo backend)
+
+Per il confronto in asta tra il giocatore uscito e i disponibili dello stesso
+ruolo, il ranking **base** usa solo dati in-app (valutazioni + bisogni rosa). Un
+arricchimento opzionale (minuti, gol, assist) può arrivare da un'API stats
+gratuita (es. API-Football, free ~100 req/giorno). Vincoli: chiave **solo lato
+backend** (mai nel client), chiamate proxied, risposte in **cache** e con
+**rate-limit**. L'assenza dell'API non deve degradare il confronto base.
+
 ## Palette
 
 Valori forniti (derivati dal riferimento del proprietario):

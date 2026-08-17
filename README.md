@@ -120,23 +120,18 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-08-17).** Il codice e la configurazione per l'hosting sono pronti:
-health check, CORS parametrizzato, `_redirects` per il routing SPA, lettura di
-`process.env.PORT`, workflow di migrazione automatica su push a `main`. Restano
-solo passi manuali di provisioning (nessun codice):
+**Stato (2026-08-17).** **In produzione**: Neon + Render + Cloudflare Pages
+attivi, app funzionante end-to-end. La procedura sotto resta come riferimento per
+un nuovo ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati
-- [x] Secret GitHub per le migrazioni impostato — **verifica** che il nome sia
-      esattamente `NEON_DIRECT_DATABASE_URL` e che il valore sia la connessione
-      **diretta** (host senza `-pooler`), non quella pooled: il workflow usa
-      `pg_advisory_lock`, incompatibile con PgBouncer in transaction-pooling
-- [ ] Migrazioni applicate al database di produzione (le applica il workflow al
-      primo push su `main`, oppure manualmente con la connessione diretta)
-- [ ] Web service Render creato e configurato (build da root del repo; Blueprint
-      `render.yaml` disponibile)
-- [ ] Progetto Cloudflare Pages creato e configurato (build da root del repo)
-- [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
-- [ ] Push umano su `main` per far girare build/lint/migrazioni del workflow
+- [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
+      connessione **diretta** senza `-pooler`)
+- [x] Migrazioni applicate al database di produzione
+- [x] Web service Render creato e configurato (Blueprint `render.yaml`)
+- [x] Progetto Cloudflare Pages creato e configurato (build da root, `web/dist`)
+- [x] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
+- [x] Push su `main`: build/lint/migrazioni del workflow eseguiti
 
 Le migrazioni automatiche e i redeploy dei servizi si attivano al **push su
 `main`**, che resta un'operazione umana (vedi `CLAUDE.md`).
