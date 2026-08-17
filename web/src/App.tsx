@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { HomePage } from "./pages/HomePage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
+import { GoalkeeperGridPage } from "./pages/GoalkeeperGridPage";
 
 type ConnectionStatus = "checking" | "ok" | "error";
-type View = "home" | "leagues" | "import";
+type View = "home" | "leagues" | "import" | "goalkeepers";
 
 function App() {
   const [status, setStatus] = useState<ConnectionStatus>("checking");
@@ -50,14 +51,24 @@ function App() {
           >
             Import quotazioni
           </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setView("goalkeepers")}
+            disabled={view === "goalkeepers"}
+          >
+            Griglia portieri
+          </button>
         </nav>
       </header>
       {view === "home" ? (
         <HomePage />
       ) : view === "leagues" ? (
         <LeaguesPage />
-      ) : (
+      ) : view === "import" ? (
         <PlayerImportPage />
+      ) : (
+        <GoalkeeperGridPage />
       )}
     </main>
   );

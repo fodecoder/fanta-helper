@@ -1,0 +1,27 @@
+# Blueprint Render per il backend. Il frontend è su Cloudflare Pages e il
+# database su Neon: qui c'è solo il web service Node.
+#
+# Build ed esecuzione partono dalla ROOT del monorepo: `server` e `web`
+# dipendono dal package di workspace @fanta-helper/shared, non pubblicato su
+# npm, che si risolve solo dalla root. A runtime tsup inlina shared nel bundle,
+# quindi server/dist/index.js è autosufficiente.
+services:
+  - type: web
+    name: fanta-helper-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm ci && npm run build --workspace server
+    startCommand: node server/dist/index.js
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      # Render inietta PORT automaticamente; il server la legge da process.env.PORT.
+      - key: NODE_VERSION
+        value: 20.11.0
+      # Connection string POOLED di Neon (host con -pooler): impostare nel dashboard.
+      - key: DATABASE_URL
+        sync: false
+      # URL del sito Cloudflare Pages, da compilare dopo il deploy del frontend.
+      - key: CORS_ORIGIN
+        sync: false

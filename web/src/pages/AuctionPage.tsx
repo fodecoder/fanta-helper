@@ -3,6 +3,7 @@ import type { League, ManagerAuctionStatus, PurchaseWithDetails } from "@fanta-h
 import { PurchaseForm } from "../components/PurchaseForm";
 import { PurchaseLog } from "../components/PurchaseLog";
 import { AuctionStatusPanel } from "../components/AuctionStatusPanel";
+import { GoalkeeperGridTable } from "../components/GoalkeeperGridTable";
 import * as purchasesApi from "../api/purchases";
 import { PageHeader } from "../components/PageHeader";
 
@@ -72,6 +73,11 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
         loadError={loadError}
         onUndone={() => setRefreshToken((t) => t + 1)}
       />
+
+      <details className="card">
+        <summary>Griglia portieri (consultazione)</summary>
+        <GoalkeeperGridTable />
+      </details>
     </div>
   );
 }

@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-17
+
+### Added
+
+- **Goalkeeper grid**: a global reference (per-team goalkeeper hierarchy,
+  `rank 1 = starter`), imported from CSV/xlsx in wide format (`Squadra`,
+  `Titolare`, `Riserva`, `Terzo`, …). New `goalkeeper_grid` table and migration,
+  DB layer, import parser, and `/goalkeeper-grid` routes. Each import replaces
+  the whole grid in a transaction. Not tied to leagues or purchases.
+- Dedicated "Griglia portieri" screen (import + table) and a read-only
+  consultation panel inside the auction screen.
+
+### Note
+
+- `render.yaml` (Render backend Blueprint) added at the repo root, matching the
+  hosting instructions in the README.
+
 ## [1.3.0] - 2026-08-17
 
 ### Added
