@@ -2,10 +2,13 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-> Stato al 2026-08-15 — `v0.4.0`. Fase 0 completa; Fase 1 al 40% (CRUD lega e
-> import giocatori fatti). Prossima operazione: CRUD manager per lega
-> (prerequisito dell'asta). Codice pronto per l'hosting; manca solo il
-> provisioning dei servizi — vedi [README.md](./README.md) e la nota in coda.
+> Stato al 2026-08-17 — `v0.9.0`. Fase 0 completa. **Fase 1 completa** (MVP
+> funzionale: CRUD lega/manager, import giocatori CSV, import valutazioni JSON,
+> asta live, selettore lega). **Fase 2 parziale**: max bid rettificato fatto;
+> restano rifinitura UI e miniature giocatori. Traguardo `v1.0.0` = Fase 2
+> completa (vedi PROMPTS.md, operazioni 11–12), poi provisioning hosting. Codice
+> pronto per l'hosting (build/lint verdi); manca il provisioning di Render e
+> Cloudflare Pages — vedi [README.md](./README.md) e la nota in coda.
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -14,19 +17,19 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 - [x] Pipeline di deploy: frontend su Cloudflare Pages, backend su Render, DB su Neon *(codice/config pronti; provisioning manuale da eseguire)*
 - [x] Configurazione ambienti e variabili (segreti solo lato backend)
 
-## Fase 1 — MVP  *(obiettivo entro deadline)*
+## Fase 1 — MVP  *(completa)*
 
 - [x] CRUD lega con configurazione regole in JSONB (roster, scoring, modificatori)
 - [x] Import giocatori da CSV quotazioni ufficiali nel pool `player`
-- [ ] CRUD manager per lega (prerequisito dell'asta: gli acquisti referenziano un manager)
-- [ ] Import valutazioni (JSON) con matching nome→ID e revisione manuale degli unmatched
-- [ ] Schermata asta live: event-log degli acquisti + stato derivato (residuo, slot)
-- [ ] Selettore lega in home
+- [x] CRUD manager per lega (prerequisito dell'asta: gli acquisti referenziano un manager)
+- [x] Import valutazioni (JSON) con matching nome→ID e revisione manuale degli unmatched
+- [x] Schermata asta live: event-log degli acquisti + stato derivato (residuo, slot)
+- [x] Selettore lega in home
 
-## Fase 2 — Rifinitura  *(obiettivo entro deadline)*
+## Fase 2 — Rifinitura  *(in corso — chiude la v1.0.0)*
 
 - [x] Max bid rettificato deterministico (opportunity cost: residuo/bisogni con floor per reparto)
-- [ ] Rifinitura UI
+- [ ] Rifinitura UI (design token dalla palette SPEC, coerenza schermate)
 - [ ] Miniature giocatori: stemma squadra + placeholder per ruolo
 
 ## Fase 3 — v2  *(successiva)*
@@ -34,3 +37,26 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 - [ ] LLM in-app via API Anthropic: genera/aggiorna valutazioni
 - [ ] Ricerca news qualitative a supporto delle valutazioni
 - [ ] Foto giocatori reali (backfill `image_url`)
+
+## Traguardo v1.0.0
+
+Rilascio 1.0.0 = Fase 2 completa + servizi in produzione. Restano:
+
+**Codice** (operazioni 11–12 in PROMPTS.md)
+
+- [ ] Rifinitura UI
+- [ ] Miniature giocatori
+
+**Provisioning** (manuale, nessun codice — dettaglio in README.md)
+
+- [x] Neon: progetto e database creati
+- [x] Secret GitHub per le migrazioni impostato *(verifica che il nome sia
+      esattamente `NEON_DIRECT_DATABASE_URL` e che sia la connessione **diretta**,
+      non pooled: il workflow usa `pg_advisory_lock`, incompatibile con PgBouncer)*
+- [ ] Render: web service (build dalla root del repo)
+- [ ] Cloudflare Pages: progetto (build dalla root, output `web/dist`)
+- [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
+- [ ] Push umano su `main` per far girare workflow (lint/build/migrazioni) e i redeploy
+
+A Fase 2 chiusa: bump a `v1.0.0` (release: stabile e in produzione), voce in
+CHANGELOG, tag locale `v1.0.0`.

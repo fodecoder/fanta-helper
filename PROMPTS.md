@@ -1,10 +1,12 @@
 # PROMPTS.md — Prompt per le prossime operazioni
 
-Backlog operativo. Le prime 5 operazioni (scaffolding → schema DB → deploy
-pipeline → CRUD lega → import giocatori CSV) sono completate fino a `v0.4.0`; i
-relativi prompt sono stati rimossi. Sotto ci sono le prossime 5 in ordine di
-dipendenza. Ogni prompt è autosufficiente ma assume che l'agente rispetti
-`CLAUDE.md` e `SPEC.md`. Regole trasversali valide per tutte le operazioni:
+Backlog operativo. Le operazioni 1–10 (scaffolding → schema DB → deploy pipeline
+→ CRUD lega → import giocatori CSV → CRUD manager → import valutazioni JSON →
+asta live → selettore lega → max bid rettificato) sono completate fino a
+`v0.9.0`; i relativi prompt sono stati rimossi. Restano le due operazioni di
+Fase 2 che chiudono la `v1.0.0`, in ordine di dipendenza. Ogni prompt è
+autosufficiente ma assume che l'agente rispetti `CLAUDE.md` e `SPEC.md`. Regole
+trasversali valide per tutte le operazioni:
 
 - Rispetta `CLAUDE.md`: commit locale a fine feature, MAI push, Conventional
   Commits in inglese, SemVer + `CHANGELOG.md` + tag locale, build e lint verdi
@@ -16,105 +18,50 @@ dipendenza. Ogni prompt è autosufficiente ma assume che l'agente rispetti
 
 ---
 
-## 6 — CRUD manager per lega
+## 11 — Rifinitura UI (design token dalla palette)
 
-**Contesto.** L'asta assegna giocatori a manager: ogni riga `purchase` referenzia
-un `manager` della stessa lega (FK `(manager_id, league_id)`). I manager oggi
-esistono solo a schema/seed; mancano API e UI. È prerequisito dell'asta live.
+**Contesto.** Le schermate sono funzionali ma grezze. La palette è in `SPEC.md`
+("Palette") ma non è ancora consolidata come token; la scelta tra i due blu va
+fissata sul riferimento reale. Nessuna nuova dipendenza di dominio: è solo
+presentazione, lo stato d'asta resta derivato dal log.
 
-**Task.** Implementa CRUD dei manager nell'ambito di una lega:
+**Task.** Consolida l'aspetto della SPA:
 
-- **Backend**: endpoint `GET/POST /leagues/:leagueId/managers` e
-  `PUT/DELETE /leagues/:leagueId/managers/:id`, con validazione via schema
-  condivisi. `name` univoco per lega (vincolo `manager_league_name_uk`): mappa la
-  violazione a `409 CONFLICT` come già fatto per `league`.
-- **Frontend**: gestione manager dentro la schermata lega (lista + add/edit/delete).
+- Definisci i colori della palette come **design token** (variabili CSS in
+  `web/src/index.css`): verde brand `#2BA756`, blu header (scegli tra `#11246F`
+  e `#144F89` e motiva), arancione accenti `#FF8300`, verde scuro `#077449`,
+  bianco. Sostituisci i colori hardcoded con i token.
+- Uniforma layout e spaziature tra Home, Leghe, Manager, Valutazioni, Asta:
+  header coerente, stati di caricamento/errore/empty espliciti, form e tabelle
+  con stile condiviso. La schermata Asta ha priorità (densità informativa alta:
+  log, stato derivato, max bid leggibili a colpo d'occhio).
 
-**Vincoli.** La delete di un manager con acquisti va gestita in modo esplicito
-(blocco con `409`, oppure cascade dichiarato): decidi e motiva, non lasciare il
-comportamento implicito del DB non documentato. Nessuno stato d'asta qui.
+**Vincoli.** Solo presentazione: nessun cambiamento all'invariante, nessun campo
+di stato mutabile, nessun segreto nel client. Niente librerie UI pesanti senza
+motivarne il tradeoff (preferenza: poche dipendenze).
 
-**Done.** Posso gestire i manager di una lega dalla SPA; nomi duplicati → `409`.
-Commit `feat:` + bump MINOR + tag.
-
----
-
-## 7 — Import valutazioni (JSON) con matching e revisione unmatched
-
-**Contesto.** Schema JSON delle valutazioni definito in `SPEC.md`. L'LLM produce
-il JSON una volta; qui lo si importa in `valuation`, che è **per-lega**.
-
-**Task.** Implementa l'import del JSON valutazioni per una lega:
-
-- **Backend**: endpoint di import (scoped alla lega) che valida il documento
-  contro lo schema stretto di `SPEC.md` (campi, tipi, enum `ruolo`/`confidence`,
-  interi ≥ 0). Esegue il matching `name`+`team` → `player_id` sul pool condiviso
-  e fa upsert in `valuation (league_id, player_id)`.
-- I match ambigui o assenti finiscono in una lista **unmatched**, non vengono
-  inventati. Restituisci un report: importate, aggiornate, unmatched (con motivo).
-- **Frontend**: upload del JSON + revisione manuale degli unmatched (associazione
-  a un `player` scelto dall'utente, oppure scarto).
-
-**Vincoli.** Nessun dato inventato: nomi non risolti restano unmatched finché
-l'utente non decide. La validazione è deterministica e rifiuta l'input non conforme.
-
-**Done.** Un JSON valutazioni popola `valuation` per la lega scelta con revisione
-degli unmatched. Commit `feat:` + bump MINOR + tag.
+**Done.** Le schermate condividono token e stile coerente; l'Asta è leggibile
+sotto pressione. Commit `feat:` + bump MINOR + tag.
 
 ---
 
-## 8 — Schermata asta live
+## 12 — Miniature giocatori (stemma squadra + placeholder per ruolo)
 
-**Contesto.** È il cuore dell'app e il punto in cui l'invariante conta di più.
+**Contesto.** `player.image_url` è nullable e pronta per il backfill delle foto
+reali (Fase 3). Per l'MVP servono miniature generate, non foto reali.
 
-**Task.** Implementa la schermata dell'asta live per una lega:
+**Task.** Rendi le miniature dei giocatori dove compaiono (ricerca in Asta,
+liste, valutazioni):
 
-- **Backend**: endpoint per registrare un acquisto (append su `purchase`:
-  league, player, manager, prezzo) e per leggere lo stato derivato (residuo per
-  manager, slot liberi per reparto) calcolato dal log — riusa/estendi
-  `db/derived.ts`. Nessun endpoint che "aggiorni" lo stato: si appende soltanto.
-- Correzione di un errore = operazione esplicita e tracciabile sul log (es.
-  rimozione dell'ultima riga), non una mutazione di un campo di stato.
-- **Frontend**: ricerca giocatore (con valutazione se presente), assegnazione a
-  manager con prezzo, event-log degli acquisti, pannello stato derivato in tempo
-  reale (residuo, slot, e — se disponibile — max bid).
+- MVP come da `SPEC.md` ("Miniature"): stemma/colore della squadra + iniziali
+  del giocatore su placeholder colorato per ruolo (P/D/C/A con colori distinti).
+- Se `image_url` è valorizzata, usa la foto reale; altrimenti il placeholder
+  generato. Componente riutilizzabile, deterministico dal nome/squadra/ruolo.
 
-**Vincoli (invariante, critico).** Residuo, slot liberi e max bid sono SEMPRE
-funzione pura di `purchase`, ricalcolati a ogni render. Vietato introdurre
-qualunque campo/colonna di stato mutabile. L'LLM non entra in questo loop.
+**Vincoli.** Nessuna chiamata esterna dal client per le immagini in MVP (niente
+fetch di stemmi da terze parti senza passare dal backend). Placeholder generati
+localmente. `image_url` resta il punto d'aggancio per la Fase 3.
 
-**Done.** Posso condurre un'asta: assegnare giocatori, vedere lo stato derivato
-aggiornarsi, correggere un errore via log. Commit `feat:` + bump MINOR + tag.
-
----
-
-## 9 — Selettore lega in home
-
-**Contesto.** Più aste convivono come righe `league`; serve scegliere quale usare.
-
-**Task.** In home, selettore delle leghe esistenti che imposta la lega attiva per
-tutte le schermate (manager, valutazioni, asta). Deep-link per lega se utile.
-
-**Vincoli.** Nessun login: l'identità di sessione è la lega selezionata. Lo stato
-di selezione è UI-side, non un campo persistente sul dominio.
-
-**Done.** Dalla home scelgo una lega e tutte le schermate operano nel suo contesto.
-Commit `feat:` + bump MINOR + tag.
-
----
-
-## 10 — Max bid rettificato deterministico (Fase 2)
-
-**Contesto.** Rifinitura: suggerire il rilancio massimo sostenibile in tempo reale,
-in modo deterministico e derivato dal log.
-
-**Task.** Calcola il max bid rettificato per il manager attivo come funzione pura
-di `purchase` + config lega: opportunity cost = residuo distribuito sui bisogni
-residui (slot liberi per reparto) con un floor minimo per reparto, così da non
-azzerare la capacità di completare la rosa. Esponilo nella schermata asta.
-
-**Vincoli.** Deterministico e spiegabile (nessuna stima opaca, nessun LLM).
-Ricalcolato a ogni acquisto dal log. Documenta la formula scelta e i suoi limiti.
-
-**Done.** Durante l'asta vedo un max bid rettificato coerente coi bisogni residui,
-che reagisce a ogni acquisto. Commit `feat:` + bump MINOR + tag.
+**Done.** Ogni giocatore mostra una miniatura coerente (foto se presente, altrimenti
+placeholder per ruolo). Chiude la Fase 2 → prepara il bump a `v1.0.0`. Commit
+`feat:` + bump MINOR + tag; a Fase 2 chiusa valuta il bump `v1.0.0`.
