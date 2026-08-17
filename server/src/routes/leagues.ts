@@ -7,6 +7,8 @@ import {
   updateLeague,
   deleteLeague,
 } from "../db/leagues";
+import { insertManager } from "../db/managers";
+import { pickFunnyNames, OWNER_MANAGER_NAME } from "../managers/funnyNames";
 import { ApiError } from "../http/errors";
 
 export const leaguesRouter = Router();
@@ -43,6 +45,13 @@ leaguesRouter.post("/", async (req, res, next) => {
   try {
     const input = createLeagueSchema.parse(req.body);
     const league = await insertLeague(input);
+    // Alla creazione la lega ha già i suoi partecipanti: il proprietario ("Io")
+    // più n-1 avversari con nomi generati. Restano modificabili dalla gestione
+    // manager; qui è solo un default per non partire da una lega vuota.
+    await insertManager({ league_id: league.id, name: OWNER_MANAGER_NAME });
+    for (const name of pickFunnyNames(Math.max(0, league.n_squadre - 1))) {
+      await insertManager({ league_id: league.id, name });
+    }
     res.status(201).json(league);
   } catch (err) {
     next(err);

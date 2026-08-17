@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-17
+
+### Added
+
+- Creating a league now seeds its participants: the owner manager `Io` plus
+  `n_squadre − 1` opponents with generated funny names. They remain editable
+  from the manager screen; managers are not derived state (purchases still
+  reference `manager.id`).
+
 ## [1.1.0] - 2026-08-17
 
 ### Added
