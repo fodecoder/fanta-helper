@@ -12,6 +12,15 @@ export async function getPlayerById(id: number): Promise<PlayerRow | undefined> 
   return result.rows[0];
 }
 
+export async function findPlayersByNameTeam(name: string, team: string): Promise<PlayerRow[]> {
+  const result = await pool.query<PlayerRow>(
+    `SELECT * FROM player
+     WHERE lower(trim(name)) = lower(trim($1)) AND lower(trim(team)) = lower(trim($2))`,
+    [name, team],
+  );
+  return result.rows;
+}
+
 export async function insertPlayer(input: Omit<PlayerRow, "id">): Promise<PlayerRow> {
   const result = await pool.query<PlayerRow>(
     `INSERT INTO player (name, team, ruolo, image_url)

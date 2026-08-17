@@ -5,6 +5,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-17
+
+### Added
+
+- League-scoped valuation JSON import (`POST
+  /leagues/:leagueId/valuations/import`): validates the whole document
+  against a strict Zod schema (required fields, `ruolo`/`confidence`
+  enums, non-negative integers) and rejects non-conforming input
+  wholesale rather than discarding individual rows. Also rejects the
+  import if the document's `league_name` doesn't match the target
+  league, guarding against importing a JSON generated for a different
+  league.
+- Deterministic `name`+`team` → `player_id` matching against the shared
+  player pool (case-insensitive, trimmed), with an idempotent upsert
+  into `valuation (league_id, player_id)`. Matches that are absent or
+  ambiguous are never guessed: they are reported as `unmatched` with a
+  reason instead.
+- Manual reconciliation endpoint (`PUT
+  /leagues/:leagueId/valuations/:playerId`) and a `GET /players`
+  listing endpoint, used by the web app to let the user resolve each
+  unmatched row by hand-picking an existing player or discarding it.
+- Valuations screen in the web app, reachable from each league row:
+  JSON upload with an import report, an unmatched-row reconciliation
+  table (filterable player picker, assign/discard), and a read-only
+  table of the league's current valuations.
+
 ## [0.5.0] - 2026-08-16
 
 ### Added

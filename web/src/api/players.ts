@@ -1,4 +1,4 @@
-import type { PlayerImportReport } from "@fanta-helper/shared";
+import type { Player, PlayerImportReport } from "@fanta-helper/shared";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/players`;
 
@@ -20,6 +20,10 @@ async function handle<T>(res: Response): Promise<T> {
     throw new PlayersApiError(res.status, (await res.json()) as ApiErrorPayload);
   }
   return (await res.json()) as T;
+}
+
+export function listPlayers(signal?: AbortSignal): Promise<Player[]> {
+  return fetch(BASE_URL, { signal }).then((res) => handle<Player[]>(res));
 }
 
 export function importPlayersCsv(csvText: string): Promise<PlayerImportReport> {

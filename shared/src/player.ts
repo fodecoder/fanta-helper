@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { roleSchema } from "./roles";
+
+export const playerSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  team: z.string(),
+  ruolo: roleSchema,
+  image_url: z.string().nullable(),
+});
+export type Player = z.infer<typeof playerSchema>;
 
 export const discardedPlayerRowSchema = z.object({
   row: z.number().int().positive(),
