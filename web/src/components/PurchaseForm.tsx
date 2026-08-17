@@ -1,5 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type { Manager, Player, ValuationWithPlayer } from "@fanta-helper/shared";
+import type {
+  Manager,
+  ManagerAuctionStatus,
+  Player,
+  ValuationWithPlayer,
+} from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import { PurchasesApiError } from "../api/purchases";
 import * as playersApi from "../api/players";
@@ -9,10 +14,16 @@ import * as valuationsApi from "../api/valuations";
 interface PurchaseFormProps {
   leagueId: number;
   purchasedPlayerIds: Set<number>;
+  statuses: ManagerAuctionStatus[] | null;
   onSaved: () => void;
 }
 
-export function PurchaseForm({ leagueId, purchasedPlayerIds, onSaved }: PurchaseFormProps) {
+export function PurchaseForm({
+  leagueId,
+  purchasedPlayerIds,
+  statuses,
+  onSaved,
+}: PurchaseFormProps) {
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [managers, setManagers] = useState<Manager[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
@@ -25,8 +36,14 @@ export function PurchaseForm({ leagueId, purchasedPlayerIds, onSaved }: Purchase
 
   useEffect(() => {
     const controller = new AbortController();
-    playersApi.listPlayers(controller.signal).then(setPlayers).catch(() => setPlayers([]));
-    managersApi.listManagers(leagueId, controller.signal).then(setManagers).catch(() => setManagers([]));
+    playersApi
+      .listPlayers(controller.signal)
+      .then(setPlayers)
+      .catch(() => setPlayers([]));
+    managersApi
+      .listManagers(leagueId, controller.signal)
+      .then(setManagers)
+      .catch(() => setManagers([]));
     valuationsApi
       .listValuations(leagueId, controller.signal)
       .then(setValuations)
@@ -41,6 +58,7 @@ export function PurchaseForm({ leagueId, purchasedPlayerIds, onSaved }: Purchase
     return player.name.toLowerCase().includes(needle) || player.team.toLowerCase().includes(needle);
   });
   const selectedValuation = valuations?.find((v) => v.player_id === Number(playerId));
+  const activeManagerStatus = statuses?.find((s) => s.managerId === Number(managerId));
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -71,7 +89,9 @@ export function PurchaseForm({ leagueId, purchasedPlayerIds, onSaved }: Purchase
       setFilter("");
       onSaved();
     } catch (err) {
-      setError(err instanceof PurchasesApiError ? err.payload.error.message : "assegnazione fallita");
+      setError(
+        err instanceof PurchasesApiError ? err.payload.error.message : "assegnazione fallita",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -116,6 +136,14 @@ export function PurchaseForm({ leagueId, purchasedPlayerIds, onSaved }: Purchase
             </option>
           ))}
         </select>
+
+        {activeManagerStatus && (
+          <p>
+            Max bid rettificato per {activeManagerStatus.managerName}:{" "}
+            <strong>{activeManagerStatus.adjustedMaxBid}</strong> (residuo{" "}
+            {activeManagerStatus.residuo})
+          </p>
+        )}
 
         <label>
           Prezzo

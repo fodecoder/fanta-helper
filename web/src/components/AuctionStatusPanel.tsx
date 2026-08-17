@@ -1,31 +1,11 @@
-import { useEffect, useState } from "react";
 import type { ManagerAuctionStatus } from "@fanta-helper/shared";
-import * as purchasesApi from "../api/purchases";
 
 interface AuctionStatusPanelProps {
-  leagueId: number;
-  refreshToken: number;
+  statuses: ManagerAuctionStatus[] | null;
+  loadError: string | null;
 }
 
-export function AuctionStatusPanel({ leagueId, refreshToken }: AuctionStatusPanelProps) {
-  const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    purchasesApi
-      .getAuctionState(leagueId, controller.signal)
-      .then((data) => {
-        setStatuses(data);
-        setLoadError(null);
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setLoadError(err instanceof Error ? err.message : "failed to load auction state");
-      });
-    return () => controller.abort();
-  }, [leagueId, refreshToken]);
-
+export function AuctionStatusPanel({ statuses, loadError }: AuctionStatusPanelProps) {
   return (
     <section>
       <h2>Stato asta</h2>
@@ -47,6 +27,7 @@ export function AuctionStatusPanel({ leagueId, refreshToken }: AuctionStatusPane
               {statuses[0]?.slots.map((slot) => (
                 <th key={slot.ruolo}>Slot {slot.ruolo}</th>
               ))}
+              <th>Max bid rettificato</th>
             </tr>
           </thead>
           <tbody>
@@ -61,6 +42,7 @@ export function AuctionStatusPanel({ leagueId, refreshToken }: AuctionStatusPane
                     {slot.used}/{slot.total} (liberi: {slot.free})
                   </td>
                 ))}
+                <td>{status.adjustedMaxBid}</td>
               </tr>
             ))}
           </tbody>

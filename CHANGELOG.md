@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-17
+
+### Added
+
+- Adjusted (opportunity-cost) max bid: `computeAdjustedMaxBid` in `shared`,
+  a pure function of a manager's residual budget and free roster slots per
+  role. Reserves 1 credit (`MIN_SLOT_RESERVE`, the minimum bid for any
+  player) for every free slot left after the current pick, so bidding it all
+  away never blocks completing the roster. Deterministic and explainable —
+  no market estimate, no LLM. Recomputed on every request from the
+  `purchase` log, same as `residuo` and slot counts; not a stored column.
+  Known limits: the floor is uniform across roles (doesn't reflect that
+  forwards/midfielders typically cost more than goalkeepers) and it doesn't
+  account for remaining market inflation or other managers' behavior.
+- `adjustedMaxBid` added to `ManagerAuctionStatus` and surfaced in the Asta
+  screen: a new column in the per-manager status table, and a prominent
+  value next to the price field in the purchase form for whichever manager
+  is currently selected there.
+- First unit tests in the repo (`vitest`, scoped to the `shared` workspace)
+  covering `computeAdjustedMaxBid`'s edge cases: full roster, last free
+  slot, mixed-role reserves, and clamping to zero.
+
 ## [0.8.0] - 2026-08-17
 
 ### Added

@@ -1,5 +1,5 @@
 import { pool } from "./client";
-import { ROLES } from "@fanta-helper/shared";
+import { ROLES, computeAdjustedMaxBid } from "@fanta-helper/shared";
 import type { ManagerAuctionStatus, RoleSlotStatus, RosterConfig } from "@fanta-helper/shared";
 
 // Budget, spesa e slot per reparto non sono mai memorizzati: sono sempre
@@ -52,13 +52,16 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
       return { ruolo, total, used, free: total - used };
     });
 
+    const residuo = row.budget - spent;
+
     return {
       managerId: row.manager_id,
       managerName: row.manager_name,
       budget: row.budget,
       spent,
-      residuo: row.budget - spent,
+      residuo,
       slots,
+      adjustedMaxBid: computeAdjustedMaxBid({ residuo, slots }),
     };
   });
 }

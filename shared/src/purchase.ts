@@ -38,5 +38,6 @@ export const managerAuctionStatusSchema = z.object({
   spent: z.number().int().nonnegative(),
   residuo: z.number().int(),
   slots: z.array(roleSlotStatusSchema),
+  adjustedMaxBid: z.number().int().nonnegative(),
 });
 export type ManagerAuctionStatus = z.infer<typeof managerAuctionStatusSchema>;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { League, PurchaseWithDetails } from "@fanta-helper/shared";
+import type { League, ManagerAuctionStatus, PurchaseWithDetails } from "@fanta-helper/shared";
 import { PurchaseForm } from "../components/PurchaseForm";
 import { PurchaseLog } from "../components/PurchaseLog";
 import { AuctionStatusPanel } from "../components/AuctionStatusPanel";
@@ -13,6 +13,8 @@ interface AuctionPageProps {
 export function AuctionPage({ league, onBack }: AuctionPageProps) {
   const [purchases, setPurchases] = useState<PurchaseWithDetails[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
+  const [statusLoadError, setStatusLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
@@ -26,6 +28,21 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setLoadError(err instanceof Error ? err.message : "failed to load purchases");
+      });
+    return () => controller.abort();
+  }, [league.id, refreshToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    purchasesApi
+      .getAuctionState(league.id, controller.signal)
+      .then((data) => {
+        setStatuses(data);
+        setStatusLoadError(null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setStatusLoadError(err instanceof Error ? err.message : "failed to load auction state");
       });
     return () => controller.abort();
   }, [league.id, refreshToken]);
@@ -45,10 +62,11 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
       <PurchaseForm
         leagueId={league.id}
         purchasedPlayerIds={purchasedPlayerIds}
+        statuses={statuses}
         onSaved={() => setRefreshToken((t) => t + 1)}
       />
 
-      <AuctionStatusPanel leagueId={league.id} refreshToken={refreshToken} />
+      <AuctionStatusPanel statuses={statuses} loadError={statusLoadError} />
 
       <PurchaseLog
         leagueId={league.id}

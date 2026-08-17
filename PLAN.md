@@ -25,7 +25,7 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 
 ## Fase 2 — Rifinitura  *(obiettivo entro deadline)*
 
-- [ ] Max bid rettificato deterministico (opportunity cost: residuo/bisogni con floor per reparto)
+- [x] Max bid rettificato deterministico (opportunity cost: residuo/bisogni con floor per reparto)
 - [ ] Rifinitura UI
 - [ ] Miniature giocatori: stemma squadra + placeholder per ruolo
 
