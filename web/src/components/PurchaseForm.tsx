@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 import type {
   Manager,
   ManagerAuctionStatus,
@@ -10,21 +10,26 @@ import { PurchasesApiError } from "../api/purchases";
 import * as playersApi from "../api/players";
 import * as managersApi from "../api/managers";
 import * as valuationsApi from "../api/valuations";
+import * as wishlistApi from "../api/wishlist";
 import { StatusMessage } from "./StatusMessage";
 import { PlayerAvatar } from "./PlayerAvatar";
 
 interface PurchaseFormProps {
   leagueId: number;
   purchasedPlayerIds: Set<number>;
+  wishlistPlayerIds: Set<number>;
   statuses: ManagerAuctionStatus[] | null;
   onSaved: () => void;
+  onWishlistChanged: () => void;
 }
 
 export function PurchaseForm({
   leagueId,
   purchasedPlayerIds,
+  wishlistPlayerIds,
   statuses,
   onSaved,
+  onWishlistChanged,
 }: PurchaseFormProps) {
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [managers, setManagers] = useState<Manager[] | null>(null);
@@ -35,6 +40,7 @@ export function PurchaseForm({
   const [prezzo, setPrezzo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,6 +68,25 @@ export function PurchaseForm({
   const selectedPlayer = available.find((player) => String(player.id) === playerId);
   const selectedValuation = valuations?.find((v) => v.player_id === Number(playerId));
   const activeManagerStatus = statuses?.find((s) => s.managerId === Number(managerId));
+
+  async function handleToggleWishlist(event: MouseEvent, playerId: number) {
+    event.stopPropagation();
+    setTogglingWishlistId(playerId);
+    try {
+      if (wishlistPlayerIds.has(playerId)) {
+        await wishlistApi.removeFromWishlist(leagueId, playerId);
+      } else {
+        await wishlistApi.addToWishlist(leagueId, playerId);
+      }
+      onWishlistChanged();
+    } catch {
+      // la wishlist è un supporto secondario: un fallimento qui non deve
+      // interrompere il flusso di assegnazione, lo stato della stella resta
+      // semplicemente invariato al prossimo refresh
+    } finally {
+      setTogglingWishlistId(null);
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -119,28 +144,43 @@ export function PurchaseForm({
           {filtered.length === 0 ? (
             <li className="player-listbox-empty">Nessun giocatore trovato.</li>
           ) : (
-            filtered.map((player) => (
-              <li key={player.id}>
-                <button
-                  type="button"
-                  className="player-listbox-item"
-                  role="option"
-                  aria-selected={String(player.id) === playerId}
-                  onClick={() => setPlayerId(String(player.id))}
-                >
-                  <PlayerAvatar
-                    name={player.name}
-                    team={player.team}
-                    ruolo={player.ruolo}
-                    image_url={player.image_url}
-                    size="sm"
-                  />
-                  <span>
-                    {player.name} ({player.team}, {player.ruolo})
-                  </span>
-                </button>
-              </li>
-            ))
+            filtered.map((player) => {
+              const wishlisted = wishlistPlayerIds.has(player.id);
+              return (
+                <li key={player.id} className="player-listbox-row">
+                  <button
+                    type="button"
+                    className={
+                      wishlisted ? "player-listbox-item player-listbox-item--wishlisted" : "player-listbox-item"
+                    }
+                    role="option"
+                    aria-selected={String(player.id) === playerId}
+                    onClick={() => setPlayerId(String(player.id))}
+                  >
+                    <PlayerAvatar
+                      name={player.name}
+                      team={player.team}
+                      ruolo={player.ruolo}
+                      image_url={player.image_url}
+                      size="sm"
+                    />
+                    <span>
+                      {player.name} ({player.team}, {player.ruolo})
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={wishlisted ? "wishlist-toggle wishlist-toggle--active" : "wishlist-toggle"}
+                    aria-pressed={wishlisted}
+                    disabled={togglingWishlistId === player.id}
+                    title={wishlisted ? "Rimuovi dalla wishlist" : "Aggiungi alla wishlist"}
+                    onClick={(event) => handleToggleWishlist(event, player.id)}
+                  >
+                    {wishlisted ? "★" : "☆"}
+                  </button>
+                </li>
+              );
+            })
           )}
         </ul>
 

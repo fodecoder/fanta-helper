@@ -29,7 +29,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
         ? "a manager with this name already exists in this league"
         : constraint === "purchase_pkey"
           ? "this player has already been purchased in this league"
-          : "a league with this name already exists";
+          : constraint === "wishlist_pkey"
+            ? "this player is already in the wishlist for this league"
+            : "a league with this name already exists";
     res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }

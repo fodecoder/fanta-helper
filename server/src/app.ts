@@ -6,6 +6,7 @@ import { playersRouter } from "./routes/players";
 import { managersRouter } from "./routes/managers";
 import { valuationsRouter } from "./routes/valuations";
 import { purchasesRouter } from "./routes/purchases";
+import { wishlistRouter } from "./routes/wishlist";
 import { goalkeeperGridRouter } from "./routes/goalkeeperGrid";
 import { errorHandler } from "./http/errorHandler";
 
@@ -24,6 +25,7 @@ export function createApp(): Express {
   app.use("/leagues/:leagueId/managers", managersRouter);
   app.use("/leagues/:leagueId/valuations", valuationsRouter);
   app.use("/leagues/:leagueId/purchases", purchasesRouter);
+  app.use("/leagues/:leagueId/wishlist", wishlistRouter);
   app.use("/players", playersRouter);
   app.use("/goalkeeper-grid", goalkeeperGridRouter);
 

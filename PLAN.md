@@ -52,7 +52,7 @@ Punti emersi prima del provisioning di Render/Cloudflare.
 Funzionalità che aiutano la decisione durante l'asta e portano dati Serie A nel
 portale. Prompt operativi 19–22 in `PROMPTS.md`.
 
-- [ ] **Giocatori desiderati (wishlist)** per-lega: aggiungi/rimuovi obiettivi,
+- [x] **Giocatori desiderati (wishlist)** per-lega: aggiungi/rimuovi obiettivi,
       evidenziati in asta
 - [ ] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
       ruolo dalle valutazioni in-app; arricchimento opzionale da API stats

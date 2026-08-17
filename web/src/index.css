@@ -424,23 +424,29 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
 }
 
+.player-listbox-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.player-listbox-row:last-child {
+  border-bottom: none;
+}
+
 .player-listbox-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   border: none;
-  border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
-}
-
-.player-listbox-item:last-child {
-  border-bottom: none;
 }
 
 .player-listbox-item:hover {
@@ -450,6 +456,79 @@ tbody tr:hover {
 .player-listbox-item[aria-selected="true"] {
   background: rgba(43, 167, 86, 0.12);
   font-weight: 600;
+}
+
+.player-listbox-item--wishlisted {
+  background: rgba(255, 131, 0, 0.08);
+}
+
+.player-listbox-item--wishlisted[aria-selected="true"] {
+  background: rgba(43, 167, 86, 0.12);
+}
+
+.wishlist-toggle {
+  flex-shrink: 0;
+  width: 40px;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wishlist-toggle:hover:not(:disabled) {
+  background: var(--color-bg-subtle);
+}
+
+.wishlist-toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.wishlist-toggle--active {
+  color: var(--color-accent-orange);
+}
+
+.icon-btn {
+  font: inherit;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--color-bg-subtle);
+}
+
+.icon-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge--available {
+  background: rgba(43, 167, 86, 0.12);
+  color: var(--color-brand-green-dark);
+}
+
+.badge--purchased {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
 }
 
 .player-listbox-empty {

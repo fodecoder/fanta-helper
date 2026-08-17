@@ -43,3 +43,10 @@ export interface PurchaseRow {
   prezzo: number;
   ts: Date;
 }
+
+export interface WishlistRow {
+  league_id: number;
+  player_id: number;
+  priority: number | null;
+  note: string | null;
+}

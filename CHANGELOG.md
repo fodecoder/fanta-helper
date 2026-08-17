@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-17
+
+### Added
+
+- **Wishlist per-lega**: obiettivi d'asta marcabili dalla ricerca giocatori
+  (stella nella lista di `PurchaseForm`), con riordino per priorità e
+  rimozione dal nuovo pannello "Obiettivi d'asta" nella schermata Asta. Nuova
+  tabella `wishlist` (univoca su `league_id, player_id`, cascade sulla lega),
+  data-access tipato e route CRUD sotto `/leagues/:leagueId/wishlist`
+  (incluso un endpoint di riordino bulk). Lista di supporto, ortogonale al log
+  `purchase`: i giocatori in wishlist ancora disponibili vengono evidenziati
+  nella ricerca durante l'asta, quelli già assegnati mostrano il badge
+  "assegnato".
+
 ## [1.4.0] - 2026-08-17
 
 ### Added

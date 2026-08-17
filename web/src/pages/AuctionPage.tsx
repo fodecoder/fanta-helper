@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import type { League, ManagerAuctionStatus, PurchaseWithDetails } from "@fanta-helper/shared";
+import type {
+  League,
+  ManagerAuctionStatus,
+  PurchaseWithDetails,
+  WishlistEntryWithPlayer,
+} from "@fanta-helper/shared";
 import { PurchaseForm } from "../components/PurchaseForm";
 import { PurchaseLog } from "../components/PurchaseLog";
 import { AuctionStatusPanel } from "../components/AuctionStatusPanel";
+import { WishlistPanel } from "../components/WishlistPanel";
 import { GoalkeeperGridTable } from "../components/GoalkeeperGridTable";
 import * as purchasesApi from "../api/purchases";
+import * as wishlistApi from "../api/wishlist";
 import { PageHeader } from "../components/PageHeader";
 
 interface AuctionPageProps {
@@ -17,6 +24,8 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
   const [statusLoadError, setStatusLoadError] = useState<string | null>(null);
+  const [wishlist, setWishlist] = useState<WishlistEntryWithPlayer[] | null>(null);
+  const [wishlistLoadError, setWishlistLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
@@ -49,9 +58,29 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
     return () => controller.abort();
   }, [league.id, refreshToken]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    wishlistApi
+      .listWishlist(league.id, controller.signal)
+      .then((data) => {
+        setWishlist(data);
+        setWishlistLoadError(null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setWishlistLoadError(err instanceof Error ? err.message : "failed to load wishlist");
+      });
+    return () => controller.abort();
+  }, [league.id, refreshToken]);
+
   const purchasedPlayerIds = useMemo(
     () => new Set((purchases ?? []).map((purchase) => purchase.player_id)),
     [purchases],
+  );
+
+  const wishlistPlayerIds = useMemo(
+    () => new Set((wishlist ?? []).map((entry) => entry.player_id)),
+    [wishlist],
   );
 
   return (
@@ -61,8 +90,18 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
       <PurchaseForm
         leagueId={league.id}
         purchasedPlayerIds={purchasedPlayerIds}
+        wishlistPlayerIds={wishlistPlayerIds}
         statuses={statuses}
         onSaved={() => setRefreshToken((t) => t + 1)}
+        onWishlistChanged={() => setRefreshToken((t) => t + 1)}
+      />
+
+      <WishlistPanel
+        leagueId={league.id}
+        wishlist={wishlist}
+        loadError={wishlistLoadError}
+        purchasedPlayerIds={purchasedPlayerIds}
+        onChanged={() => setRefreshToken((t) => t + 1)}
       />
 
       <AuctionStatusPanel statuses={statuses} loadError={statusLoadError} />
