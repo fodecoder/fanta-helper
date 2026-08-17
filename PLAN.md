@@ -2,13 +2,14 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-> Stato al 2026-08-17 — `v0.9.0`. Fase 0 completa. **Fase 1 completa** (MVP
+> Stato al 2026-08-17 — `v1.0.0`. Fase 0 completa. **Fase 1 completa** (MVP
 > funzionale: CRUD lega/manager, import giocatori CSV, import valutazioni JSON,
-> asta live, selettore lega). **Fase 2 parziale**: max bid rettificato fatto;
-> restano rifinitura UI e miniature giocatori. Traguardo `v1.0.0` = Fase 2
-> completa (vedi PROMPTS.md, operazioni 11–12), poi provisioning hosting. Codice
-> pronto per l'hosting (build/lint verdi); manca il provisioning di Render e
-> Cloudflare Pages — vedi [README.md](./README.md) e la nota in coda.
+> asta live, selettore lega). **Fase 2 completa** (codice): max bid rettificato,
+> rifinitura UI, miniature giocatori. Codice pronto per l'hosting (build/lint
+> verdi); manca il provisioning di Render e Cloudflare Pages — vedi
+> [README.md](./README.md) e la nota in coda. `v1.0.0` è taggato lato codice;
+> il rilascio si considera pienamente chiuso solo a provisioning e push
+> completati.
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -26,11 +27,11 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 - [x] Schermata asta live: event-log degli acquisti + stato derivato (residuo, slot)
 - [x] Selettore lega in home
 
-## Fase 2 — Rifinitura  *(in corso — chiude la v1.0.0)*
+## Fase 2 — Rifinitura  *(completa lato codice)*
 
 - [x] Max bid rettificato deterministico (opportunity cost: residuo/bisogni con floor per reparto)
-- [ ] Rifinitura UI (design token dalla palette SPEC, coerenza schermate)
-- [ ] Miniature giocatori: stemma squadra + placeholder per ruolo
+- [x] Rifinitura UI (design token dalla palette SPEC, coerenza schermate)
+- [x] Miniature giocatori: colore squadra + placeholder per ruolo
 
 ## Fase 3 — v2  *(successiva)*
 
@@ -40,14 +41,14 @@ Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è succe
 
 ## Traguardo v1.0.0
 
-Rilascio 1.0.0 = Fase 2 completa + servizi in produzione. Restano:
+Rilascio 1.0.0 = Fase 2 completa + servizi in produzione.
 
-**Codice** (operazioni 11–12 in PROMPTS.md)
+**Codice** (operazioni 11–12 in PROMPTS.md) — **completo**
 
-- [ ] Rifinitura UI
-- [ ] Miniature giocatori
+- [x] Rifinitura UI
+- [x] Miniature giocatori
 
-**Provisioning** (manuale, nessun codice — dettaglio in README.md)
+**Provisioning** (manuale, nessun codice — dettaglio in README.md) — **in corso**
 
 - [x] Neon: progetto e database creati
 - [x] Secret GitHub per le migrazioni impostato *(verifica che il nome sia
@@ -58,5 +59,5 @@ Rilascio 1.0.0 = Fase 2 completa + servizi in produzione. Restano:
 - [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
 - [ ] Push umano su `main` per far girare workflow (lint/build/migrazioni) e i redeploy
 
-A Fase 2 chiusa: bump a `v1.0.0` (release: stabile e in produzione), voce in
-CHANGELOG, tag locale `v1.0.0`.
+Codice taggato `v1.0.0`; il rilascio si considera pienamente chiuso solo a
+provisioning e push completati (operazione manuale e umana, vedi CLAUDE.md).
