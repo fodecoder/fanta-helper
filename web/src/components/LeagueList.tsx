@@ -8,6 +8,7 @@ interface LeagueListProps {
   onEdit: (league: League) => void;
   onManageManagers: (league: League) => void;
   onManageValuations: (league: League) => void;
+  onManageAuction: (league: League) => void;
   onDeleted: () => void;
 }
 
@@ -17,6 +18,7 @@ export function LeagueList({
   onEdit,
   onManageManagers,
   onManageValuations,
+  onManageAuction,
   onDeleted,
 }: LeagueListProps) {
   const [leagues, setLeagues] = useState<League[] | null>(null);
@@ -94,6 +96,9 @@ export function LeagueList({
                   </button>
                   <button type="button" onClick={() => onManageValuations(league)}>
                     Valutazioni
+                  </button>
+                  <button type="button" onClick={() => onManageAuction(league)}>
+                    Asta
                   </button>
                   <button type="button" onClick={() => handleDelete(league)}>
                     Elimina

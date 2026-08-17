@@ -4,7 +4,7 @@ import { insertPlayer } from "./players";
 import { insertValuation } from "./valuations";
 import { insertManager } from "./managers";
 import { insertPurchase } from "./purchases";
-import { getManagerBudgetStatuses } from "./derived";
+import { getManagerAuctionStatuses } from "./derived";
 
 async function seed(): Promise<void> {
   const league = await insertLeague({
@@ -50,7 +50,7 @@ async function seed(): Promise<void> {
   await insertPurchase({ league_id: league.id, player_id: striker.id, manager_id: managerB.id, prezzo: 48 });
   await insertPurchase({ league_id: league.id, player_id: defender.id, manager_id: managerA.id, prezzo: 3 });
 
-  const statuses = await getManagerBudgetStatuses(league.id);
+  const statuses = await getManagerAuctionStatuses(league.id);
   console.log(`Seeded league "${league.name}" (id=${league.id}). Manager budget status:`);
   for (const status of statuses) {
     console.log(

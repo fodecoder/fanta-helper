@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-17
+
+### Added
+
+- League-scoped purchase log endpoints under `/leagues/:leagueId/purchases`:
+  `GET /` lists the immutable log enriched with player and manager names,
+  `POST /` appends a purchase (league, player, manager, price), `GET /state`
+  returns the derived auction status per manager, and `DELETE /last` removes
+  the single most recently appended row as an explicit, traceable correction.
+  There is no update endpoint: the log is append-only, and mistakes are
+  corrected by removing the last entry, never by mutating a field.
+- `db/derived.ts` extended (`getManagerAuctionStatuses`, replacing
+  `getManagerBudgetStatuses`) to also compute free roster slots per role
+  (`P`/`D`/`C`/`A`) alongside residual budget, both recomputed from the
+  `purchase` log and the league's `roster_config` on every call — no
+  additional mutable state.
+- Asta live screen in the web app, reachable from each league row: player
+  search with the current valuation shown when available, assignment to a
+  manager with a price, a purchase event log with an "undo last" action, and
+  a live-updating derived-status panel (residuo and slots per manager).
+- Adjusted (opportunity-cost) max bid is intentionally out of scope here; the
+  form only surfaces the static `max_bid` from `valuation`, if present.
+
 ## [0.6.0] - 2026-08-17
 
 ### Added

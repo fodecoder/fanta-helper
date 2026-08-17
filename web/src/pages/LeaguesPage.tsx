@@ -4,13 +4,15 @@ import { LeagueList } from "../components/LeagueList";
 import { LeagueForm } from "../components/LeagueForm";
 import { ManagersPage } from "./ManagersPage";
 import { ValuationsPage } from "./ValuationsPage";
+import { AuctionPage } from "./AuctionPage";
 
 type View =
   | { mode: "list" }
   | { mode: "create" }
   | { mode: "edit"; league: League }
   | { mode: "managers"; league: League }
-  | { mode: "valuations"; league: League };
+  | { mode: "valuations"; league: League }
+  | { mode: "auction"; league: League };
 
 export function LeaguesPage() {
   const [view, setView] = useState<View>({ mode: "list" });
@@ -24,6 +26,7 @@ export function LeaguesPage() {
         onEdit={(league) => setView({ mode: "edit", league })}
         onManageManagers={(league) => setView({ mode: "managers", league })}
         onManageValuations={(league) => setView({ mode: "valuations", league })}
+        onManageAuction={(league) => setView({ mode: "auction", league })}
         onDeleted={() => setRefreshToken((t) => t + 1)}
       />
     );
@@ -35,6 +38,10 @@ export function LeaguesPage() {
 
   if (view.mode === "valuations") {
     return <ValuationsPage league={view.league} onBack={() => setView({ mode: "list" })} />;
+  }
+
+  if (view.mode === "auction") {
+    return <AuctionPage league={view.league} onBack={() => setView({ mode: "list" })} />;
   }
 
   return (
