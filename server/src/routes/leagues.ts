@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createLeagueSchema, updateLeagueSchema } from "@fanta-helper/shared";
+import { createLeagueSchema, updateLeagueSchema, OWNER_MANAGER_NAME } from "@fanta-helper/shared";
 import {
   listLeagues,
   getLeagueById,
@@ -8,7 +8,7 @@ import {
   deleteLeague,
 } from "../db/leagues";
 import { insertManager } from "../db/managers";
-import { pickFunnyNames, OWNER_MANAGER_NAME } from "../managers/funnyNames";
+import { pickFunnyNames } from "../managers/funnyNames";
 import { ApiError } from "../http/errors";
 
 export const leaguesRouter = Router();

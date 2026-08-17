@@ -7,35 +7,38 @@ import type {
 } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import { PurchasesApiError } from "../api/purchases";
-import * as playersApi from "../api/players";
 import * as managersApi from "../api/managers";
-import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
 import { StatusMessage } from "./StatusMessage";
 import { PlayerAvatar } from "./PlayerAvatar";
 
 interface PurchaseFormProps {
   leagueId: number;
+  players: Player[] | null;
+  valuations: ValuationWithPlayer[] | null;
   purchasedPlayerIds: Set<number>;
   wishlistPlayerIds: Set<number>;
   statuses: ManagerAuctionStatus[] | null;
+  selectedPlayerId: number | null;
+  onSelectPlayer: (playerId: number | null) => void;
   onSaved: () => void;
   onWishlistChanged: () => void;
 }
 
 export function PurchaseForm({
   leagueId,
+  players,
+  valuations,
   purchasedPlayerIds,
   wishlistPlayerIds,
   statuses,
+  selectedPlayerId,
+  onSelectPlayer,
   onSaved,
   onWishlistChanged,
 }: PurchaseFormProps) {
-  const [players, setPlayers] = useState<Player[] | null>(null);
   const [managers, setManagers] = useState<Manager[] | null>(null);
-  const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
   const [filter, setFilter] = useState("");
-  const [playerId, setPlayerId] = useState("");
   const [managerId, setManagerId] = useState("");
   const [prezzo, setPrezzo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,18 +47,10 @@ export function PurchaseForm({
 
   useEffect(() => {
     const controller = new AbortController();
-    playersApi
-      .listPlayers(controller.signal)
-      .then(setPlayers)
-      .catch(() => setPlayers([]));
     managersApi
       .listManagers(leagueId, controller.signal)
       .then(setManagers)
       .catch(() => setManagers([]));
-    valuationsApi
-      .listValuations(leagueId, controller.signal)
-      .then(setValuations)
-      .catch(() => setValuations([]));
     return () => controller.abort();
   }, [leagueId]);
 
@@ -65,8 +60,8 @@ export function PurchaseForm({
     if (needle === "") return true;
     return player.name.toLowerCase().includes(needle) || player.team.toLowerCase().includes(needle);
   });
-  const selectedPlayer = available.find((player) => String(player.id) === playerId);
-  const selectedValuation = valuations?.find((v) => v.player_id === Number(playerId));
+  const selectedPlayer = available.find((player) => player.id === selectedPlayerId);
+  const selectedValuation = valuations?.find((v) => v.player_id === selectedPlayerId);
   const activeManagerStatus = statuses?.find((s) => s.managerId === Number(managerId));
 
   async function handleToggleWishlist(event: MouseEvent, playerId: number) {
@@ -90,7 +85,7 @@ export function PurchaseForm({
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (playerId === "") {
+    if (selectedPlayerId === null) {
       setError("seleziona un giocatore");
       return;
     }
@@ -108,11 +103,11 @@ export function PurchaseForm({
     setSubmitting(true);
     try {
       await purchasesApi.createPurchase(leagueId, {
-        player_id: Number(playerId),
+        player_id: selectedPlayerId,
         manager_id: Number(managerId),
         prezzo: prezzoValue,
       });
-      setPlayerId("");
+      onSelectPlayer(null);
       setPrezzo("");
       setFilter("");
       onSaved();
@@ -154,8 +149,8 @@ export function PurchaseForm({
                       wishlisted ? "player-listbox-item player-listbox-item--wishlisted" : "player-listbox-item"
                     }
                     role="option"
-                    aria-selected={String(player.id) === playerId}
-                    onClick={() => setPlayerId(String(player.id))}
+                    aria-selected={player.id === selectedPlayerId}
+                    onClick={() => onSelectPlayer(player.id)}
                   >
                     <PlayerAvatar
                       name={player.name}

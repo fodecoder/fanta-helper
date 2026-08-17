@@ -537,6 +537,11 @@ tbody tr:hover {
   font-style: italic;
 }
 
+tbody tr.rank-row--current {
+  background: rgba(43, 167, 86, 0.16);
+  font-weight: 600;
+}
+
 /* Status messages (loading / error / empty) */
 
 .status-message {

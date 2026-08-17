@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-08-17
+
+### Added
+
+- **Confronto in asta per ruolo**: selezionando un giocatore in `PurchaseForm`
+  compare un pannello "Confronto per ruolo" con il ranking dei giocatori dello
+  stesso ruolo ancora disponibili (esclusi quelli nel log `purchase`), ordinati
+  per `fair_value`/`target`, con tier/max bid/panic price e i bisogni di
+  reparto/residuo/max bid rettificato del manager "Io". Il confronto base è
+  puramente derivato client-side dai dati già in-app (valutazioni, pool
+  giocatori, stato manager), nessun nuovo endpoint aggregato o stato
+  persistito.
+- **Arricchimento opzionale minuti/gol/assist**: nuovo modulo backend
+  `statsApi` (dietro `STATS_API_ENABLED`/`STATS_API_KEY`, chiave solo
+  server-side, cache in-memory e rate-limit giornaliero) che proxya un
+  provider di statistiche esterno e alimenta colonne extra nel confronto
+  quando attivo; disattivato di default, il confronto base non ne dipende e
+  non degrada se l'arricchimento manca o è esaurito.
+
 ## [1.5.0] - 2026-08-17
 
 ### Added

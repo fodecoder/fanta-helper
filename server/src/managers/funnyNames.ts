@@ -1,6 +1,3 @@
-// Nome del manager che rappresenta il proprietario della lega.
-export const OWNER_MANAGER_NAME = "Io";
-
 const FUNNY_NAMES = [
   "Real Sconcerti",
   "Atletico Divano",

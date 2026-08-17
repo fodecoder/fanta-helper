@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Name of the manager representing the league owner (the app's current user).
+export const OWNER_MANAGER_NAME = "Io";
+
 export const createManagerSchema = z.object({
   name: z.string().trim().min(1, "name is required"),
 });

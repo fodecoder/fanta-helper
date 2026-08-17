@@ -8,6 +8,7 @@ import { valuationsRouter } from "./routes/valuations";
 import { purchasesRouter } from "./routes/purchases";
 import { wishlistRouter } from "./routes/wishlist";
 import { goalkeeperGridRouter } from "./routes/goalkeeperGrid";
+import { statsEnrichmentRouter } from "./routes/statsEnrichment";
 import { errorHandler } from "./http/errorHandler";
 
 export function createApp(): Express {
@@ -26,6 +27,7 @@ export function createApp(): Express {
   app.use("/leagues/:leagueId/valuations", valuationsRouter);
   app.use("/leagues/:leagueId/purchases", purchasesRouter);
   app.use("/leagues/:leagueId/wishlist", wishlistRouter);
+  app.use("/players/stats-enrichment", statsEnrichmentRouter);
   app.use("/players", playersRouter);
   app.use("/goalkeeper-grid", goalkeeperGridRouter);
 
