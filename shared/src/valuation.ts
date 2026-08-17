@@ -54,5 +54,6 @@ export const valuationWithPlayerSchema = valuationRecordSchema.extend({
   name: z.string(),
   team: z.string(),
   ruolo: roleSchema,
+  image_url: z.string().nullable(),
 });
 export type ValuationWithPlayer = z.infer<typeof valuationWithPlayerSchema>;

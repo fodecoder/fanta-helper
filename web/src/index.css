@@ -15,6 +15,11 @@
   --color-bg-subtle: #f4f6f8;
   --color-surface: #ffffff;
 
+  --color-role-p: #c98a1d;
+  --color-role-d: #2a6fb0;
+  --color-role-c: #2ba756;
+  --color-role-a: #c0392b;
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -330,6 +335,103 @@ tbody tr:hover {
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Player avatars */
+
+.player-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.player-avatar--md {
+  width: 40px;
+  height: 40px;
+}
+
+.player-avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+}
+
+.player-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.player-avatar--placeholder {
+  color: var(--color-white);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid transparent;
+}
+
+.player-avatar--role-P {
+  background: var(--color-role-p);
+}
+
+.player-avatar--role-D {
+  background: var(--color-role-d);
+}
+
+.player-avatar--role-C {
+  background: var(--color-role-c);
+}
+
+.player-avatar--role-A {
+  background: var(--color-role-a);
+}
+
+/* Player listbox (searchable player picker) */
+
+.player-listbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.player-listbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.player-listbox-item:last-child {
+  border-bottom: none;
+}
+
+.player-listbox-item:hover {
+  background: var(--color-bg-subtle);
+}
+
+.player-listbox-item[aria-selected="true"] {
+  background: rgba(43, 167, 86, 0.12);
+  font-weight: 600;
+}
+
+.player-listbox-empty {
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 /* Status messages (loading / error / empty) */

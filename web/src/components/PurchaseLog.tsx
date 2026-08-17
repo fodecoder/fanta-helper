@@ -3,6 +3,7 @@ import type { PurchaseWithDetails } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import { PurchasesApiError } from "../api/purchases";
 import { StatusMessage } from "./StatusMessage";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 interface PurchaseLogProps {
   leagueId: number;
@@ -64,6 +65,7 @@ export function PurchaseLog({ leagueId, purchases, loadError, onUndone }: Purcha
           <table>
             <thead>
               <tr>
+                <th></th>
                 <th>Giocatore</th>
                 <th>Squadra</th>
                 <th>Ruolo</th>
@@ -74,6 +76,15 @@ export function PurchaseLog({ leagueId, purchases, loadError, onUndone }: Purcha
             <tbody>
               {purchases.map((purchase) => (
                 <tr key={`${purchase.league_id}-${purchase.player_id}`}>
+                  <td>
+                    <PlayerAvatar
+                      name={purchase.player_name}
+                      team={purchase.player_team}
+                      ruolo={purchase.player_ruolo}
+                      image_url={purchase.player_image_url}
+                      size="sm"
+                    />
+                  </td>
                   <td>{purchase.player_name}</td>
                   <td>{purchase.player_team}</td>
                   <td>{purchase.player_ruolo}</td>

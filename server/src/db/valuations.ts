@@ -87,7 +87,7 @@ export async function listValuationsWithPlayerByLeague(
 ): Promise<ValuationWithPlayer[]> {
   const result = await pool.query<ValuationWithPlayer>(
     `SELECT v.league_id, v.player_id, v.tier, v.target, v.fair_value, v.max_bid,
-            v.panic_price, v.confidence, v.note, p.name, p.team, p.ruolo
+            v.panic_price, v.confidence, v.note, p.name, p.team, p.ruolo, p.image_url
      FROM valuation v
      JOIN player p ON p.id = v.player_id
      WHERE v.league_id = $1

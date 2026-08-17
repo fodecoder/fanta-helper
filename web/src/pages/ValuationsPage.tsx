@@ -4,6 +4,7 @@ import { ValuationImportForm } from "../components/ValuationImportForm";
 import * as valuationsApi from "../api/valuations";
 import { PageHeader } from "../components/PageHeader";
 import { StatusMessage } from "../components/StatusMessage";
+import { PlayerAvatar } from "../components/PlayerAvatar";
 
 interface ValuationsPageProps {
   league: League;
@@ -49,6 +50,7 @@ export function ValuationsPage({ league, onBack }: ValuationsPageProps) {
             <table>
               <thead>
                 <tr>
+                  <th></th>
                   <th>Nome</th>
                   <th>Squadra</th>
                   <th>Ruolo</th>
@@ -63,6 +65,15 @@ export function ValuationsPage({ league, onBack }: ValuationsPageProps) {
               <tbody>
                 {valuations.map((valuation) => (
                   <tr key={valuation.player_id}>
+                    <td>
+                      <PlayerAvatar
+                        name={valuation.name}
+                        team={valuation.team}
+                        ruolo={valuation.ruolo}
+                        image_url={valuation.image_url}
+                        size="sm"
+                      />
+                    </td>
                     <td>{valuation.name}</td>
                     <td>{valuation.team}</td>
                     <td>{valuation.ruolo}</td>

@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-08-17
+
+### Added
+
+- Player thumbnails wherever a player is shown (Asta search, purchase log,
+  valuations table, unmatched-import rows): a new `PlayerAvatar` component
+  renders the real photo when `player.image_url` is set, otherwise a
+  deterministic placeholder — initials on a role-colored background (P/D/C/A),
+  with a ring colored from a stable hash of the team name standing in for a
+  crest. No external fetch: everything is derived locally from
+  name/team/ruolo.
+- `image_url` threaded through the enriched valuation and purchase-log rows
+  (`ValuationWithPlayer`, `PurchaseWithDetails`) so those screens can show the
+  real photo, not just the player list endpoint.
+- Replaced the native player `<select>` in the Asta assignment form with a
+  filterable custom listbox, since thumbnails can't be rendered inside native
+  `<option>` elements.
+
 ## [0.10.0] - 2026-08-17
 
 ### Added

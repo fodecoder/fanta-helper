@@ -19,6 +19,7 @@ export const purchaseWithDetailsSchema = purchaseSchema.extend({
   player_name: z.string(),
   player_team: z.string(),
   player_ruolo: roleSchema,
+  player_image_url: z.string().nullable(),
   manager_name: z.string(),
 });
 export type PurchaseWithDetails = z.infer<typeof purchaseWithDetailsSchema>;

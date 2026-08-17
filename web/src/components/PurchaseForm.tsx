@@ -11,6 +11,7 @@ import * as playersApi from "../api/players";
 import * as managersApi from "../api/managers";
 import * as valuationsApi from "../api/valuations";
 import { StatusMessage } from "./StatusMessage";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 interface PurchaseFormProps {
   leagueId: number;
@@ -58,6 +59,7 @@ export function PurchaseForm({
     if (needle === "") return true;
     return player.name.toLowerCase().includes(needle) || player.team.toLowerCase().includes(needle);
   });
+  const selectedPlayer = available.find((player) => String(player.id) === playerId);
   const selectedValuation = valuations?.find((v) => v.player_id === Number(playerId));
   const activeManagerStatus = statuses?.find((s) => s.managerId === Number(managerId));
 
@@ -113,14 +115,41 @@ export function PurchaseForm({
             onChange={(e) => setFilter(e.target.value)}
           />
         </label>
-        <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-          <option value="">— seleziona giocatore —</option>
-          {filtered.map((player) => (
-            <option key={player.id} value={player.id}>
-              {player.name} ({player.team}, {player.ruolo})
-            </option>
-          ))}
-        </select>
+        <ul className="player-listbox" role="listbox" aria-label="Giocatori">
+          {filtered.length === 0 ? (
+            <li className="player-listbox-empty">Nessun giocatore trovato.</li>
+          ) : (
+            filtered.map((player) => (
+              <li key={player.id}>
+                <button
+                  type="button"
+                  className="player-listbox-item"
+                  role="option"
+                  aria-selected={String(player.id) === playerId}
+                  onClick={() => setPlayerId(String(player.id))}
+                >
+                  <PlayerAvatar
+                    name={player.name}
+                    team={player.team}
+                    ruolo={player.ruolo}
+                    image_url={player.image_url}
+                    size="sm"
+                  />
+                  <span>
+                    {player.name} ({player.team}, {player.ruolo})
+                  </span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+
+        {selectedPlayer && (
+          <p>
+            Selezionato: <strong>{selectedPlayer.name}</strong> ({selectedPlayer.team},{" "}
+            {selectedPlayer.ruolo})
+          </p>
+        )}
 
         {selectedValuation && (
           <p>

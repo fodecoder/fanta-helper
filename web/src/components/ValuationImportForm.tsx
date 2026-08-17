@@ -4,6 +4,7 @@ import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import * as playersApi from "../api/players";
 import { StatusMessage } from "./StatusMessage";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 interface ValuationImportFormProps {
   leagueId: number;
@@ -59,7 +60,12 @@ function UnmatchedRow({ leagueId, entry, players, onAssigned, onDiscarded }: Unm
 
   return (
     <tr>
-      <td>{entry.name}</td>
+      <td>
+        <div className="player-name-cell">
+          <PlayerAvatar name={entry.name} team={entry.team} ruolo={entry.ruolo} size="sm" />
+          {entry.name}
+        </div>
+      </td>
       <td>{entry.team}</td>
       <td>{entry.ruolo}</td>
       <td>{entry.tier}</td>

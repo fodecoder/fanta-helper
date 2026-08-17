@@ -15,7 +15,7 @@ export async function listPurchasesWithDetailsByLeague(
   const result = await pool.query<PurchaseWithDetails>(
     `SELECT purchase.league_id, purchase.player_id, purchase.manager_id, purchase.prezzo, purchase.ts,
             player.name AS player_name, player.team AS player_team, player.ruolo AS player_ruolo,
-            manager.name AS manager_name
+            player.image_url AS player_image_url, manager.name AS manager_name
      FROM purchase
      JOIN player ON player.id = purchase.player_id
      JOIN manager ON manager.id = purchase.manager_id
