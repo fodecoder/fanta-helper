@@ -15,6 +15,13 @@ Documenti di riferimento: [SPEC.md](./SPEC.md) (modello dati e decisioni),
 
 Uso personale, nessun login. Ogni asta è una riga `league` con nome univoco.
 
+Note d'uso: alla creazione, una lega parte da default modificabili (rosa
+`3/8/8/6`, 8 squadre, budget 1000, punteggio e modificatori standard) e viene
+popolata con i manager (`Io` + avversari generati). L'import quotazioni accetta
+**CSV o xlsx**; è disponibile anche l'import di una **griglia portieri** di
+riferimento (titolare→riserve per squadra), consultabile durante l'asta. Modello
+dati e formati in [SPEC.md](./SPEC.md).
+
 ---
 
 ## Esecuzione in locale
@@ -125,7 +132,8 @@ solo passi manuali di provisioning (nessun codice):
       `pg_advisory_lock`, incompatibile con PgBouncer in transaction-pooling
 - [ ] Migrazioni applicate al database di produzione (le applica il workflow al
       primo push su `main`, oppure manualmente con la connessione diretta)
-- [ ] Web service Render creato e configurato (build da root del repo)
+- [ ] Web service Render creato e configurato (build da root del repo; Blueprint
+      `render.yaml` disponibile)
 - [ ] Progetto Cloudflare Pages creato e configurato (build da root del repo)
 - [ ] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
 - [ ] Push umano su `main` per far girare build/lint/migrazioni del workflow
@@ -158,6 +166,12 @@ Le migrazioni automatiche e i redeploy dei servizi si attivano al **push su
 > a runtime.
 
 ### B. Backend — Render
+
+Il repo include [`render.yaml`](./render.yaml): su Render si può usare **New →
+Blueprint** e collegare il repo per configurare il web service automaticamente
+(build dalla root, start `node server/dist/index.js`, health check `/health`).
+`DATABASE_URL` e `CORS_ORIGIN` restano da compilare nel dashboard (`sync: false`).
+In alternativa, la configurazione manuale:
 
 1. Su [render.com](https://render.com): **New → Web Service**, collega il repo.
 2. Impostazioni del servizio:

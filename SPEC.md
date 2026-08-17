@@ -20,8 +20,38 @@ Le tabelle. I tipi sono indicativi; i vincoli esatti vivono nelle migrazioni.
 | `n_squadre`     | int    | numero di partecipanti                            |
 | `budget`        | int    | budget per manager                                |
 | `roster_config` | JSONB  | `{ "P": n, "D": n, "C": n, "A": n }`              |
-| `scoring`       | JSONB  | sistema di punteggio (bonus/malus, voti)          |
+| `scoring`       | JSONB  | sistema di punteggio (bonus/malus, fasce gol)     |
 | `modificatori`  | JSONB  | modificatore difesa/centrocampo e simili          |
+
+**Default alla creazione.** Il form nuova lega parte da valori precompilati,
+tutti modificabili: `n_squadre = 8`, `budget = 1000`, rosa `{ P: 3, D: 8, C: 8,
+A: 6 }`, più il punteggio e i modificatori standard descritti sotto.
+
+### Punteggio e modificatori standard
+
+`scoring` e `modificatori` sono JSONB ma con forma tipizzata (validata in
+`shared/src/league.ts`). I valori di default seguono il regolamento standard del
+Fantacalcio (Fantagazzetta):
+
+- **Bonus/malus** (`scoring`): gol `+3`, assist `+1`, rigore segnato `+2,5`,
+  rigore parato `+2,5`, rigore sbagliato `−2,5`, ammonizione `−0,5`, espulsione
+  `−1`, autorete `−2`, gol subito (portiere) `−1`.
+- **Fasce gol** (`scoring.fasce_gol`): soglie di punteggio-squadra che valgono
+  una rete, default `[66, 72, 77, 81, 85, 89]` (la prima rete a 66).
+- **Modificatori** (`modificatori`): `difesa` attivo con tabella media→bonus
+  `6 → +1`, `6,5 → +3`, `7 → +6`; `centrocampo`, `attacco`, `portiere`,
+  `capitano`, `modulo` come toggle (default disattivi).
+
+I valori restano configurabili per lega: il valore dei calciatori è RELATIVO
+alle regole scelte.
+
+### Manager automatici
+
+Alla creazione della lega vengono generati i partecipanti: il manager
+proprietario **`Io`** più `n_squadre − 1` avversari con nomi generati
+divertenti. Restano gestibili (rinomina/elimina) dalla schermata Manager: è solo
+un default per non partire da una lega vuota. Non sono stato mutabile — gli
+acquisti continuano a referenziare `manager.id`.
 
 ### `player`
 
@@ -34,6 +64,27 @@ Le tabelle. I tipi sono indicativi; i vincoli esatti vivono nelle migrazioni.
 | `image_url` | text | nullable; pronta per backfill foto reali    |
 
 Il pool `player` è condiviso tra tutte le leghe.
+
+**Import quotazioni.** Il pool si popola dal listone ufficiale in formato **CSV
+(`;`) o xlsx**. Il parser individua la riga di intestazione (tollerando una
+riga-titolo iniziale) e richiede le colonne `R`, `Nome`, `Squadra`. Le righe con
+ruolo non valido o campi mancanti finiscono in un report di scarto, non vengono
+inventate. Un reimport non azzera `image_url`.
+
+### `goalkeeper_grid`
+
+| campo   | tipo | note                                        |
+|---------|------|---------------------------------------------|
+| `id`    | PK   |                                             |
+| `team`  | text | squadra di Serie A                          |
+| `rank`  | int  | gerarchia del portiere (`1` = titolare)     |
+| `name`  | text | nome del portiere                           |
+
+Dato di **riferimento globale** (non per-lega, non legato agli acquisti): la
+gerarchia dei portieri per squadra, usata solo in consultazione durante l'asta.
+Import da CSV/xlsx in **formato largo** — una riga per squadra con colonne
+`Squadra`, `Titolare`, `Riserva`, `Terzo` (e simili `Portiere 2`, `P3`). Ogni
+import **sostituisce** l'intera griglia (snapshot in transazione).
 
 ### `valuation`
 
