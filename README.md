@@ -22,8 +22,31 @@ Uso personale, nessun login. Ogni asta è una riga `league` con nome univoco.
 ### Prerequisiti
 
 - Node.js LTS (≥ 20) e il package manager del repo (npm/pnpm — vedi `package.json`)
-- Un database PostgreSQL: consigliato un branch di sviluppo su Neon; in
-  alternativa un PostgreSQL locale
+- Un database PostgreSQL: un branch di sviluppo su Neon, **oppure** un Postgres
+  locale via Docker (vedi sotto)
+
+#### Opzione: PostgreSQL locale con Docker
+
+Il repo include un `docker-compose.yml` con un Postgres pronto all'uso (utente,
+password e db `fanta`, dati persistiti su un volume):
+
+```bash
+docker compose up -d          # avvia Postgres su localhost:5432
+docker compose down           # ferma (i dati restano nel volume)
+docker compose down -v        # ferma ed elimina anche i dati
+```
+
+Il client non forza SSL, quindi in locale la connessione **non** usa
+`sslmode=require` (che serve solo a Neon). Imposta in `server/.env`:
+
+```
+DATABASE_URL=postgres://fanta:fanta@localhost:5432/fanta
+```
+
+Poi applica le migrazioni ed eventualmente il seed (passo 3).
+
+> Senza `docker compose`, l'equivalente con `docker run`:
+> `docker run --name fanta-pg -e POSTGRES_USER=fanta -e POSTGRES_PASSWORD=fanta -e POSTGRES_DB=fanta -p 5432:5432 -v fanta-pg-data:/var/lib/postgresql/data -d postgres:16`
 
 ### 1. Clona e installa
 

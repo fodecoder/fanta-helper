@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fanta-pg
+    environment:
+      POSTGRES_USER: fanta
+      POSTGRES_PASSWORD: fanta
+      POSTGRES_DB: fanta
+    ports:
+      - "5432:5432"
+    volumes:
+      - fanta-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fanta -d fanta"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  fanta-pg-data:
