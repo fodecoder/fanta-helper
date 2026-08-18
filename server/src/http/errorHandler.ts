@@ -33,7 +33,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
             ? "this player is already in the wishlist for this league"
             : constraint === "probable_lineup_team_player_uk"
               ? "this player appears more than once in the confirmed lineup for this team"
-              : "a league with this name already exists";
+              : constraint === "set_piece_taker_team_tipo_rank_uk"
+                ? "this rank is already assigned to another player for this team and set piece type"
+                : "a league with this name already exists";
     res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }

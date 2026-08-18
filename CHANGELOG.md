@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-08-18
+
+### Added
+
+- **Rigoristi e tiratori di punizioni**: nuova tabella globale
+  `set_piece_taker` (`team, tipo, player_name, rank`, `tipo` ∈
+  rigore/punizione/corner), stessa pipeline di ingest delle probabili
+  formazioni — screenshot per squadra, estrazione con Claude (vision), bozza
+  modificabile prima del salvataggio, righe incerte evidenziate e mai
+  inventate, conferma che sostituisce in transazione solo la squadra
+  confermata. Mostrati nella stessa tab "Probabili formazioni", per squadra,
+  in gerarchia. Riusa il modulo `claudeExtraction` già introdotto per le
+  formazioni.
+
 ## [1.7.0] - 2026-08-18
 
 ### Added

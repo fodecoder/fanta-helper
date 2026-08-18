@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ProbableLineupEntry } from "@fanta-helper/shared";
+import type { ProbableLineupEntry, SetPieceTakerEntry, SetPieceTakerTipo } from "@fanta-helper/shared";
 import * as lineupApi from "../api/probableLineup";
+import * as setPieceTakerApi from "../api/setPieceTaker";
 import { StatusMessage } from "./StatusMessage";
 
 interface TeamGroup {
@@ -10,19 +11,54 @@ interface TeamGroup {
   ballottaggio: ProbableLineupEntry[];
 }
 
-function groupByTeam(entries: ProbableLineupEntry[]): TeamGroup[] {
+// `extraTeams` copre le squadre che hanno solo calci piazzati confermati e
+// ancora nessuna formazione: i due ingest sono indipendenti (screenshot
+// separati), quindi una squadra deve comparire nello switcher anche se uno
+// solo dei due dataset è popolato.
+function groupByTeam(entries: ProbableLineupEntry[], extraTeams: Iterable<string>): TeamGroup[] {
   const byTeam = new Map<string, TeamGroup>();
-  for (const entry of entries) {
-    let group = byTeam.get(entry.team);
+  function ensure(team: string): TeamGroup {
+    let group = byTeam.get(team);
     if (!group) {
-      group = { team: entry.team, titolari: [], panchina: [], ballottaggio: [] };
-      byTeam.set(entry.team, group);
+      group = { team, titolari: [], panchina: [], ballottaggio: [] };
+      byTeam.set(team, group);
     }
+    return group;
+  }
+  for (const entry of entries) {
+    const group = ensure(entry.team);
     if (entry.stato === "titolare") group.titolari.push(entry);
     else if (entry.stato === "panchina") group.panchina.push(entry);
     else group.ballottaggio.push(entry);
   }
+  for (const team of extraTeams) ensure(team);
   return [...byTeam.values()].sort((a, b) => a.team.localeCompare(b.team));
+}
+
+const SET_PIECE_TAKER_LABELS: Record<SetPieceTakerTipo, string> = {
+  rigore: "Rigoristi",
+  punizione: "Punizioni",
+  corner: "Corner",
+};
+
+function groupSetPieceTakersByTeam(
+  entries: SetPieceTakerEntry[],
+): Map<string, Record<SetPieceTakerTipo, SetPieceTakerEntry[]>> {
+  const byTeam = new Map<string, Record<SetPieceTakerTipo, SetPieceTakerEntry[]>>();
+  for (const entry of entries) {
+    let group = byTeam.get(entry.team);
+    if (!group) {
+      group = { rigore: [], punizione: [], corner: [] };
+      byTeam.set(entry.team, group);
+    }
+    group[entry.tipo].push(entry);
+  }
+  for (const group of byTeam.values()) {
+    for (const tipo of Object.keys(group) as SetPieceTakerTipo[]) {
+      group[tipo].sort((a, b) => a.rank - b.rank);
+    }
+  }
+  return byTeam;
 }
 
 // Modulo calcolato solo a scopo di visualizzazione, mai persistito: se i
@@ -51,6 +87,7 @@ interface ProbableLineupBoardProps {
 
 export function ProbableLineupBoard({ refreshToken = 0 }: ProbableLineupBoardProps) {
   const [entries, setEntries] = useState<ProbableLineupEntry[] | null>(null);
+  const [setPieceTakers, setSetPieceTakers] = useState<SetPieceTakerEntry[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
@@ -69,7 +106,27 @@ export function ProbableLineupBoard({ refreshToken = 0 }: ProbableLineupBoardPro
     return () => controller.abort();
   }, [refreshToken]);
 
-  const groups = useMemo(() => groupByTeam(entries ?? []), [entries]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setPieceTakerApi
+      .listSetPieceTakers(controller.signal)
+      .then((data) => setSetPieceTakers(data))
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        // Sezione secondaria: un errore qui non deve bloccare la vista
+        // principale delle formazioni, che ha già il proprio stato di errore.
+      });
+    return () => controller.abort();
+  }, [refreshToken]);
+
+  const setPieceTakersByTeam = useMemo(
+    () => groupSetPieceTakersByTeam(setPieceTakers),
+    [setPieceTakers],
+  );
+  const groups = useMemo(
+    () => groupByTeam(entries ?? [], setPieceTakersByTeam.keys()),
+    [entries, setPieceTakersByTeam],
+  );
 
   if (loadError) return <StatusMessage kind="error">{loadError}</StatusMessage>;
   if (entries === null) return <StatusMessage kind="loading">Caricamento…</StatusMessage>;
@@ -142,6 +199,31 @@ export function ProbableLineupBoard({ refreshToken = 0 }: ProbableLineupBoardPro
             </ul>
           </div>
         )}
+
+        {(() => {
+          const takers = setPieceTakersByTeam.get(active.team);
+          if (!takers) return null;
+          const tipi = Object.keys(SET_PIECE_TAKER_LABELS) as SetPieceTakerTipo[];
+          if (tipi.every((tipo) => takers[tipo].length === 0)) return null;
+          return (
+            <div>
+              <strong>Calci piazzati</strong>
+              {tipi.map(
+                (tipo) =>
+                  takers[tipo].length > 0 && (
+                    <div key={tipo}>
+                      <em>{SET_PIECE_TAKER_LABELS[tipo]}</em>
+                      <ol>
+                        {takers[tipo].map((p) => (
+                          <li key={p.player_name}>{p.player_name}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ),
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

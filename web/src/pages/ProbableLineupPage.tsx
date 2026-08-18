@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { ProbableLineupStato } from "@fanta-helper/shared";
-import { PROBABLE_LINEUP_STATI } from "@fanta-helper/shared";
+import type { ProbableLineupStato, SetPieceTakerTipo } from "@fanta-helper/shared";
+import { PROBABLE_LINEUP_STATI, SET_PIECE_TAKER_TIPI } from "@fanta-helper/shared";
 import * as lineupApi from "../api/probableLineup";
 import { ProbableLineupApiError } from "../api/probableLineup";
+import * as setPieceTakerApi from "../api/setPieceTaker";
+import { SetPieceTakerApiError } from "../api/setPieceTaker";
 import * as playersApi from "../api/players";
 import { ProbableLineupBoard } from "../components/ProbableLineupBoard";
 import { StatusMessage } from "../components/StatusMessage";
@@ -12,6 +14,15 @@ interface DraftRow {
   player_name: string;
   ruolo: string | null;
   stato: ProbableLineupStato;
+  uncertain: boolean;
+  reason?: string;
+  excluded: boolean;
+}
+
+interface SetPieceDraftRow {
+  tipo: SetPieceTakerTipo;
+  player_name: string;
+  rank: number;
   uncertain: boolean;
   reason?: string;
   excluded: boolean;
@@ -28,6 +39,15 @@ export function ProbableLineupPage() {
   const [confirming, setConfirming] = useState(false);
   const [confirmReport, setConfirmReport] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+
+  const [spTeam, setSpTeam] = useState("");
+  const [spFile, setSpFile] = useState<File | null>(null);
+  const [spDraftRows, setSpDraftRows] = useState<SetPieceDraftRow[] | null>(null);
+  const [spDiscardedCount, setSpDiscardedCount] = useState(0);
+  const [spGeneralError, setSpGeneralError] = useState<string | null>(null);
+  const [spExtracting, setSpExtracting] = useState(false);
+  const [spConfirming, setSpConfirming] = useState(false);
+  const [spConfirmReport, setSpConfirmReport] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -118,6 +138,83 @@ export function ProbableLineupPage() {
       );
     } finally {
       setConfirming(false);
+    }
+  }
+
+  const hasSpEditableRows = useMemo(() => (spDraftRows?.length ?? 0) > 0, [spDraftRows]);
+
+  async function handleSpExtract(event: FormEvent) {
+    event.preventDefault();
+    if (spTeam.trim() === "") {
+      setSpGeneralError("indica la squadra");
+      return;
+    }
+    if (!spFile) {
+      setSpGeneralError("seleziona uno screenshot PNG o JPEG");
+      return;
+    }
+    setSpGeneralError(null);
+    setSpConfirmReport(null);
+    setSpDraftRows(null);
+    setSpExtracting(true);
+    try {
+      const result = await setPieceTakerApi.extractSetPieceTakers(spTeam.trim(), spFile);
+      setSpDraftRows(
+        result.rows.map((row) => ({
+          tipo: row.tipo,
+          player_name: row.player_name,
+          rank: row.rank,
+          uncertain: row.uncertain,
+          reason: row.reason,
+          excluded: false,
+        })),
+      );
+      setSpDiscardedCount(result.discarded.length);
+    } catch (err) {
+      setSpGeneralError(
+        err instanceof SetPieceTakerApiError
+          ? err.payload.error.message
+          : err instanceof Error
+            ? err.message
+            : "estrazione fallita",
+      );
+    } finally {
+      setSpExtracting(false);
+    }
+  }
+
+  function updateSpRow(index: number, patch: Partial<SetPieceDraftRow>) {
+    setSpDraftRows(
+      (rows) => rows?.map((row, i) => (i === index ? { ...row, ...patch } : row)) ?? null,
+    );
+  }
+
+  async function handleSpConfirm() {
+    if (!spDraftRows) return;
+    const finalRows = spDraftRows
+      .filter((row) => !row.excluded)
+      .map((row) => ({ tipo: row.tipo, player_name: row.player_name, rank: row.rank }));
+    if (finalRows.length === 0) {
+      setSpGeneralError("nessuna riga da confermare");
+      return;
+    }
+    setSpGeneralError(null);
+    setSpConfirming(true);
+    try {
+      const report = await setPieceTakerApi.confirmSetPieceTakers(spTeam.trim(), finalRows);
+      setSpConfirmReport(`Calci piazzati ${report.team} salvati: ${report.entries} righe.`);
+      setSpDraftRows(null);
+      setRefreshToken((t) => t + 1);
+    } catch (err) {
+      setSpGeneralError(
+        err instanceof SetPieceTakerApiError
+          ? err.payload.error.message
+          : err instanceof Error
+            ? err.message
+            : "conferma fallita",
+      );
+    } finally {
+      setSpConfirming(false);
     }
   }
 
@@ -242,6 +339,127 @@ export function ProbableLineupPage() {
               disabled={confirming}
             >
               {confirming ? "Conferma in corso…" : "Conferma"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      <section className="card">
+        <h2>Rigoristi e tiratori di punizioni</h2>
+        <p>
+          Carica lo screenshot della gerarchia editoriale dei calci piazzati di una squadra:
+          il backend estrae le righe leggibili, quelle incerte sono evidenziate per la
+          revisione. Nessuna riga viene salvata finché non confermi.
+        </p>
+        {spGeneralError && <StatusMessage kind="error">{spGeneralError}</StatusMessage>}
+        {spConfirmReport && <StatusMessage kind="empty">{spConfirmReport}</StatusMessage>}
+
+        <form onSubmit={handleSpExtract}>
+          <label>
+            Squadra
+            <input
+              type="text"
+              list="probable-lineup-teams"
+              value={spTeam}
+              onChange={(e) => setSpTeam(e.target.value)}
+              placeholder="es. Inter"
+            />
+          </label>
+          <label>
+            Screenshot (PNG o JPEG)
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={(e) => setSpFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={spExtracting}>
+              {spExtracting ? "Estrazione in corso…" : "Estrai"}
+            </button>
+          </div>
+        </form>
+
+        {spDiscardedCount > 0 && (
+          <p>{spDiscardedCount} riga/righe scartate dal modello (formato non interpretabile).</p>
+        )}
+      </section>
+
+      {hasSpEditableRows && (
+        <section className="card">
+          <h2>Revisione bozza — {spTeam}</h2>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Giocatore</th>
+                  <th>Rank</th>
+                  <th>Escludi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {spDraftRows!.map((row, index) => (
+                  <tr
+                    key={index}
+                    className={row.uncertain ? "probable-lineup-row--uncertain" : undefined}
+                  >
+                    <td>
+                      <select
+                        value={row.tipo}
+                        onChange={(e) =>
+                          updateSpRow(index, { tipo: e.target.value as SetPieceTakerTipo })
+                        }
+                      >
+                        {SET_PIECE_TAKER_TIPI.map((tipo) => (
+                          <option key={tipo} value={tipo}>
+                            {tipo}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={row.player_name}
+                        onChange={(e) => updateSpRow(index, { player_name: e.target.value })}
+                      />
+                      {row.uncertain && (
+                        <div className="probable-lineup-row__reason">
+                          incerto{row.reason ? `: ${row.reason}` : ""}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={1}
+                        value={row.rank}
+                        onChange={(e) =>
+                          updateSpRow(index, { rank: Number(e.target.value) || 1 })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={row.excluded}
+                        onChange={(e) => updateSpRow(index, { excluded: e.target.checked })}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSpConfirm}
+              disabled={spConfirming}
+            >
+              {spConfirming ? "Conferma in corso…" : "Conferma"}
             </button>
           </div>
         </section>

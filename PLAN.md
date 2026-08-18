@@ -59,7 +59,7 @@ portale. Prompt operativi 19–22 in `PROMPTS.md`.
       esterna (API-Football free) via backend, con cache e rate-limit
 - [x] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
       estrazione e/o integrazione esterna; visualizzazione a tab
-- [ ] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
+- [x] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
       formazioni): stessa pipeline di ingest
 
 ## Fase 3 — v2  *(successiva)*
