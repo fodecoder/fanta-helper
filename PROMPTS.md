@@ -5,10 +5,12 @@ Backlog operativo. Le operazioni 1–12 (scaffolding → schema DB → deploy pi
 asta live → selettore lega → max bid rettificato → rifinitura UI → miniature
 giocatori) sono completate fino a `v1.0.0`; i relativi prompt sono stati rimossi.
 
-Le correzioni pre-release 13–18 (Fase 2.1) sono state eseguite e portano a
-`v1.4.0`; sono elencate sotto come storico. L'**hosting è in produzione** (Neon +
-Render + Cloudflare Pages). Il backlog attivo è la **Fase 4** (assistenza
-all'asta e dati Serie A): prompt 19–22 in coda.
+Le correzioni pre-release 13–18 (Fase 2.1) e la **Fase 4** (prompt 19–22:
+wishlist, confronto in asta, probabili formazioni, rigoristi) sono state eseguite
+e portano a `v1.8.0`; sono elencate sotto come storico. L'**hosting è in
+produzione** (Neon + Render + Cloudflare Pages). Il backlog attivo è la
+**correzione della griglia portieri** (prompt 23) e la **Fase 3 — v2** (prompt
+24: valutazioni generate via LLM in-app).
 
 Regole trasversali valide per tutte le operazioni:
 
@@ -43,7 +45,12 @@ Regole trasversali valide per tutte le operazioni:
 
 ---
 
-## Fase 4 — Assistenza all'asta e dati Serie A
+## Storico — Fase 4 (eseguite)
+
+Le quattro operazioni sotto sono state completate (`v1.5.0`→`v1.8.0`): wishlist
+per-lega (19), confronto in asta stesso-ruolo con arricchimento stats opzionale
+(20), probabili formazioni via screenshot con estrazione Claude vision (21),
+rigoristi e tiratori (22). Restano come riferimento.
 
 Quattro operazioni in ordine di dipendenza. Le prime due non richiedono fonti
 esterne obbligatorie; le ultime due portano dati Serie A editoriali (probabili
@@ -145,3 +152,69 @@ idempotente.
 
 **Done.** Rigoristi/tiratori visibili per squadra nella vista formazioni. Commit
 `feat:` + bump MINOR + `CHANGELOG` + tag.
+
+---
+
+## Backlog attivo
+
+### 23 — Griglia portieri come matrice di accoppiamenti
+
+**Contesto.** Il modello attuale (`goalkeeper_grid`: gerarchia titolare→riserve
+per squadra) non rappresenta la sorgente reale. La "griglia portieri" è una
+**matrice simmetrica squadra×squadra** con un punteggio di favorevolezza della
+*coppia* di portieri: più basso = i due portieri giocano meno spesso in casa
+nella stessa giornata (calendari-casa più complementari). Le coppie che
+condividono lo stadio (Roma-Lazio, Inter-Milan, Juve-Torino) valgono `0` e sono
+l'accoppiamento ideale. La gerarchia va **sostituita** da questo modello.
+
+**Task.**
+
+- Nuova tabella globale `gk_pairing (team_a text, team_b text, score int)`,
+  simmetrica (una riga per coppia non ordinata o entrambe le direzioni),
+  import **a sostituzione** (snapshot in transazione) come `goalkeeper_grid`.
+- Import da xlsx/CSV in **formato matrice**: prima riga/colonna = sigle squadre,
+  celle = punteggio; diagonale vuota; ignora le righe di legenda finali. Righe
+  non riconosciute in report di scarto, mai inventate.
+- Rimuovi il modello e la UI della gerarchia titolare→riserve (sostituzione, non
+  affiancamento — decisione confermata).
+- UI "Coppie portieri": scelta una squadra, mostra i migliori compagni di coppia
+  ordinati per favorevolezza. **Display invertibile** (`display = max − score`)
+  così alto = più favorevole; il fattore campo è già nella metrica, non
+  aggiungerlo due volte.
+
+**Vincoli.** Dato di riferimento globale, non stato d'asta: nessun impatto su
+residuo/slot/max bid. Import idempotente a sostituzione. Nessun segreto nel client.
+
+**Done.** Matrice coppie importabile e consultabile, gerarchia rimossa. Commit
+`feat:` (breaking sul modello → valuta bump) + `CHANGELOG` + tag.
+
+### 24 — Valutazioni generate via LLM in-app (Fase 3)
+
+**Contesto.** Generare/aggiornare le `valuation` per-lega con Claude, invece
+dell'import JSON manuale. Lo schema stretto delle valutazioni esiste già in
+`SPEC.md` e la validazione+matching nome→ID in `server/src/import/valuationJson.ts`.
+
+**Task.**
+
+- Riusa `server/src/claudeExtraction` aggiungendo un path **text-only** (nessuna
+  immagine): input = pool giocatori + regole della lega (`scoring`,
+  `modificatori`, `roster_config`); output = il JSON valutazioni già specificato.
+- **Chunk per ruolo** (P/D/C/A): `max_tokens` attuale (4096) non basta per l'intero
+  listone in un colpo. Ogni chunk validato e riconciliato prima del salvataggio.
+- Endpoint backend `POST /leagues/:leagueId/valuations/generate` (chiave solo
+  server-side). UI: trigger dalla schermata Valutazioni, con anteprima
+  modificabile prima di persistere; gli unmatched restano per revisione, non
+  stimati.
+- Il `confidence` per riga arriva dal modello: la qualità non è verificabile a
+  priori, il campo esiste apposta.
+
+**Vincoli.** Chiave Anthropic **solo lato backend** (invariante). Le valutazioni
+non entrano nel loop dell'asta live: si generano una volta / su refresh. Nessun
+dato inventato nel matching.
+
+**Done.** Valutazioni generabili da Claude per lega, con anteprima e revisione.
+Commit `feat:` + bump MINOR + `CHANGELOG` + tag.
+
+> **Fase 3 — opzionali** (dipendenze esterne/legali, da valutare a parte):
+> ricerca news qualitative a supporto delle valutazioni; backfill foto reali
+> in `player.image_url`.

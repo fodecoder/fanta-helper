@@ -2,15 +2,13 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-> Stato al 2026-08-17 — `v1.4.0`. Fase 0 completa. **Fase 1 completa** (MVP
-> funzionale: CRUD lega/manager, import giocatori CSV, import valutazioni JSON,
-> asta live, selettore lega). **Fase 2 completa** (codice): max bid rettificato,
-> rifinitura UI, miniature giocatori. **Fase 2.1 completa** (correzioni
-> pre-release): default di lega, form modificatori/punti, manager automatici,
-> import xlsx, griglia portieri, `render.yaml`. **Hosting in produzione**: Neon
-> + Render + Cloudflare Pages attivi, app funzionante end-to-end. Prossimo lavoro
-> in [Fase 4](#fase-4--assistenza-allasta-e-dati-serie-a) (assistenza all'asta e
-> dati Serie A) — prompt in [PROMPTS.md](./PROMPTS.md).
+> Stato al 2026-08-18 — `v1.8.0`. Fasi 0–2.1 complete. **Fase 4 completa**:
+> wishlist per-lega, confronto in asta stesso-ruolo, probabili formazioni con
+> estrazione da screenshot (Claude vision, chiave solo server-side), rigoristi e
+> tiratori di punizioni. **Hosting in produzione**: Neon + Render + Cloudflare
+> Pages attivi, app funzionante end-to-end. Prossimo lavoro in
+> [Fase 3](#fase-3--v2) (v2: valutazioni generate via LLM in-app) — prompt in
+> [PROMPTS.md](./PROMPTS.md).
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -47,26 +45,39 @@ Punti emersi prima del provisioning di Render/Cloudflare.
       in consultazione nell'asta
 - [x] `render.yaml` (Blueprint del backend) alla root
 
-## Fase 4 — Assistenza all'asta e dati Serie A  *(pianificata)*
+## Fase 4 — Assistenza all'asta e dati Serie A  *(completa)*
 
 Funzionalità che aiutano la decisione durante l'asta e portano dati Serie A nel
-portale. Prompt operativi 19–22 in `PROMPTS.md`.
+portale. Prompt operativi 19–22 in `PROMPTS.md` (storico).
 
 - [x] **Giocatori desiderati (wishlist)** per-lega: aggiungi/rimuovi obiettivi,
       evidenziati in asta
-- [ ] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
+- [x] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
       ruolo dalle valutazioni in-app; arricchimento opzionale da API stats
       esterna (API-Football free) via backend, con cache e rate-limit
 - [x] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
-      estrazione e/o integrazione esterna; visualizzazione a tab
+      estrazione (Claude vision) e revisione manuale; visualizzazione a tab
 - [x] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
       formazioni): stessa pipeline di ingest
 
-## Fase 3 — v2  *(successiva)*
+## Correzioni — Griglia portieri  *(pianificata)*
 
-- [ ] LLM in-app via API Anthropic: genera/aggiorna valutazioni
-- [ ] Ricerca news qualitative a supporto delle valutazioni
-- [ ] Foto giocatori reali (backfill `image_url`)
+- [ ] **Rimodella la griglia portieri come matrice di accoppiamenti.** Il modello
+      attuale (`goalkeeper_grid`: gerarchia titolare→riserve per squadra) non
+      rappresenta la sorgente reale, che è una **matrice simmetrica squadra×squadra**
+      con un punteggio di favorevolezza della *coppia* (più basso = calendari-casa
+      più complementari; le coppie stesso-stadio valgono 0). La gerarchia viene
+      **sostituita** da `gk_pairing (team_a, team_b, score)`, import a sostituzione,
+      con vista "Coppie portieri" (display invertibile: alto = più favorevole).
+
+## Fase 3 — v2  *(backlog attivo)*
+
+- [ ] LLM in-app via API Anthropic: genera/aggiorna valutazioni (riusa il modulo
+      `claudeExtraction` con un path text-only; chunk per ruolo per i limiti token)
+- [ ] Ricerca news qualitative a supporto delle valutazioni *(opzionale — dipende
+      da fonte news esterna, fragile)*
+- [ ] Foto giocatori reali (backfill `image_url`) *(opzionale — vincolo diritti
+      immagine, non tecnico)*
 
 ## Traguardo v1.0.0
 
@@ -87,5 +98,5 @@ Rilascio 1.0.0 = Fase 2 completa + servizi in produzione.
 - [x] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
 - [x] Push umano su `main`: workflow (lint/build/migrazioni) e redeploy eseguiti
 
-Rilascio `v1.4.0` **in produzione**: app funzionante end-to-end. Il prossimo
-lavoro è la Fase 4.
+Rilascio in produzione: app funzionante end-to-end (attuale `v1.8.0`). La Fase 4
+è completa; il prossimo lavoro è la correzione della griglia portieri e la Fase 3.

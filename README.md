@@ -1,7 +1,8 @@
-# fanta-helper
+# fanta-helper — FantaProfeta
 
-SPA per la gestione di aste del Fantacalcio italiano, riusabile su più leghe con
-regole diverse. Stato dell'asta sempre derivato dal log immutabile degli acquisti.
+SPA per la gestione di aste del Fantacalcio italiano (nome applicazione:
+**FantaProfeta**), riusabile su più leghe con regole diverse. Stato dell'asta
+sempre derivato dal log immutabile degli acquisti.
 
 Documenti di riferimento: [SPEC.md](./SPEC.md) (modello dati e decisioni),
 [PLAN.md](./PLAN.md) (roadmap), [PROMPTS.md](./PROMPTS.md) (prompt operativi),
@@ -120,9 +121,9 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-08-17).** **In produzione**: Neon + Render + Cloudflare Pages
-attivi, app funzionante end-to-end. La procedura sotto resta come riferimento per
-un nuovo ambiente. I passi eseguiti:
+**Stato (2026-08-18, `v1.8.0`).** **In produzione**: Neon + Render + Cloudflare
+Pages attivi, app funzionante end-to-end. La procedura sotto resta come
+riferimento per un nuovo ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati
 - [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
