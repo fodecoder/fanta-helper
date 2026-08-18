@@ -6,7 +6,17 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "**/.vite/**", "**/coverage/**"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.vite/**",
+      "**/coverage/**",
+      // Riferimenti di design (prototipi .dc.html + runtime proprietario): non
+      // sono codice di produzione e non vanno lintati.
+      "design_handoff_portale/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { rules: { "no-undef": "off" } },

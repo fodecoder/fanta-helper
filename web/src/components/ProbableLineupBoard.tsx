@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ProbableLineupEntry, SetPieceTakerEntry, SetPieceTakerTipo } from "@fanta-helper/shared";
+import type {
+  ProbableLineupEntry,
+  SetPieceTakerEntry,
+  SetPieceTakerTipo,
+  Role,
+} from "@fanta-helper/shared";
 import * as lineupApi from "../api/probableLineup";
 import * as setPieceTakerApi from "../api/setPieceTaker";
 import { StatusMessage } from "./StatusMessage";
+import { roleColor } from "../lib/auctionDerivations";
 
 interface TeamGroup {
   team: string;
@@ -12,9 +18,7 @@ interface TeamGroup {
 }
 
 // `extraTeams` copre le squadre che hanno solo calci piazzati confermati e
-// ancora nessuna formazione: i due ingest sono indipendenti (screenshot
-// separati), quindi una squadra deve comparire nello switcher anche se uno
-// solo dei due dataset è popolato.
+// ancora nessuna formazione: i due ingest sono indipendenti.
 function groupByTeam(entries: ProbableLineupEntry[], extraTeams: Iterable<string>): TeamGroup[] {
   const byTeam = new Map<string, TeamGroup>();
   function ensure(team: string): TeamGroup {
@@ -62,8 +66,7 @@ function groupSetPieceTakersByTeam(
 }
 
 // Modulo calcolato solo a scopo di visualizzazione, mai persistito: se i
-// titolari non hanno tutti un ruolo noto o non sono esattamente 11, il
-// modulo viene omesso piuttosto che indovinato.
+// titolari non sono esattamente 11 con ruoli noti, viene omesso.
 function computeModulo(titolari: ProbableLineupEntry[]): string | null {
   if (titolari.length !== 11) return null;
   const outfield = titolari.filter((p) => p.ruolo?.toUpperCase() !== "P");
@@ -79,6 +82,25 @@ function computeModulo(titolari: ProbableLineupEntry[]): string | null {
     .filter((k) => counts.has(k))
     .map((k) => counts.get(k))
     .join("-");
+}
+
+function RoleTag({ ruolo }: { ruolo: string | null }) {
+  if (!ruolo)
+    return (
+      <span className="role-tag" style={{ width: 14, color: "var(--color-neutral-500)" }}>
+        ·
+      </span>
+    );
+  const upper = ruolo.toUpperCase();
+  const known = ["P", "D", "C", "A"].includes(upper);
+  return (
+    <span
+      className="role-tag"
+      style={{ width: 14, color: known ? roleColor(upper as Role) : "var(--color-neutral-700)" }}
+    >
+      {upper}
+    </span>
+  );
 }
 
 interface ProbableLineupBoardProps {
@@ -111,10 +133,8 @@ export function ProbableLineupBoard({ refreshToken = 0 }: ProbableLineupBoardPro
     setPieceTakerApi
       .listSetPieceTakers(controller.signal)
       .then((data) => setSetPieceTakers(data))
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        // Sezione secondaria: un errore qui non deve bloccare la vista
-        // principale delle formazioni, che ha già il proprio stato di errore.
+      .catch(() => {
+        // Sezione secondaria: un errore qui non blocca la vista principale.
       });
     return () => controller.abort();
   }, [refreshToken]);
@@ -134,96 +154,144 @@ export function ProbableLineupBoard({ refreshToken = 0 }: ProbableLineupBoardPro
     return <StatusMessage kind="empty">Nessuna formazione confermata.</StatusMessage>;
 
   const active = groups.find((g) => g.team === selectedTeam) ?? groups[0]!;
+  const modulo = computeModulo(active.titolari);
+  const takers = setPieceTakersByTeam.get(active.team);
+  const tipi = Object.keys(SET_PIECE_TAKER_LABELS) as SetPieceTakerTipo[];
+  const hasSetPieces = takers && tipi.some((tipo) => takers[tipo].length > 0);
 
   return (
     <div>
-      <nav className="nav">
-        {groups.map((g) => (
-          <button
-            key={g.team}
-            type="button"
-            className="nav-button"
-            onClick={() => setSelectedTeam(g.team)}
-            disabled={g.team === active.team}
-          >
-            {g.team}
-          </button>
-        ))}
-      </nav>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
+        {groups.map((g) => {
+          const on = g.team === active.team;
+          return (
+            <button
+              key={g.team}
+              type="button"
+              className="chip"
+              onClick={() => setSelectedTeam(g.team)}
+              style={
+                on
+                  ? {
+                      borderColor: "var(--color-accent)",
+                      background: "var(--color-accent)",
+                      color: "var(--color-bg)",
+                      fontWeight: 600,
+                    }
+                  : undefined
+              }
+            >
+              {g.team}
+            </button>
+          );
+        })}
+      </div>
 
-      <div className="card">
-        <h2>
-          {active.team}
-          {(() => {
-            const modulo = computeModulo(active.titolari);
-            return modulo ? ` — modulo ${modulo}` : "";
-          })()}
-        </h2>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 18 }}>
+        <h2 style={{ margin: 0 }}>{active.team}</h2>
+        {modulo && (
+          <span style={{ fontSize: 14, color: "var(--color-neutral-700)" }}>modulo {modulo}</span>
+        )}
+      </div>
 
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: 40,
+          maxWidth: 880,
+        }}
+      >
         <div>
-          <strong>Undici probabile</strong>
-          <ul>
+          <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
+            Undici probabile
+          </h6>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {active.titolari.map((p) => (
-              <li key={p.player_name}>
-                {p.player_name}
-                {p.ruolo ? ` (${p.ruolo})` : ""}
-              </li>
+              <div
+                key={p.player_name}
+                style={{ display: "flex", alignItems: "baseline", gap: 9, fontSize: 14 }}
+              >
+                <RoleTag ruolo={p.ruolo} />
+                <span>{p.player_name}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        {active.ballottaggio.length > 0 && (
-          <div>
-            <strong>Ballottaggio</strong>
-            <ul>
-              {active.ballottaggio.map((p) => (
-                <li key={p.player_name}>
-                  {p.player_name}
-                  {p.ruolo ? ` (${p.ruolo})` : ""}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div>
+          {active.ballottaggio.length > 0 && (
+            <>
+              <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
+                Ballottaggio
+              </h6>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 26 }}>
+                {active.ballottaggio.map((p) => (
+                  <div
+                    key={p.player_name}
+                    style={{ display: "flex", alignItems: "baseline", gap: 9, fontSize: 14 }}
+                  >
+                    <RoleTag ruolo={p.ruolo} />
+                    <span>{p.player_name}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {active.panchina.length > 0 && (
+            <>
+              <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>Panchina</h6>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {active.panchina.map((p) => (
+                  <div
+                    key={p.player_name}
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: 9,
+                      fontSize: 14,
+                      color: "var(--color-neutral-800)",
+                    }}
+                  >
+                    <RoleTag ruolo={p.ruolo} />
+                    <span>{p.player_name}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-        {active.panchina.length > 0 && (
-          <div>
-            <strong>Panchina</strong>
-            <ul>
-              {active.panchina.map((p) => (
-                <li key={p.player_name}>
-                  {p.player_name}
-                  {p.ruolo ? ` (${p.ruolo})` : ""}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {(() => {
-          const takers = setPieceTakersByTeam.get(active.team);
-          if (!takers) return null;
-          const tipi = Object.keys(SET_PIECE_TAKER_LABELS) as SetPieceTakerTipo[];
-          if (tipi.every((tipo) => takers[tipo].length === 0)) return null;
-          return (
-            <div>
-              <strong>Calci piazzati</strong>
-              {tipi.map(
-                (tipo) =>
-                  takers[tipo].length > 0 && (
+        <div>
+          {hasSetPieces && (
+            <>
+              <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
+                Calci piazzati
+              </h6>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {tipi.map((tipo) =>
+                  takers![tipo].length > 0 ? (
                     <div key={tipo}>
-                      <em>{SET_PIECE_TAKER_LABELS[tipo]}</em>
-                      <ol>
-                        {takers[tipo].map((p) => (
-                          <li key={p.player_name}>{p.player_name}</li>
+                      <div style={{ font: "600 13px/1.2 var(--font-heading)", marginBottom: 4 }}>
+                        {SET_PIECE_TAKER_LABELS[tipo]}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        {takers![tipo].map((p, i) => (
+                          <div
+                            key={p.player_name}
+                            style={{ fontSize: 14, color: "var(--color-neutral-800)" }}
+                          >
+                            {i + 1}. {p.player_name}
+                          </div>
                         ))}
-                      </ol>
+                      </div>
                     </div>
-                  ),
-              )}
-            </div>
-          );
-        })()}
+                  ) : null,
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

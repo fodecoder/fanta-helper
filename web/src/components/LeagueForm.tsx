@@ -18,9 +18,16 @@ import { StatusMessage } from "./StatusMessage";
 
 interface LeagueFormProps {
   initial?: League;
-  onSaved: () => void;
+  onSaved: (league: League) => void;
   onCancel: () => void;
 }
+
+const ROSTER_FIELDS: { key: "P" | "D" | "C" | "A"; label: string }[] = [
+  { key: "P", label: "Portieri" },
+  { key: "D", label: "Difensori" },
+  { key: "C", label: "Centrocampisti" },
+  { key: "A", label: "Attaccanti" },
+];
 
 const SCORING_FIELDS: { key: keyof Omit<ScoringConfig, "fasce_gol">; label: string }[] = [
   { key: "gol", label: "Gol segnato" },
@@ -34,7 +41,7 @@ const SCORING_FIELDS: { key: keyof Omit<ScoringConfig, "fasce_gol">; label: stri
   { key: "gol_subito", label: "Gol subito (portiere)" },
 ];
 
-const MODIFIER_TOGGLES: { key: keyof Omit<ModifiersConfig, "difesa">; label: string }[] = [
+const OTHER_MODIFIERS: { key: keyof Omit<ModifiersConfig, "difesa">; label: string }[] = [
   { key: "centrocampo", label: "Modificatore centrocampo" },
   { key: "attacco", label: "Modificatore attacco" },
   { key: "portiere", label: "Modificatore portiere" },
@@ -51,10 +58,12 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [nSquadre, setNSquadre] = useState(String(initial?.n_squadre ?? DEFAULT_N_SQUADRE));
   const [budget, setBudget] = useState(String(initial?.budget ?? DEFAULT_BUDGET));
-  const [rosterP, setRosterP] = useState(String(initial?.roster_config.P ?? defaultRosterConfig.P));
-  const [rosterD, setRosterD] = useState(String(initial?.roster_config.D ?? defaultRosterConfig.D));
-  const [rosterC, setRosterC] = useState(String(initial?.roster_config.C ?? defaultRosterConfig.C));
-  const [rosterA, setRosterA] = useState(String(initial?.roster_config.A ?? defaultRosterConfig.A));
+  const [roster, setRoster] = useState<Record<"P" | "D" | "C" | "A", string>>({
+    P: String(initial?.roster_config.P ?? defaultRosterConfig.P),
+    D: String(initial?.roster_config.D ?? defaultRosterConfig.D),
+    C: String(initial?.roster_config.C ?? defaultRosterConfig.C),
+    A: String(initial?.roster_config.A ?? defaultRosterConfig.A),
+  });
   const [scoring, setScoring] = useState<ScoringConfig>(clone(initial?.scoring ?? defaultScoring));
   const [fasceText, setFasceText] = useState(
     (initial?.scoring.fasce_gol ?? defaultScoring.fasce_gol).join(", "),
@@ -80,6 +89,15 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
     });
   }
 
+  function toggleModifier(key: keyof ModifiersConfig) {
+    setModificatori((prev) => {
+      if (key === "difesa") {
+        return { ...prev, difesa: { ...prev.difesa, enabled: !prev.difesa.enabled } };
+      }
+      return { ...prev, [key]: { enabled: !prev[key].enabled } };
+    });
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setGeneralError(null);
@@ -95,10 +113,10 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
       n_squadre: Number(nSquadre),
       budget: Number(budget),
       roster_config: {
-        P: Number(rosterP),
-        D: Number(rosterD),
-        C: Number(rosterC),
-        A: Number(rosterA),
+        P: Number(roster.P),
+        D: Number(roster.D),
+        C: Number(roster.C),
+        A: Number(roster.A),
       },
       scoring: { ...scoring, fasce_gol },
       modificatori,
@@ -119,12 +137,10 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
 
     setSubmitting(true);
     try {
-      if (initial) {
-        await leaguesApi.updateLeague(initial.id, result.data);
-      } else {
-        await leaguesApi.createLeague(result.data);
-      }
-      onSaved();
+      const saved = initial
+        ? await leaguesApi.updateLeague(initial.id, result.data)
+        : await leaguesApi.createLeague(result.data);
+      onSaved(saved);
     } catch (err) {
       if (err instanceof LeaguesApiError) {
         if (err.payload.error.fields) {
@@ -143,148 +159,176 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
     }
   }
 
+  const errorsFor = (prefix: string) =>
+    Object.entries(fieldErrors).filter(([key]) => key.startsWith(prefix));
+
   return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h2>{initial ? "Modifica lega" : "Nuova lega"}</h2>
+    <form onSubmit={handleSubmit}>
+      <h3 style={{ margin: "0 0 18px" }}>{initial ? `Modifica ${initial.name}` : "Nuova lega"}</h3>
 
       {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
-      <label>
-        Nome
-        <input value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, maxWidth: 860, marginBottom: 30 }}>
+        <div className="field" style={{ width: 260 }}>
+          <label htmlFor="lf-name">Nome</label>
+          <input
+            id="lf-name"
+            className="input"
+            placeholder="es. Lega Bar Centrale"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="field" style={{ width: 130 }}>
+          <label htmlFor="lf-squadre">Squadre</label>
+          <input
+            id="lf-squadre"
+            className="input"
+            type="number"
+            value={nSquadre}
+            onChange={(e) => setNSquadre(e.target.value)}
+          />
+        </div>
+        <div className="field" style={{ width: 130 }}>
+          <label htmlFor="lf-budget">Budget</label>
+          <input
+            id="lf-budget"
+            className="input"
+            type="number"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+          />
+        </div>
+      </div>
+      {fieldErrors.name && (
+        <p style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>{fieldErrors.name}</p>
+      )}
 
-      <label>
-        Numero squadre
-        <input type="number" value={nSquadre} onChange={(e) => setNSquadre(e.target.value)} />
-      </label>
-      {fieldErrors.n_squadre && <p className="field-error">{fieldErrors.n_squadre}</p>}
-
-      <label>
-        Budget
-        <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} />
-      </label>
-      {fieldErrors.budget && <p className="field-error">{fieldErrors.budget}</p>}
-
-      <fieldset>
-        <legend>Composizione rosa</legend>
-        <label>
-          P
-          <input type="number" value={rosterP} onChange={(e) => setRosterP(e.target.value)} />
-        </label>
-        <label>
-          D
-          <input type="number" value={rosterD} onChange={(e) => setRosterD(e.target.value)} />
-        </label>
-        <label>
-          C
-          <input type="number" value={rosterC} onChange={(e) => setRosterC(e.target.value)} />
-        </label>
-        <label>
-          A
-          <input type="number" value={rosterA} onChange={(e) => setRosterA(e.target.value)} />
-        </label>
-        {Object.entries(fieldErrors)
-          .filter(([key]) => key.startsWith("roster_config"))
-          .map(([key, message]) => (
-            <p className="field-error" key={key}>
-              {key}: {message}
-            </p>
-          ))}
-      </fieldset>
-
-      <fieldset>
-        <legend>Punti (bonus / malus)</legend>
-        {SCORING_FIELDS.map(({ key, label }) => (
-          <label key={key}>
-            {label}
+      <h4 style={{ margin: "0 0 12px" }}>Rosa</h4>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 34 }}>
+        {ROSTER_FIELDS.map(({ key, label }) => (
+          <div className="field" style={{ width: 130 }} key={key}>
+            <label htmlFor={`lf-roster-${key}`}>{label}</label>
             <input
+              id={`lf-roster-${key}`}
+              className="input"
+              type="number"
+              value={roster[key]}
+              onChange={(e) => setRoster((r) => ({ ...r, [key]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      {errorsFor("roster_config").map(([key, message]) => (
+        <p key={key} style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>
+          {key}: {message}
+        </p>
+      ))}
+
+      <h4 style={{ margin: "0 0 12px" }}>Punteggio</h4>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 190px))",
+          gap: "16px 24px",
+          marginBottom: 22,
+        }}
+      >
+        {SCORING_FIELDS.map(({ key, label }) => (
+          <div className="field" key={key}>
+            <label htmlFor={`lf-scoring-${key}`}>{label}</label>
+            <input
+              id={`lf-scoring-${key}`}
+              className="input"
               type="number"
               step="0.5"
               value={String(scoring[key])}
               onChange={(e) => setScoringField(key, e.target.value)}
             />
-          </label>
+          </div>
         ))}
-        <label>
-          Fasce gol (soglie, separate da virgola)
-          <input value={fasceText} onChange={(e) => setFasceText(e.target.value)} />
-        </label>
-        {Object.entries(fieldErrors)
-          .filter(([key]) => key.startsWith("scoring"))
-          .map(([key, message]) => (
-            <p className="field-error" key={key}>
-              {key}: {message}
-            </p>
-          ))}
-      </fieldset>
+      </div>
+      <div className="field" style={{ maxWidth: 400, marginBottom: 34 }}>
+        <label htmlFor="lf-fasce">Fasce gol (punteggio squadra)</label>
+        <input
+          id="lf-fasce"
+          className="input"
+          value={fasceText}
+          onChange={(e) => setFasceText(e.target.value)}
+        />
+      </div>
+      {errorsFor("scoring").map(([key, message]) => (
+        <p key={key} style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>
+          {key}: {message}
+        </p>
+      ))}
 
-      <fieldset>
-        <legend>Modificatori</legend>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={modificatori.difesa.enabled}
-            onChange={(e) =>
-              setModificatori((prev) => ({
-                ...prev,
-                difesa: { ...prev.difesa, enabled: e.target.checked },
-              }))
-            }
+      <h4 style={{ margin: "0 0 12px" }}>Modificatori</h4>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22 }}>
+        <button type="button" className="toggle-row" onClick={() => toggleModifier("difesa")}>
+          <span
+            className={modificatori.difesa.enabled ? "toggle-box toggle-box--on" : "toggle-box"}
           />
           Modificatore difesa
-        </label>
-        <div className="difesa-bands">
-          {modificatori.difesa.tabella.map((band, index) => (
-            <span className="difesa-band" key={index}>
-              <label>
-                Media
-                <input
-                  type="number"
-                  step="0.5"
-                  value={String(band.media)}
-                  onChange={(e) => setDifesaBand(index, "media", e.target.value)}
-                />
-              </label>
-              <label>
-                Bonus
-                <input
-                  type="number"
-                  step="0.5"
-                  value={String(band.bonus)}
-                  onChange={(e) => setDifesaBand(index, "bonus", e.target.value)}
-                />
-              </label>
-            </span>
-          ))}
-        </div>
-        {MODIFIER_TOGGLES.map(({ key, label }) => (
-          <label className="checkbox" key={key}>
-            <input
-              type="checkbox"
-              checked={modificatori[key].enabled}
-              onChange={(e) =>
-                setModificatori((prev) => ({ ...prev, [key]: { enabled: e.target.checked } }))
-              }
+        </button>
+        {OTHER_MODIFIERS.map(({ key, label }) => (
+          <button
+            type="button"
+            className="toggle-row"
+            key={key}
+            onClick={() => toggleModifier(key)}
+          >
+            <span
+              className={modificatori[key].enabled ? "toggle-box toggle-box--on" : "toggle-box"}
             />
             {label}
-          </label>
+          </button>
         ))}
-        {Object.entries(fieldErrors)
-          .filter(([key]) => key.startsWith("modificatori"))
-          .map(([key, message]) => (
-            <p className="field-error" key={key}>
-              {key}: {message}
-            </p>
-          ))}
-      </fieldset>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          maxWidth: 340,
+          marginBottom: 34,
+        }}
+      >
+        <span className="text-muted" style={{ fontSize: 12 }}>
+          Tabella difesa: media voto → bonus
+        </span>
+        {modificatori.difesa.tabella.map((band, index) => (
+          <div style={{ display: "flex", gap: 12 }} key={index}>
+            <input
+              className="input"
+              type="number"
+              step="0.5"
+              aria-label={`Media banda ${index + 1}`}
+              value={String(band.media)}
+              onChange={(e) => setDifesaBand(index, "media", e.target.value)}
+            />
+            <input
+              className="input"
+              type="number"
+              step="0.5"
+              aria-label={`Bonus banda ${index + 1}`}
+              value={String(band.bonus)}
+              onChange={(e) => setDifesaBand(index, "bonus", e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
 
-      <div className="form-actions">
+      <div style={{ display: "flex", gap: 10 }}>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? "Salvataggio…" : "Salva"}
+          {submitting ? "Salvataggio…" : initial ? "Salva" : "Crea lega"}
         </button>
-        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onCancel}
+          disabled={submitting}
+        >
           Annulla
         </button>
       </div>

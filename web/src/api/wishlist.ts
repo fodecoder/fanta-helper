@@ -31,7 +31,10 @@ export function listWishlist(
   return fetch(baseUrl(leagueId), { signal }).then((res) => handle<WishlistEntryWithPlayer[]>(res));
 }
 
-export function addToWishlist(leagueId: number, playerId: number): Promise<WishlistEntryWithPlayer> {
+export function addToWishlist(
+  leagueId: number,
+  playerId: number,
+): Promise<WishlistEntryWithPlayer> {
   return fetch(baseUrl(leagueId), {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -7,8 +7,12 @@ import * as setPieceTakerApi from "../api/setPieceTaker";
 import { SetPieceTakerApiError } from "../api/setPieceTaker";
 import * as playersApi from "../api/players";
 import { ProbableLineupBoard } from "../components/ProbableLineupBoard";
+import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
-import { PageHeader } from "../components/PageHeader";
+
+interface ProbableLineupPageProps {
+  calls: number | null;
+}
 
 interface DraftRow {
   player_name: string;
@@ -28,7 +32,7 @@ interface SetPieceDraftRow {
   excluded: boolean;
 }
 
-export function ProbableLineupPage() {
+export function ProbableLineupPage({ calls }: ProbableLineupPageProps) {
   const [teams, setTeams] = useState<string[]>([]);
   const [team, setTeam] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -54,30 +58,22 @@ export function ProbableLineupPage() {
     playersApi
       .listPlayers(controller.signal)
       .then((players) => {
-        const distinct = [...new Set(players.map((p) => p.team))].sort((a, b) =>
-          a.localeCompare(b),
-        );
-        setTeams(distinct);
+        setTeams([...new Set(players.map((p) => p.team))].sort((a, b) => a.localeCompare(b)));
       })
       .catch(() => {
-        // La lista squadre è solo un suggerimento per il campo di input: se
-        // non si carica, l'utente può comunque digitare il nome a mano.
+        // La lista squadre è solo un suggerimento del campo: se non si carica,
+        // l'utente digita il nome a mano.
       });
     return () => controller.abort();
   }, []);
 
   const hasEditableRows = useMemo(() => (draftRows?.length ?? 0) > 0, [draftRows]);
+  const hasSpEditableRows = useMemo(() => (spDraftRows?.length ?? 0) > 0, [spDraftRows]);
 
   async function handleExtract(event: FormEvent) {
     event.preventDefault();
-    if (team.trim() === "") {
-      setGeneralError("indica la squadra");
-      return;
-    }
-    if (!file) {
-      setGeneralError("seleziona uno screenshot PNG o JPEG");
-      return;
-    }
+    if (team.trim() === "") return setGeneralError("indica la squadra");
+    if (!file) return setGeneralError("seleziona uno screenshot PNG o JPEG");
     setGeneralError(null);
     setConfirmReport(null);
     setDraftRows(null);
@@ -109,7 +105,9 @@ export function ProbableLineupPage() {
   }
 
   function updateRow(index: number, patch: Partial<DraftRow>) {
-    setDraftRows((rows) => rows?.map((row, i) => (i === index ? { ...row, ...patch } : row)) ?? null);
+    setDraftRows(
+      (rows) => rows?.map((row, i) => (i === index ? { ...row, ...patch } : row)) ?? null,
+    );
   }
 
   async function handleConfirm() {
@@ -117,10 +115,7 @@ export function ProbableLineupPage() {
     const finalRows = draftRows
       .filter((row) => !row.excluded)
       .map((row) => ({ player_name: row.player_name, ruolo: row.ruolo, stato: row.stato }));
-    if (finalRows.length === 0) {
-      setGeneralError("nessuna riga da confermare");
-      return;
-    }
+    if (finalRows.length === 0) return setGeneralError("nessuna riga da confermare");
     setGeneralError(null);
     setConfirming(true);
     try {
@@ -141,18 +136,10 @@ export function ProbableLineupPage() {
     }
   }
 
-  const hasSpEditableRows = useMemo(() => (spDraftRows?.length ?? 0) > 0, [spDraftRows]);
-
   async function handleSpExtract(event: FormEvent) {
     event.preventDefault();
-    if (spTeam.trim() === "") {
-      setSpGeneralError("indica la squadra");
-      return;
-    }
-    if (!spFile) {
-      setSpGeneralError("seleziona uno screenshot PNG o JPEG");
-      return;
-    }
+    if (spTeam.trim() === "") return setSpGeneralError("indica la squadra");
+    if (!spFile) return setSpGeneralError("seleziona uno screenshot PNG o JPEG");
     setSpGeneralError(null);
     setSpConfirmReport(null);
     setSpDraftRows(null);
@@ -194,10 +181,7 @@ export function ProbableLineupPage() {
     const finalRows = spDraftRows
       .filter((row) => !row.excluded)
       .map((row) => ({ tipo: row.tipo, player_name: row.player_name, rank: row.rank }));
-    if (finalRows.length === 0) {
-      setSpGeneralError("nessuna riga da confermare");
-      return;
-    }
+    if (finalRows.length === 0) return setSpGeneralError("nessuna riga da confermare");
     setSpGeneralError(null);
     setSpConfirming(true);
     try {
@@ -219,256 +203,264 @@ export function ProbableLineupPage() {
   }
 
   return (
-    <div className="page">
-      <PageHeader title="Probabili formazioni" />
+    <>
+      <PageMasthead
+        kicker="Riferimento globale · undici probabili"
+        title="Probabili formazioni"
+        subtitle="Screenshot editoriale → estrazione → revisione → conferma. Le righe che il modello non ha letto con certezza restano evidenziate: nessun dato inventato, nessuna riga salvata prima della conferma."
+        calls={calls}
+      />
 
-      <section className="card">
-        <p>
-          Carica lo screenshot della probabile formazione editoriale di una squadra: il
-          backend estrae le righe leggibili, quelle incerte sono evidenziate per la
-          revisione. Nessuna riga viene salvata finché non confermi.
+      {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
+      {confirmReport && <StatusMessage kind="empty">{confirmReport}</StatusMessage>}
+
+      <form
+        onSubmit={handleExtract}
+        style={{
+          display: "flex",
+          gap: 14,
+          alignItems: "flex-end",
+          marginBottom: 34,
+          flexWrap: "wrap",
+        }}
+      >
+        <div className="field" style={{ width: 190 }}>
+          <label htmlFor="pl-team">Squadra</label>
+          <input
+            id="pl-team"
+            className="input"
+            list="pl-teams"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+            placeholder="es. Inter"
+          />
+          <datalist id="pl-teams">
+            {teams.map((t) => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+        </div>
+        <div className="field" style={{ width: 300 }}>
+          <label htmlFor="pl-file">Screenshot (PNG o JPEG)</label>
+          <input
+            id="pl-file"
+            className="input"
+            style={{ padding: 6 }}
+            type="file"
+            accept="image/png,image/jpeg"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={extracting}>
+          {extracting ? "Estrazione…" : "Estrai"}
+        </button>
+      </form>
+      {discardedCount > 0 && (
+        <p className="text-muted" style={{ fontSize: 13 }}>
+          {discardedCount} riga/righe scartate dal modello (formato non interpretabile).
         </p>
-        {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
-        {confirmReport && <StatusMessage kind="empty">{confirmReport}</StatusMessage>}
-
-        <form onSubmit={handleExtract}>
-          <label>
-            Squadra
-            <input
-              type="text"
-              list="probable-lineup-teams"
-              value={team}
-              onChange={(e) => setTeam(e.target.value)}
-              placeholder="es. Inter"
-            />
-            <datalist id="probable-lineup-teams">
-              {teams.map((t) => (
-                <option key={t} value={t} />
-              ))}
-            </datalist>
-          </label>
-          <label>
-            Screenshot (PNG o JPEG)
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={extracting}>
-              {extracting ? "Estrazione in corso…" : "Estrai"}
-            </button>
-          </div>
-        </form>
-
-        {discardedCount > 0 && (
-          <p>{discardedCount} riga/righe scartate dal modello (formato non interpretabile).</p>
-        )}
-      </section>
+      )}
 
       {hasEditableRows && (
-        <section className="card">
-          <h2>Revisione bozza — {team}</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Giocatore</th>
-                  <th>Ruolo</th>
-                  <th>Stato</th>
-                  <th>Escludi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {draftRows!.map((row, index) => (
-                  <tr
-                    key={index}
-                    className={row.uncertain ? "probable-lineup-row--uncertain" : undefined}
-                  >
-                    <td>
-                      <input
-                        type="text"
-                        value={row.player_name}
-                        onChange={(e) => updateRow(index, { player_name: e.target.value })}
-                      />
-                      {row.uncertain && (
-                        <div className="probable-lineup-row__reason">
-                          incerto{row.reason ? `: ${row.reason}` : ""}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={row.ruolo ?? ""}
-                        onChange={(e) => updateRow(index, { ruolo: e.target.value || null })}
-                      />
-                    </td>
-                    <td>
-                      <select
-                        value={row.stato}
-                        onChange={(e) =>
-                          updateRow(index, { stato: e.target.value as ProbableLineupStato })
-                        }
-                      >
-                        {PROBABLE_LINEUP_STATI.map((stato) => (
-                          <option key={stato} value={stato}>
-                            {stato}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={row.excluded}
-                        onChange={(e) => updateRow(index, { excluded: e.target.checked })}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="form-actions">
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14, margin: "10px 0" }}>
+            <h3 style={{ margin: 0 }}>Revisione bozza — {team}</h3>
             <button
               type="button"
               className="btn btn-primary"
-              onClick={handleConfirm}
+              style={{ marginLeft: "auto" }}
+              onClick={() => void handleConfirm()}
               disabled={confirming}
             >
-              {confirming ? "Conferma in corso…" : "Conferma"}
+              {confirming ? "Conferma…" : "Conferma"}
             </button>
           </div>
-        </section>
+          <table className="table" style={{ maxWidth: 720 }}>
+            <thead>
+              <tr>
+                <th>Giocatore</th>
+                <th style={{ width: 90 }}>Ruolo</th>
+                <th style={{ width: 150 }}>Stato</th>
+                <th style={{ width: 80 }}>Escludi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {draftRows!.map((row, index) => (
+                <tr key={index} className={row.uncertain ? "row-uncertain" : undefined}>
+                  <td>
+                    <input
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      value={row.player_name}
+                      onChange={(e) => updateRow(index, { player_name: e.target.value })}
+                    />
+                    {row.uncertain && (
+                      <div className="row-reason">incerto{row.reason ? `: ${row.reason}` : ""}</div>
+                    )}
+                  </td>
+                  <td>
+                    <input
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      value={row.ruolo ?? ""}
+                      onChange={(e) => updateRow(index, { ruolo: e.target.value || null })}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      value={row.stato}
+                      onChange={(e) =>
+                        updateRow(index, { stato: e.target.value as ProbableLineupStato })
+                      }
+                    >
+                      {PROBABLE_LINEUP_STATI.map((stato) => (
+                        <option key={stato} value={stato}>
+                          {stato}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={row.excluded}
+                      onChange={(e) => updateRow(index, { excluded: e.target.checked })}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <section className="card">
-        <h2>Rigoristi e tiratori di punizioni</h2>
-        <p>
-          Carica lo screenshot della gerarchia editoriale dei calci piazzati di una squadra:
-          il backend estrae le righe leggibili, quelle incerte sono evidenziate per la
-          revisione. Nessuna riga viene salvata finché non confermi.
+      <h3 style={{ margin: "0 0 12px" }}>Rigoristi e tiratori di punizioni</h3>
+      {spGeneralError && <StatusMessage kind="error">{spGeneralError}</StatusMessage>}
+      {spConfirmReport && <StatusMessage kind="empty">{spConfirmReport}</StatusMessage>}
+      <form
+        onSubmit={handleSpExtract}
+        style={{
+          display: "flex",
+          gap: 14,
+          alignItems: "flex-end",
+          marginBottom: 34,
+          flexWrap: "wrap",
+        }}
+      >
+        <div className="field" style={{ width: 190 }}>
+          <label htmlFor="sp-team">Squadra</label>
+          <input
+            id="sp-team"
+            className="input"
+            list="pl-teams"
+            value={spTeam}
+            onChange={(e) => setSpTeam(e.target.value)}
+            placeholder="es. Inter"
+          />
+        </div>
+        <div className="field" style={{ width: 300 }}>
+          <label htmlFor="sp-file">Screenshot (PNG o JPEG)</label>
+          <input
+            id="sp-file"
+            className="input"
+            style={{ padding: 6 }}
+            type="file"
+            accept="image/png,image/jpeg"
+            onChange={(e) => setSpFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <button type="submit" className="btn btn-secondary" disabled={spExtracting}>
+          {spExtracting ? "Estrazione…" : "Estrai"}
+        </button>
+      </form>
+      {spDiscardedCount > 0 && (
+        <p className="text-muted" style={{ fontSize: 13 }}>
+          {spDiscardedCount} riga/righe scartate dal modello (formato non interpretabile).
         </p>
-        {spGeneralError && <StatusMessage kind="error">{spGeneralError}</StatusMessage>}
-        {spConfirmReport && <StatusMessage kind="empty">{spConfirmReport}</StatusMessage>}
-
-        <form onSubmit={handleSpExtract}>
-          <label>
-            Squadra
-            <input
-              type="text"
-              list="probable-lineup-teams"
-              value={spTeam}
-              onChange={(e) => setSpTeam(e.target.value)}
-              placeholder="es. Inter"
-            />
-          </label>
-          <label>
-            Screenshot (PNG o JPEG)
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => setSpFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={spExtracting}>
-              {spExtracting ? "Estrazione in corso…" : "Estrai"}
-            </button>
-          </div>
-        </form>
-
-        {spDiscardedCount > 0 && (
-          <p>{spDiscardedCount} riga/righe scartate dal modello (formato non interpretabile).</p>
-        )}
-      </section>
+      )}
 
       {hasSpEditableRows && (
-        <section className="card">
-          <h2>Revisione bozza — {spTeam}</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tipo</th>
-                  <th>Giocatore</th>
-                  <th>Rank</th>
-                  <th>Escludi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {spDraftRows!.map((row, index) => (
-                  <tr
-                    key={index}
-                    className={row.uncertain ? "probable-lineup-row--uncertain" : undefined}
-                  >
-                    <td>
-                      <select
-                        value={row.tipo}
-                        onChange={(e) =>
-                          updateSpRow(index, { tipo: e.target.value as SetPieceTakerTipo })
-                        }
-                      >
-                        {SET_PIECE_TAKER_TIPI.map((tipo) => (
-                          <option key={tipo} value={tipo}>
-                            {tipo}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={row.player_name}
-                        onChange={(e) => updateSpRow(index, { player_name: e.target.value })}
-                      />
-                      {row.uncertain && (
-                        <div className="probable-lineup-row__reason">
-                          incerto{row.reason ? `: ${row.reason}` : ""}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min={1}
-                        value={row.rank}
-                        onChange={(e) =>
-                          updateSpRow(index, { rank: Number(e.target.value) || 1 })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={row.excluded}
-                        onChange={(e) => updateSpRow(index, { excluded: e.target.checked })}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="form-actions">
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14, margin: "10px 0" }}>
+            <h3 style={{ margin: 0 }}>Revisione bozza — {spTeam}</h3>
             <button
               type="button"
               className="btn btn-primary"
-              onClick={handleSpConfirm}
+              style={{ marginLeft: "auto" }}
+              onClick={() => void handleSpConfirm()}
               disabled={spConfirming}
             >
-              {spConfirming ? "Conferma in corso…" : "Conferma"}
+              {spConfirming ? "Conferma…" : "Conferma"}
             </button>
           </div>
-        </section>
+          <table className="table" style={{ maxWidth: 640 }}>
+            <thead>
+              <tr>
+                <th style={{ width: 130 }}>Tipo</th>
+                <th>Giocatore</th>
+                <th style={{ width: 90 }}>Rank</th>
+                <th style={{ width: 80 }}>Escludi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {spDraftRows!.map((row, index) => (
+                <tr key={index} className={row.uncertain ? "row-uncertain" : undefined}>
+                  <td>
+                    <select
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      value={row.tipo}
+                      onChange={(e) =>
+                        updateSpRow(index, { tipo: e.target.value as SetPieceTakerTipo })
+                      }
+                    >
+                      {SET_PIECE_TAKER_TIPI.map((tipo) => (
+                        <option key={tipo} value={tipo}>
+                          {tipo}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      value={row.player_name}
+                      onChange={(e) => updateSpRow(index, { player_name: e.target.value })}
+                    />
+                    {row.uncertain && (
+                      <div className="row-reason">incerto{row.reason ? `: ${row.reason}` : ""}</div>
+                    )}
+                  </td>
+                  <td>
+                    <input
+                      className="input"
+                      style={{ minHeight: 28 }}
+                      type="number"
+                      min={1}
+                      value={row.rank}
+                      onChange={(e) => updateSpRow(index, { rank: Number(e.target.value) || 1 })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={row.excluded}
+                      onChange={(e) => updateSpRow(index, { excluded: e.target.checked })}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <section className="card">
-        <h2>Formazioni confermate</h2>
+      <div style={{ marginTop: 20 }}>
         <ProbableLineupBoard refreshToken={refreshToken} />
-      </section>
-    </div>
+      </div>
+    </>
   );
 }
