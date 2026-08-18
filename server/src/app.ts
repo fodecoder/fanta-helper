@@ -7,7 +7,7 @@ import { managersRouter } from "./routes/managers";
 import { valuationsRouter } from "./routes/valuations";
 import { purchasesRouter } from "./routes/purchases";
 import { wishlistRouter } from "./routes/wishlist";
-import { goalkeeperGridRouter } from "./routes/goalkeeperGrid";
+import { gkPairingRouter } from "./routes/gkPairing";
 import { probableLineupRouter } from "./routes/probableLineup";
 import { setPieceTakerRouter } from "./routes/setPieceTaker";
 import { statsEnrichmentRouter } from "./routes/statsEnrichment";
@@ -31,7 +31,7 @@ export function createApp(): Express {
   app.use("/leagues/:leagueId/wishlist", wishlistRouter);
   app.use("/players/stats-enrichment", statsEnrichmentRouter);
   app.use("/players", playersRouter);
-  app.use("/goalkeeper-grid", goalkeeperGridRouter);
+  app.use("/gk-pairing", gkPairingRouter);
   app.use("/probable-lineup", probableLineupRouter);
   app.use("/set-piece-taker", setPieceTakerRouter);
 

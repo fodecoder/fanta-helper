@@ -12,7 +12,7 @@ import { PurchaseLog } from "../components/PurchaseLog";
 import { AuctionStatusPanel } from "../components/AuctionStatusPanel";
 import { WishlistPanel } from "../components/WishlistPanel";
 import { RoleComparisonPanel } from "../components/RoleComparisonPanel";
-import { GoalkeeperGridTable } from "../components/GoalkeeperGridTable";
+import { GkPairingPanel } from "../components/GkPairingPanel";
 import * as purchasesApi from "../api/purchases";
 import * as wishlistApi from "../api/wishlist";
 import * as playersApi from "../api/players";
@@ -170,8 +170,8 @@ export function AuctionPage({ league, onBack }: AuctionPageProps) {
       />
 
       <details className="card">
-        <summary>Griglia portieri (consultazione)</summary>
-        <GoalkeeperGridTable />
+        <summary>Coppie portieri (consultazione)</summary>
+        <GkPairingPanel />
       </details>
     </div>
   );

@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-08-18
+
+### Changed
+
+- **Matrice coppie portieri**: la gerarchia titolare/riserva (`goalkeeper_grid`)
+  è sostituita da una matrice simmetrica squadra×squadra (`gk_pairing`) con un
+  punteggio di favorevolezza della coppia di portieri — più basso = i due
+  portieri giocano meno spesso in casa nella stessa giornata; le coppie che
+  condividono lo stadio (Roma-Lazio, Inter-Milan, Juve-Torino) valgono `0`.
+  Import da xlsx/CSV in formato matrice (intestazione riga/colonna = sigle
+  squadra, diagonale vuota, righe di legenda finali scartate e mai
+  inventate), a sostituzione integrale in transazione. Nuova UI "Coppie
+  portieri": scelta una squadra, mostra i compagni ordinati per
+  favorevolezza con display invertibile (alto = più favorevole). Endpoint
+  `/goalkeeper-grid` rimosso in favore di `/gk-pairing`.
+
 ## [1.10.0] - 2026-08-18
 
 ### Added

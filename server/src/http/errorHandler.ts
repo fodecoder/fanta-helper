@@ -35,7 +35,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
               ? "this player appears more than once in the confirmed lineup for this team"
               : constraint === "set_piece_taker_team_tipo_rank_uk"
                 ? "this rank is already assigned to another player for this team and set piece type"
-                : "a league with this name already exists";
+                : constraint === "gk_pairing_team_pair_uk"
+                  ? "this team pair is already recorded in the pairing matrix"
+                  : "a league with this name already exists";
     res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }

@@ -2,7 +2,7 @@ export * from "./roles";
 export * from "./league";
 export * from "./valuation";
 export * from "./player";
-export * from "./goalkeeperGrid";
+export * from "./gkPairing";
 export * from "./probableLineup";
 export * from "./setPieceTaker";
 export * from "./manager";

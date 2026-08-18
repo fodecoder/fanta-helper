@@ -8,7 +8,7 @@ export async function listProbableLineup(): Promise<ProbableLineupEntry[]> {
   return result.rows;
 }
 
-// A differenza di replaceGoalkeeperGrid (TRUNCATE dell'intera tabella),
+// A differenza di replaceGkPairing (TRUNCATE dell'intera tabella),
 // l'ingest qui è per-squadra: ogni screenshot riguarda una sola squadra,
 // caricata indipendentemente dalle altre nel tempo. Un TRUNCATE globale
 // azzererebbe le altre squadre già confermate ad ogni singola conferma.

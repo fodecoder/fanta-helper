@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { HomePage } from "./pages/HomePage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
-import { GoalkeeperGridPage } from "./pages/GoalkeeperGridPage";
+import { GkPairingPage } from "./pages/GkPairingPage";
 import { ProbableLineupPage } from "./pages/ProbableLineupPage";
 
 type ConnectionStatus = "checking" | "ok" | "error";
-type View = "home" | "leagues" | "import" | "goalkeepers" | "probableLineups";
+type View = "home" | "leagues" | "import" | "gkPairing" | "probableLineups";
 
 function App() {
   const [status, setStatus] = useState<ConnectionStatus>("checking");
@@ -58,10 +58,10 @@ function App() {
           <button
             type="button"
             className="nav-button"
-            onClick={() => setView("goalkeepers")}
-            disabled={view === "goalkeepers"}
+            onClick={() => setView("gkPairing")}
+            disabled={view === "gkPairing"}
           >
-            Griglia portieri
+            Coppie portieri
           </button>
           <button
             type="button"
@@ -79,8 +79,8 @@ function App() {
         <LeaguesPage />
       ) : view === "import" ? (
         <PlayerImportPage />
-      ) : view === "goalkeepers" ? (
-        <GoalkeeperGridPage />
+      ) : view === "gkPairing" ? (
+        <GkPairingPage />
       ) : (
         <ProbableLineupPage />
       )}

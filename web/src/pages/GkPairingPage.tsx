@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from "react";
-import type { GoalkeeperGridImportReport } from "@fanta-helper/shared";
-import * as gridApi from "../api/goalkeeperGrid";
-import { GoalkeeperGridApiError } from "../api/goalkeeperGrid";
-import { GoalkeeperGridTable } from "../components/GoalkeeperGridTable";
+import type { GkPairingImportReport } from "@fanta-helper/shared";
+import * as gkPairingApi from "../api/gkPairing";
+import { GkPairingApiError } from "../api/gkPairing";
+import { GkPairingPanel } from "../components/GkPairingPanel";
 import { StatusMessage } from "../components/StatusMessage";
 import { PageHeader } from "../components/PageHeader";
 
-export function GoalkeeperGridPage() {
+export function GkPairingPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [report, setReport] = useState<GoalkeeperGridImportReport | null>(null);
+  const [report, setReport] = useState<GkPairingImportReport | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -23,12 +23,12 @@ export function GoalkeeperGridPage() {
     setReport(null);
     setSubmitting(true);
     try {
-      const result = await gridApi.importGoalkeeperGridFile(file);
+      const result = await gkPairingApi.importGkPairingFile(file);
       setReport(result);
       setRefreshToken((t) => t + 1);
     } catch (err) {
       setGeneralError(
-        err instanceof GoalkeeperGridApiError
+        err instanceof GkPairingApiError
           ? err.payload.error.message
           : err instanceof Error
             ? err.message
@@ -41,13 +41,13 @@ export function GoalkeeperGridPage() {
 
   return (
     <div className="page">
-      <PageHeader title="Griglia portieri" />
+      <PageHeader title="Coppie portieri" />
 
       <section className="card">
         <p>
-          File di riferimento (indipendente dalle leghe): una riga per squadra, con
-          colonne <code>Squadra</code>, <code>Titolare</code>, <code>Riserva</code>,{" "}
-          <code>Terzo</code>. Ogni import sostituisce la griglia esistente.
+          File di riferimento (indipendente dalle leghe): matrice squadra×squadra, prima
+          riga/colonna con le sigle, celle con il punteggio di favorevolezza della coppia
+          (diagonale vuota). Ogni import sostituisce la matrice esistente.
         </p>
         {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
@@ -69,15 +69,15 @@ export function GoalkeeperGridPage() {
 
         {report && (
           <p>
-            Squadre: {report.teams} · Portieri: {report.entries} · Scartate:{" "}
+            Squadre: {report.teams} · Coppie: {report.pairs} · Scartate:{" "}
             {report.discarded.length}
           </p>
         )}
       </section>
 
       <section className="card">
-        <h2>Griglia attuale</h2>
-        <GoalkeeperGridTable refreshToken={refreshToken} />
+        <h2>Matrice attuale</h2>
+        <GkPairingPanel refreshToken={refreshToken} />
       </section>
     </div>
   );
