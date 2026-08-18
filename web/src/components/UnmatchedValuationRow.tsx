@@ -68,14 +68,16 @@ export function UnmatchedValuationRow({
       <td>{entry.team}</td>
       <td>{entry.ruolo}</td>
       <td>{entry.tier}</td>
-      <td>{entry.reason}</td>
+      <td style={{ color: "var(--color-accent-2-700)", fontSize: 13 }}>{entry.reason}</td>
       <td>
         <input
+          className="input"
+          style={{ marginBottom: 5 }}
           placeholder="filtra per nome/squadra"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
+        <select className="input" value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
           <option value="">— seleziona —</option>
           {filtered.map((player) => (
             <option key={player.id} value={player.id}>
@@ -83,14 +85,28 @@ export function UnmatchedValuationRow({
             </option>
           ))}
         </select>
-        {error && <p className="field-error">{error}</p>}
+        {error && (
+          <p style={{ color: "var(--color-accent-2-700)", fontSize: 12, margin: "4px 0 0" }}>
+            {error}
+          </p>
+        )}
       </td>
       <td>
-        <div className="row-actions">
-          <button type="button" className="btn btn-primary" onClick={handleAssign} disabled={submitting}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleAssign}
+            disabled={submitting}
+          >
             Assegna
           </button>
-          <button type="button" className="btn btn-secondary" onClick={onDiscarded} disabled={submitting}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onDiscarded}
+            disabled={submitting}
+          >
             Scarta
           </button>
         </div>

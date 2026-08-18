@@ -11,7 +11,6 @@ import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import * as playersApi from "../api/players";
 import { StatusMessage } from "./StatusMessage";
-import { PlayerAvatar } from "./PlayerAvatar";
 import { UnmatchedValuationRow } from "./UnmatchedValuationRow";
 
 interface ValuationGenerateFormProps {
@@ -78,7 +77,9 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
   async function saveRow(index: number): Promise<boolean> {
     const row = matched[index];
     if (!row || row.saving || row.saved) return true;
-    setMatched((rows) => rows.map((r, i) => (i === index ? { ...r, saving: true, error: null } : r)));
+    setMatched((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saving: true, error: null } : r)),
+    );
     try {
       await valuationsApi.upsertValuation(leagueId, row.draft.player_id, {
         tier: row.draft.tier,
@@ -89,13 +90,17 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
         confidence: row.draft.confidence,
         note: row.draft.note,
       });
-      setMatched((rows) => rows.map((r, i) => (i === index ? { ...r, saving: false, saved: true } : r)));
+      setMatched((rows) =>
+        rows.map((r, i) => (i === index ? { ...r, saving: false, saved: true } : r)),
+      );
       onResolved();
       return true;
     } catch (err) {
       const message =
         err instanceof ValuationsApiError ? err.payload.error.message : "salvataggio fallito";
-      setMatched((rows) => rows.map((r, i) => (i === index ? { ...r, saving: false, error: message } : r)));
+      setMatched((rows) =>
+        rows.map((r, i) => (i === index ? { ...r, saving: false, error: message } : r)),
+      );
       return false;
     }
   }
@@ -109,100 +114,132 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
   }
 
   const pendingCount = matched.filter((row) => !row.saved).length;
+  const numberCol = { width: 82 } as const;
 
   return (
-    <section className="card">
-      <h2>Genera valutazioni</h2>
-
+    <div style={{ marginBottom: matched.length > 0 || unmatched.length > 0 ? 40 : 0 }}>
       {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
-      <div className="form-actions">
-        <button type="button" className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => void handleGenerate()}
+          disabled={generating}
+        >
           {generating ? "Generazione in corso…" : "Genera valutazioni"}
         </button>
-        {generating && (
-          <p>Chiamata a Claude in corso, a chunk per ruolo: può richiedere qualche decina di secondi.</p>
-        )}
+        <span className="text-muted" style={{ fontSize: 12 }}>
+          La generazione chiama Claude per ruolo: qualche decina di secondi.
+        </span>
       </div>
 
       {matched.length > 0 && (
         <>
-          <div className="form-actions">
-            <button type="button" className="btn btn-primary" onClick={handleSaveAll} disabled={savingAll || pendingCount === 0}>
-              {savingAll ? "Salvataggio in corso…" : `Salva tutto (${pendingCount})`}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14, margin: "26px 0 10px" }}>
+            <h3 style={{ margin: 0 }}>Revisione bozza</h3>
+            <span className="text-muted" style={{ fontSize: 12 }}>
+              {pendingCount} righe abbinate a un giocatore
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ marginLeft: "auto" }}
+              onClick={() => void handleSaveAll()}
+              disabled={savingAll || pendingCount === 0}
+            >
+              {savingAll ? "Salvataggio…" : "Salva tutto"}
             </button>
           </div>
-          <div className="table-wrap">
-            <table>
+          <div className="table-scroll">
+            <table className="table" style={{ minWidth: 1020 }}>
               <thead>
                 <tr>
                   <th>Nome</th>
                   <th>Squadra</th>
                   <th>Ruolo</th>
-                  <th>Tier</th>
-                  <th className="num">Target</th>
-                  <th className="num">Fair value</th>
-                  <th className="num">Max bid</th>
-                  <th className="num">Panic price</th>
-                  <th>Confidence</th>
-                  <th>Note</th>
-                  <th></th>
+                  <th style={{ width: 70 }}>Tier</th>
+                  <th style={numberCol}>Target</th>
+                  <th style={numberCol}>Fair value</th>
+                  <th style={numberCol}>Max bid</th>
+                  <th style={numberCol}>Panic</th>
+                  <th style={{ width: 110 }}>Confidence</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {matched.map((row, index) =>
                   row.saved ? null : (
                     <tr key={row.draft.player_id}>
-                      <td>
-                        <div className="player-name-cell">
-                          <PlayerAvatar name={row.draft.name} team={row.draft.team} ruolo={row.draft.ruolo} size="sm" />
-                          {row.draft.name}
-                        </div>
-                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>{row.draft.name}</td>
                       <td>{row.draft.team}</td>
                       <td>{row.draft.ruolo}</td>
                       <td>
                         <input
+                          className="input"
+                          style={{ minHeight: 28 }}
                           value={row.draft.tier}
                           onChange={(e) => updateRow(index, { tier: e.target.value })}
                         />
                       </td>
-                      <td className="num">
+                      <td>
                         <input
+                          className="input"
+                          style={{ minHeight: 28 }}
                           type="number"
                           min={0}
                           value={row.draft.target}
                           onChange={(e) => updateRow(index, { target: Number(e.target.value) })}
                         />
                       </td>
-                      <td className="num">
+                      <td>
                         <input
+                          className="input"
+                          style={{ minHeight: 28 }}
                           type="number"
                           min={0}
                           value={row.draft.fair_value}
                           onChange={(e) => updateRow(index, { fair_value: Number(e.target.value) })}
                         />
                       </td>
-                      <td className="num">
+                      <td>
                         <input
+                          className="input"
+                          style={{ minHeight: 28 }}
                           type="number"
                           min={0}
                           value={row.draft.max_bid}
                           onChange={(e) => updateRow(index, { max_bid: Number(e.target.value) })}
                         />
                       </td>
-                      <td className="num">
+                      <td>
                         <input
+                          className="input"
+                          style={{ minHeight: 28 }}
                           type="number"
                           min={0}
                           value={row.draft.panic_price}
-                          onChange={(e) => updateRow(index, { panic_price: Number(e.target.value) })}
+                          onChange={(e) =>
+                            updateRow(index, { panic_price: Number(e.target.value) })
+                          }
                         />
                       </td>
                       <td>
                         <select
+                          className="input"
+                          style={{ minHeight: 28 }}
                           value={row.draft.confidence}
-                          onChange={(e) => updateRow(index, { confidence: e.target.value as Confidence })}
+                          onChange={(e) =>
+                            updateRow(index, { confidence: e.target.value as Confidence })
+                          }
                         >
                           {CONFIDENCE_LEVELS.map((level) => (
                             <option key={level} value={level}>
@@ -211,32 +248,21 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
                           ))}
                         </select>
                       </td>
-                      <td>
-                        <input
-                          value={row.draft.note ?? ""}
-                          onChange={(e) => updateRow(index, { note: e.target.value === "" ? null : e.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => void saveRow(index)}
-                            disabled={row.saving}
-                          >
-                            Salva
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => setMatched((rows) => rows.filter((_, i) => i !== index))}
-                            disabled={row.saving}
-                          >
-                            Scarta
-                          </button>
-                        </div>
-                        {row.error && <p className="field-error">{row.error}</p>}
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{ fontSize: 12 }}
+                          onClick={() => setMatched((rows) => rows.filter((_, i) => i !== index))}
+                          disabled={row.saving}
+                        >
+                          Scarta
+                        </button>
+                        {row.error && (
+                          <div style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>
+                            {row.error}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ),
@@ -248,8 +274,9 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
       )}
 
       {unmatched.length > 0 && (
-        <div className="table-wrap">
-          <table>
+        <>
+          <h3 style={{ margin: "26px 0 8px" }}>Righe non abbinate</h3>
+          <table className="table" style={{ maxWidth: 760 }}>
             <thead>
               <tr>
                 <th>Nome</th>
@@ -258,7 +285,7 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
                 <th>Tier</th>
                 <th>Motivo</th>
                 <th>Assegna a</th>
-                <th></th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -277,19 +304,14 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
               ))}
             </tbody>
           </table>
-        </div>
+        </>
       )}
 
       {discarded.length > 0 && (
-        <div>
-          <p>{discarded.length} righe scartate dal modello (mai stimate):</p>
-          <ul>
-            {discarded.map((row) => (
-              <li key={row.index}>{row.reason}</li>
-            ))}
-          </ul>
-        </div>
+        <p className="text-muted" style={{ fontSize: 13, marginTop: 10 }}>
+          {discarded.length} righe scartate dal modello (mai stimate).
+        </p>
       )}
-    </section>
+    </div>
   );
 }
