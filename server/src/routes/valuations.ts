@@ -4,6 +4,7 @@ import { getLeagueById } from "../db/leagues";
 import { getPlayerById } from "../db/players";
 import { listValuationsWithPlayerByLeague, upsertValuation } from "../db/valuations";
 import { importValuationsFromJson } from "../import/valuationJson";
+import { generateValuationsForLeague } from "../import/valuationGenerate";
 import { ApiError } from "../http/errors";
 
 export const valuationsRouter = Router({ mergeParams: true });
@@ -45,6 +46,20 @@ valuationsRouter.post<LeagueParams>("/import", async (req, res, next) => {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
     const report = await importValuationsFromJson(leagueId, league, req.body);
+    res.json(report);
+  } catch (err) {
+    next(err);
+  }
+});
+
+valuationsRouter.post<LeagueParams>("/generate", async (req, res, next) => {
+  try {
+    const leagueId = parseId(req.params.leagueId);
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+      throw ApiError.notFound(`league ${leagueId} not found`);
+    }
+    const report = await generateValuationsForLeague(league);
     res.json(report);
   } catch (err) {
     next(err);

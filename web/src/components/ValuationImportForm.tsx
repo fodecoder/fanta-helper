@@ -4,100 +4,11 @@ import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import * as playersApi from "../api/players";
 import { StatusMessage } from "./StatusMessage";
-import { PlayerAvatar } from "./PlayerAvatar";
+import { UnmatchedValuationRow } from "./UnmatchedValuationRow";
 
 interface ValuationImportFormProps {
   leagueId: number;
   onResolved: () => void;
-}
-
-interface UnmatchedRowProps {
-  leagueId: number;
-  entry: UnmatchedValuation;
-  players: Player[];
-  onAssigned: () => void;
-  onDiscarded: () => void;
-}
-
-function UnmatchedRow({ leagueId, entry, players, onAssigned, onDiscarded }: UnmatchedRowProps) {
-  const [filter, setFilter] = useState("");
-  const [playerId, setPlayerId] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const filtered = players.filter((player) => {
-    const needle = filter.trim().toLowerCase();
-    if (needle === "") return true;
-    return player.name.toLowerCase().includes(needle) || player.team.toLowerCase().includes(needle);
-  });
-
-  async function handleAssign() {
-    if (playerId === "") {
-      setError("seleziona un giocatore");
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
-    try {
-      await valuationsApi.upsertValuation(leagueId, Number(playerId), {
-        tier: entry.tier,
-        target: entry.target,
-        fair_value: entry.fair_value,
-        max_bid: entry.max_bid,
-        panic_price: entry.panic_price,
-        confidence: entry.confidence,
-        note: entry.note,
-      });
-      onAssigned();
-    } catch (err) {
-      setError(
-        err instanceof ValuationsApiError ? err.payload.error.message : "assegnazione fallita",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <tr>
-      <td>
-        <div className="player-name-cell">
-          <PlayerAvatar name={entry.name} team={entry.team} ruolo={entry.ruolo} size="sm" />
-          {entry.name}
-        </div>
-      </td>
-      <td>{entry.team}</td>
-      <td>{entry.ruolo}</td>
-      <td>{entry.tier}</td>
-      <td>{entry.reason}</td>
-      <td>
-        <input
-          placeholder="filtra per nome/squadra"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-        <select value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-          <option value="">— seleziona —</option>
-          {filtered.map((player) => (
-            <option key={player.id} value={player.id}>
-              {player.name} ({player.team}, {player.ruolo})
-            </option>
-          ))}
-        </select>
-        {error && <p className="field-error">{error}</p>}
-      </td>
-      <td>
-        <div className="row-actions">
-          <button type="button" className="btn btn-primary" onClick={handleAssign} disabled={submitting}>
-            Assegna
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onDiscarded} disabled={submitting}>
-            Scarta
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
 }
 
 export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFormProps) {
@@ -196,7 +107,7 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
             </thead>
             <tbody>
               {unmatched.map((entry, index) => (
-                <UnmatchedRow
+                <UnmatchedValuationRow
                   key={`${entry.name}-${entry.team}-${index}`}
                   leagueId={leagueId}
                   entry={entry}

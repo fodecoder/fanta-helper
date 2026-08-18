@@ -17,21 +17,24 @@ function extractTextBlock(body: unknown): string | null {
   return typeof block?.text === "string" ? block.text : null;
 }
 
+type MessageContent =
+  | { type: "text"; text: string }
+  | { type: "image"; source: { type: "base64"; media_type: ImageMediaType; data: string } };
+
 // Modulo generico, senza conoscenza di dominio: il prompt e il parsing del
 // JSON atteso vivono nei moduli import/*. Ogni fallimento di rete/parsing
 // diventa un ApiError con messaggio generico — mai la chiave o il body
 // upstream nel messaggio d'errore.
-export async function requestVisionExtraction(
+async function requestExtraction(
   config: ClaudeExtractionConfig,
-  image: Buffer,
-  mediaType: ImageMediaType,
-  promptText: string,
+  content: MessageContent[],
+  maxTokens: number,
 ): Promise<string> {
   if (config.apiKey === "") {
     throw new ApiError(
       503,
       "EXTRACTION_UNAVAILABLE",
-      "estrazione da screenshot non configurata (ANTHROPIC_API_KEY assente)",
+      "estrazione non configurata (ANTHROPIC_API_KEY assente)",
     );
   }
 
@@ -46,19 +49,8 @@ export async function requestVisionExtraction(
       },
       body: JSON.stringify({
         model: config.model,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: { type: "base64", media_type: mediaType, data: image.toString("base64") },
-              },
-              { type: "text", text: promptText },
-            ],
-          },
-        ],
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content }],
       }),
     });
   } catch {
@@ -97,4 +89,31 @@ export async function requestVisionExtraction(
     );
   }
   return text;
+}
+
+export async function requestVisionExtraction(
+  config: ClaudeExtractionConfig,
+  image: Buffer,
+  mediaType: ImageMediaType,
+  promptText: string,
+): Promise<string> {
+  return requestExtraction(
+    config,
+    [
+      {
+        type: "image",
+        source: { type: "base64", media_type: mediaType, data: image.toString("base64") },
+      },
+      { type: "text", text: promptText },
+    ],
+    4096,
+  );
+}
+
+export async function requestTextExtraction(
+  config: ClaudeExtractionConfig,
+  promptText: string,
+  maxTokens: number,
+): Promise<string> {
+  return requestExtraction(config, [{ type: "text", text: promptText }], maxTokens);
 }

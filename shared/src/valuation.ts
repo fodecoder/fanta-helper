@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { roleSchema } from "./roles";
+import { discardedExtractionRowSchema } from "./extraction";
 
 export const CONFIDENCE_LEVELS = ["low", "medium", "high"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
@@ -57,3 +58,18 @@ export const valuationWithPlayerSchema = valuationRecordSchema.extend({
   image_url: z.string().nullable(),
 });
 export type ValuationWithPlayer = z.infer<typeof valuationWithPlayerSchema>;
+
+// Anteprima di generazione (POST /valuations/generate): riga risolta a un
+// player_id ma non ancora persistita — l'utente la rivede/modifica prima di
+// salvarla (stesso PUT /:playerId usato per l'import JSON).
+export const valuationMatchedDraftSchema = valuationEntrySchema.extend({
+  player_id: z.number().int().positive(),
+});
+export type ValuationMatchedDraft = z.infer<typeof valuationMatchedDraftSchema>;
+
+export const valuationGenerationResponseSchema = z.object({
+  matched: z.array(valuationMatchedDraftSchema),
+  unmatched: z.array(unmatchedValuationSchema),
+  discarded: z.array(discardedExtractionRowSchema),
+});
+export type ValuationGenerationResponse = z.infer<typeof valuationGenerationResponseSchema>;

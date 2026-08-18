@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { discardedExtractionRowSchema } from "./extraction";
 
 // Formazioni probabili: riferimento globale (come goalkeeper_grid), popolato
 // via upload screenshot + estrazione lato backend. Ingest per-squadra: ogni
@@ -40,16 +41,6 @@ export const probableLineupDraftRowSchema = z.object({
   reason: z.string().optional(),
 });
 export type ProbableLineupDraftRow = z.infer<typeof probableLineupDraftRowSchema>;
-
-// Righe che il modello ha restituito ma che non rispettano lo schema atteso
-// (es. stato non tra i 3 valori): scartate esplicitamente, mai forzate in una
-// forma valida — stesso principio "unmatched, no invented data" di
-// valuationJson.
-export const discardedExtractionRowSchema = z.object({
-  index: z.number().int().nonnegative(),
-  reason: z.string(),
-});
-export type DiscardedExtractionRow = z.infer<typeof discardedExtractionRowSchema>;
 
 export const probableLineupExtractionResponseSchema = z.object({
   team: z.string(),

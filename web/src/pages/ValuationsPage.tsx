@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { League, ValuationWithPlayer } from "@fanta-helper/shared";
 import { ValuationImportForm } from "../components/ValuationImportForm";
+import { ValuationGenerateForm } from "../components/ValuationGenerateForm";
 import * as valuationsApi from "../api/valuations";
 import { PageHeader } from "../components/PageHeader";
 import { StatusMessage } from "../components/StatusMessage";
@@ -34,6 +35,8 @@ export function ValuationsPage({ league, onBack }: ValuationsPageProps) {
   return (
     <div className="page">
       <PageHeader title={`Valutazioni — ${league.name}`} onBack={onBack} />
+
+      <ValuationGenerateForm leagueId={league.id} onResolved={() => setRefreshToken((t) => t + 1)} />
 
       <ValuationImportForm leagueId={league.id} onResolved={() => setRefreshToken((t) => t + 1)} />
 

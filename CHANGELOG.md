@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-18
+
+### Added
+
+- **Valutazioni generate via LLM in-app**: nuovo endpoint
+  `POST /leagues/:leagueId/valuations/generate` (chiave Anthropic solo
+  lato backend) che genera le valutazioni per-lega chiamando Claude con il
+  pool giocatori e le regole della lega (`scoring`, `modificatori`,
+  `roster_config`), suddividendo il listone in chunk per ruolo (P/D/C/A) e
+  ulteriormente in batch per restare entro il limite di output del
+  modello. Ogni chunk è validato indipendentemente contro lo schema delle
+  valutazioni; le righe non interpretabili vengono scartate (mai
+  inventate) e il matching nome+squadra → giocatore riusa la stessa
+  logica esatta dell'import JSON. UI "Genera valutazioni" nella schermata
+  Valutazioni con anteprima modificabile riga per riga prima del
+  salvataggio; gli unmatched restano in revisione, non stimati.
+
 ## [2.0.0] - 2026-08-18
 
 ### Changed

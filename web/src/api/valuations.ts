@@ -1,4 +1,5 @@
 import type {
+  ValuationGenerationResponse,
   ValuationImportReport,
   ValuationRecord,
   ValuationUpsertInput,
@@ -45,6 +46,15 @@ export function importValuationsJson(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(doc),
   }).then((res) => handle<ValuationImportReport>(res));
+}
+
+export function generateValuations(
+  leagueId: number,
+  signal?: AbortSignal,
+): Promise<ValuationGenerationResponse> {
+  return fetch(`${baseUrl(leagueId)}/generate`, { method: "POST", signal }).then((res) =>
+    handle<ValuationGenerationResponse>(res),
+  );
 }
 
 export function upsertValuation(

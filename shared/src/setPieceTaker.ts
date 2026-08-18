@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { discardedExtractionRowSchema } from "./probableLineup";
+import { discardedExtractionRowSchema } from "./extraction";
 
 // Rigoristi/tiratori di punizioni/corner: riferimento globale (come
 // probable_lineup), popolato via upload screenshot + estrazione lato
