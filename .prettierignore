@@ -3,3 +3,6 @@ node_modules
 coverage
 .vite
 package-lock.json
+
+# Riferimenti di design (prototipi, non codice di produzione)
+design_handoff_portale/

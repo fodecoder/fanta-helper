@@ -5,6 +5,31 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-08-18
+
+### Changed
+
+- **Ristrutturazione del portale nel design system Broadsheet**: interfaccia
+  ricostruita fedelmente (carta chiara, serif Source Serif 4, accento ciano,
+  magenta raro, nessuna card) con token e classi portati in
+  `web/src/index.css`, inclusi i numerali a lastre CMYK (`.cmyk-num`, puro CSS).
+- **Shell lega-centrica**: sidebar fissa `236px` con selettore lega e sette voci
+  (Panoramica, Manager, Valutazioni, Quotazioni, Coppie portieri, Probabili
+  formazioni, Leghe); la lega attiva resta in querystring (`?league=`). Rimossa
+  la navigazione a bottoni annidati (Home → lega → sotto-vista).
+- **Modalità asta a schermo pieno**: contesto separato con layout desktop
+  (tre colonne: chiamata, in asta con price ladder e verdetto, pannello "Io") e
+  layout telefono dedicato (fascia fissa + pannello a tab Lista/Alternative/Log).
+  Si entra dalla sidebar, si esce con `Esc`; `↑/↓` scelgono, `Invio` assegna.
+- **Panoramica lega**: quattro figure a lastre CMYK (residuo, max bid rettificato,
+  slot liberi, speso), tabella stato manager e colonne obiettivi/ultime chiamate.
+
+### Notes
+
+- Nessun cambiamento ai contratti API/DB né alle invarianti di dominio: lo stato
+  dell'asta resta derivato dal log `purchase` e `computeAdjustedMaxBid`
+  (`shared/src/maxBid.ts`) è l'unica fonte del max bid rettificato.
+
 ## [2.1.0] - 2026-08-18
 
 ### Added

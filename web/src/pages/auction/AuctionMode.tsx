@@ -1,0 +1,406 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  League,
+  Manager,
+  ManagerAuctionStatus,
+  Player,
+  PurchaseWithDetails,
+  StatsEnrichmentResponse,
+  ValuationWithPlayer,
+  WishlistEntryWithPlayer,
+  Role,
+} from "@fanta-helper/shared";
+import { OWNER_MANAGER_NAME } from "@fanta-helper/shared";
+import * as purchasesApi from "../../api/purchases";
+import { PurchasesApiError } from "../../api/purchases";
+import * as wishlistApi from "../../api/wishlist";
+import * as playersApi from "../../api/players";
+import * as valuationsApi from "../../api/valuations";
+import * as managersApi from "../../api/managers";
+import * as statsEnrichmentApi from "../../api/statsEnrichment";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import {
+  impact as computeImpact,
+  ladderModel,
+  rankSameRole,
+  verdict as computeVerdict,
+  type RankRow,
+} from "../../lib/auctionDerivations";
+import { AuctionDesktop } from "./AuctionDesktop";
+import { AuctionPhone } from "./AuctionPhone";
+
+interface AuctionModeProps {
+  league: League;
+  onExit: () => void;
+}
+
+export type RoleFilter = "tutti" | Role;
+
+export interface CompareRow extends RankRow {
+  delta: number | null;
+  isCurrent: boolean;
+}
+
+// Modello di vista condiviso tra desktop e telefono: tutto derivato, nulla di
+// duplicato. Lo stato dell'asta resta funzione del log (purchases + state dal
+// server), il max bid rettificato viene da `adjustedMaxBid`.
+export interface AuctionView {
+  league: League;
+  onExit: () => void;
+  bumps: number[];
+
+  managers: Manager[];
+  statuses: ManagerAuctionStatus[] | null;
+  me: ManagerAuctionStatus | undefined;
+  selectedManagerId: number | null;
+  onSelectManager: (id: number) => void;
+
+  visiblePlayers: Player[];
+  availableCount: number;
+  callsLabel: string;
+  query: string;
+  onQuery: (q: string) => void;
+  roleFilter: RoleFilter;
+  onRoleFilter: (r: RoleFilter) => void;
+
+  selectedPlayer: Player | undefined;
+  selectedValuation: ValuationWithPlayer | undefined;
+  wishlistPlayerIds: Set<number>;
+  valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
+
+  price: string;
+  priceNum: number | null;
+  onPrice: (v: string) => void;
+  onBump: (delta: number) => void;
+  verdict: ReturnType<typeof computeVerdict>;
+  ladder: ReturnType<typeof ladderModel>;
+  impact: ReturnType<typeof computeImpact>;
+
+  compareRows: CompareRow[];
+  compareMaxFv: number;
+  enrichment: StatsEnrichmentResponse | null;
+
+  logRows: {
+    key: string;
+    name: string;
+    manager: string;
+    prezzo: number;
+    delta: number | null;
+    ruolo: Role;
+  }[];
+  wishRows: {
+    player_id: number;
+    name: string;
+    ruolo: Role;
+    tier: string | null;
+    fv: number | null;
+  }[];
+
+  assignError: string | null;
+  canAssign: boolean;
+  onAssign: () => void;
+  onSelect: (playerId: number) => void;
+  onToggleWishlist: (playerId: number) => void;
+  onUndo: () => void;
+}
+
+export function AuctionMode({ league, onExit }: AuctionModeProps) {
+  const [purchases, setPurchases] = useState<PurchaseWithDetails[] | null>(null);
+  const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
+  const [wishlist, setWishlist] = useState<WishlistEntryWithPlayer[] | null>(null);
+  const [players, setPlayers] = useState<Player[] | null>(null);
+  const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [enrichment, setEnrichment] = useState<StatsEnrichmentResponse | null>(null);
+
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [price, setPrice] = useState("");
+  const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  const isPhone = useMediaQuery("(max-width: 768px)");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void purchasesApi
+      .listPurchases(league.id, controller.signal)
+      .then(setPurchases)
+      .catch(() => {});
+    void purchasesApi
+      .getAuctionState(league.id, controller.signal)
+      .then(setStatuses)
+      .catch(() => {});
+    void wishlistApi
+      .listWishlist(league.id, controller.signal)
+      .then(setWishlist)
+      .catch(() => {});
+    void valuationsApi
+      .listValuations(league.id, controller.signal)
+      .then(setValuations)
+      .catch(() => {});
+    return () => controller.abort();
+  }, [league.id, refreshToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void playersApi
+      .listPlayers(controller.signal)
+      .then(setPlayers)
+      .catch(() => {});
+    void managersApi
+      .listManagers(league.id, controller.signal)
+      .then(setManagers)
+      .catch(() => {});
+    return () => controller.abort();
+  }, [league.id]);
+
+  const purchasedPlayerIds = useMemo(
+    () => new Set((purchases ?? []).map((p) => p.player_id)),
+    [purchases],
+  );
+  const wishlistPlayerIds = useMemo(
+    () => new Set((wishlist ?? []).map((e) => e.player_id)),
+    [wishlist],
+  );
+  const valuationById = useMemo(() => {
+    const map = new Map<number, ValuationWithPlayer>();
+    for (const v of valuations ?? []) map.set(v.player_id, v);
+    return map;
+  }, [valuations]);
+  const valuationFor = useCallback((id: number) => valuationById.get(id), [valuationById]);
+
+  const ownerManagerId = useMemo(
+    () => managers.find((m) => m.name === OWNER_MANAGER_NAME)?.id ?? managers[0]?.id ?? null,
+    [managers],
+  );
+  // Manager selezionato = scelta esplicita, altrimenti il proprietario ("Io").
+  const effectiveManagerId = selectedManagerId ?? ownerManagerId;
+
+  const visiblePlayers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (players ?? [])
+      .filter((p) => !purchasedPlayerIds.has(p.id))
+      .filter((p) => roleFilter === "tutti" || p.ruolo === roleFilter)
+      .filter(
+        (p) => q === "" || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q),
+      )
+      .sort(
+        (a, b) =>
+          (valuationById.get(b.id)?.fair_value ?? -1) - (valuationById.get(a.id)?.fair_value ?? -1),
+      );
+  }, [players, purchasedPlayerIds, roleFilter, query, valuationById]);
+
+  const selectedPlayer = players?.find((p) => p.id === selectedPlayerId);
+  const selectedValuation =
+    selectedPlayerId != null ? valuationById.get(selectedPlayerId) : undefined;
+  const priceNum = price === "" ? null : Number(price);
+  const validPrice = priceNum !== null && Number.isInteger(priceNum) && priceNum >= 0;
+
+  const me = statuses?.find((s) => s.managerName === OWNER_MANAGER_NAME);
+  const selectedManagerStatus = statuses?.find((s) => s.managerId === effectiveManagerId);
+
+  const verdict = computeVerdict(priceNum, selectedValuation);
+  const ladder = ladderModel(selectedValuation, priceNum);
+  const impact = selectedPlayer
+    ? computeImpact(priceNum, selectedManagerStatus, selectedPlayer.ruolo)
+    : { text: "", color: "var(--color-neutral-700)" };
+
+  const compareBase = useMemo(() => {
+    if (!selectedPlayer || !players || !valuations) return [] as RankRow[];
+    return rankSameRole(players, valuations, purchasedPlayerIds, selectedPlayer.ruolo).slice(0, 7);
+  }, [selectedPlayer, players, valuations, purchasedPlayerIds]);
+
+  const compareRows: CompareRow[] = compareBase.map((row) => ({
+    ...row,
+    isCurrent: row.player.id === selectedPlayer?.id,
+    delta:
+      selectedValuation && row.valuation
+        ? row.valuation.fair_value - selectedValuation.fair_value
+        : null,
+  }));
+  const compareMaxFv = compareBase[0]?.valuation?.fair_value ?? 1;
+
+  // Arricchimento stat opzionale per le alternative (gated su `enabled`).
+  useEffect(() => {
+    if (compareBase.length === 0) return;
+    const controller = new AbortController();
+    statsEnrichmentApi
+      .getStatsEnrichment(
+        compareBase.map((r) => r.player.id),
+        controller.signal,
+      )
+      .then(setEnrichment)
+      .catch(() => setEnrichment(null));
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds]);
+
+  const logRows = (purchases ?? [])
+    .slice()
+    .reverse()
+    .slice(0, 7)
+    .map((p) => {
+      const val = valuationById.get(p.player_id);
+      return {
+        key: `${p.league_id}-${p.player_id}`,
+        name: p.player_name,
+        manager: p.manager_name,
+        prezzo: p.prezzo,
+        delta: val ? p.prezzo - val.fair_value : null,
+        ruolo: p.player_ruolo,
+      };
+    });
+
+  const wishRows = (wishlist ?? [])
+    .filter((e) => !purchasedPlayerIds.has(e.player_id))
+    .map((e) => {
+      const val = valuationById.get(e.player_id);
+      return {
+        player_id: e.player_id,
+        name: e.name,
+        ruolo: e.ruolo,
+        tier: val?.tier ?? null,
+        fv: val?.fair_value ?? null,
+      };
+    });
+
+  const onSelect = useCallback((playerId: number) => {
+    setSelectedPlayerId(playerId);
+    setPrice("");
+    setAssignError(null);
+  }, []);
+
+  const onBump = useCallback((delta: number) => {
+    setPrice((prev) => String(Math.max(0, (prev === "" ? 0 : Number(prev)) + delta)));
+  }, []);
+
+  const refresh = () => setRefreshToken((t) => t + 1);
+
+  const onAssign = useCallback(async () => {
+    if (selectedPlayerId === null || effectiveManagerId === null || !validPrice) return;
+    setAssignError(null);
+    // Prossimo libero dopo l'assegnazione (escludendo quello appena assegnato).
+    const nextId = visiblePlayers.find((p) => p.id !== selectedPlayerId)?.id ?? null;
+    try {
+      await purchasesApi.createPurchase(league.id, {
+        player_id: selectedPlayerId,
+        manager_id: effectiveManagerId,
+        prezzo: priceNum!,
+      });
+      setSelectedPlayerId(nextId);
+      setPrice("");
+      refresh();
+    } catch (err) {
+      setAssignError(
+        err instanceof PurchasesApiError ? err.payload.error.message : "assegnazione fallita",
+      );
+    }
+  }, [selectedPlayerId, effectiveManagerId, validPrice, priceNum, league.id, visiblePlayers]);
+
+  const onToggleWishlist = useCallback(
+    async (playerId: number) => {
+      try {
+        if (wishlistPlayerIds.has(playerId)) {
+          await wishlistApi.removeFromWishlist(league.id, playerId);
+        } else {
+          await wishlistApi.addToWishlist(league.id, playerId);
+        }
+        refresh();
+      } catch {
+        // La wishlist è di supporto: un errore non interrompe la chiamata.
+      }
+    },
+    [wishlistPlayerIds, league.id],
+  );
+
+  const onUndo = useCallback(async () => {
+    if ((purchases?.length ?? 0) === 0) return;
+    if (
+      !window.confirm(
+        "Annullare l'ultima chiamata? Il log è immutabile: usalo solo per correggere un errore.",
+      )
+    ) {
+      return;
+    }
+    try {
+      await purchasesApi.deleteLastPurchase(league.id);
+      refresh();
+    } catch {
+      // ignora: il log resta invariato
+    }
+  }, [purchases, league.id]);
+
+  // Tastiera: ↑/↓ selezione, Invio assegna, Esc esce.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onExit();
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (visiblePlayers.length === 0) return;
+        e.preventDefault();
+        const i = visiblePlayers.findIndex((p) => p.id === selectedPlayerId);
+        const next =
+          e.key === "ArrowDown" ? Math.min(visiblePlayers.length - 1, i + 1) : Math.max(0, i - 1);
+        const target = visiblePlayers[i === -1 ? 0 : next];
+        if (target) onSelect(target.id);
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        void onAssign();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [visiblePlayers, selectedPlayerId, onExit, onSelect, onAssign]);
+
+  const view: AuctionView = {
+    league,
+    onExit,
+    bumps: [-5, -1, 1, 5],
+    managers,
+    statuses,
+    me,
+    selectedManagerId: effectiveManagerId,
+    onSelectManager: setSelectedManagerId,
+    visiblePlayers,
+    availableCount: (players?.length ?? 0) - purchasedPlayerIds.size,
+    callsLabel: `${purchases?.length ?? 0} chiamate`,
+    query,
+    onQuery: setQuery,
+    roleFilter,
+    onRoleFilter: setRoleFilter,
+    selectedPlayer,
+    selectedValuation,
+    wishlistPlayerIds,
+    valuationFor,
+    price,
+    priceNum,
+    onPrice: (v) => {
+      setPrice(v);
+      setAssignError(null);
+    },
+    onBump,
+    verdict,
+    ladder,
+    impact,
+    compareRows,
+    compareMaxFv,
+    enrichment,
+    logRows,
+    wishRows,
+    assignError,
+    canAssign: selectedPlayerId !== null && effectiveManagerId !== null && validPrice,
+    onAssign: () => void onAssign(),
+    onSelect,
+    onToggleWishlist: (id) => void onToggleWishlist(id),
+    onUndo: () => void onUndo(),
+  };
+
+  return isPhone ? <AuctionPhone view={view} /> : <AuctionDesktop view={view} />;
+}

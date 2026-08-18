@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;font-family:system-ui,sans-serif;color:#1a1a1a;background:#fff}*{box-sizing:border-box}</style></helmet>
+<div style="display:flex;flex-direction:column;gap:0;background:#fff">
+
+<div style="padding:24px 24px 8px;font:600 12px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f6b7a">Ricostruzione fedele — FantaProfeta v1.8.0 · web/src/index.css</div>
+
+<div style="border:1px solid #d9dee3;margin:8px 24px 32px">
+  <header style="background:#11246f;color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+    <h1 style="margin:0;font-size:1.25rem;color:#fff;display:flex;align-items:center;gap:8px"><img src="assets/logo.png" alt="" style="height:1.75rem;width:auto;display:block">FantaProfeta</h1>
+    <p style="margin:0;font-size:.85rem;opacity:.85">Backend: ok</p>
+    <nav style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" style="border:1px solid #fff;background:#fff;color:#11246f;padding:8px 12px;border-radius:4px;cursor:default;font:inherit;font-weight:600">Home</button>
+      <button type="button" style="border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Leghe</button>
+      <button type="button" style="border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Import quotazioni</button>
+      <button type="button" style="border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Coppie portieri</button>
+      <button type="button" style="border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Probabili formazioni</button>
+    </nav>
+  </header>
+
+  <div style="max-width:960px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="margin:0;font-size:1.4rem;flex:1">Home</h1></div>
+    <div style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:.9rem;font-weight:600">Lega attiva
+        <select style="font:inherit;padding:8px 12px;border:1px solid #d9dee3;border-radius:4px;background:#fff;color:#1a1a1a"><option>Lega Bar Centrale</option></select>
+      </label>
+    </div>
+    <nav style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" style="border:1px solid #d9dee3;background:#fff;color:#11246f;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Manager</button>
+      <button type="button" style="border:1px solid #d9dee3;background:#fff;color:#11246f;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Valutazioni</button>
+      <button type="button" style="border:1px solid #d9dee3;background:#fff;color:#11246f;padding:8px 12px;border-radius:4px;cursor:pointer;font:inherit;font-weight:600">Asta</button>
+    </nav>
+    <footer style="margin-top:40px;padding:12px 24px;text-align:center;font-size:.8rem;opacity:.6">FantaProfeta v1.8.0</footer>
+  </div>
+</div>
+
+<div style="padding:0 24px 8px;font:600 12px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f6b7a">Asta — pagina attuale (Home → lega → Asta)</div>
+
+<div style="border:1px solid #d9dee3;margin:8px 24px 40px">
+  <header style="background:#11246f;color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+    <h1 style="margin:0;font-size:1.25rem;color:#fff;display:flex;align-items:center;gap:8px"><img src="assets/logo.png" alt="" style="height:1.75rem;width:auto;display:block">FantaProfeta</h1>
+    <p style="margin:0;font-size:.85rem;opacity:.85">Backend: ok</p>
+  </header>
+
+  <div style="max-width:960px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button type="button" style="border:1px solid #d9dee3;background:#fff;color:#1a1a1a;padding:4px 12px;border-radius:4px;cursor:pointer;font:inherit">← Indietro</button>
+      <h1 style="margin:0;font-size:1.4rem;flex:1">Asta — Lega Bar Centrale</h1>
+    </div>
+
+    <section style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:1.1rem">Assegna giocatore</h2>
+      <form style="display:flex;flex-direction:column;gap:12px">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.9rem;font-weight:600">Cerca giocatore
+          <input placeholder="filtra per nome/squadra" value="lau" style="font:inherit;padding:8px 12px;border:1px solid #d9dee3;border-radius:4px;background:#fff;color:#1a1a1a">
+        </label>
+        <ul style="list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;border:1px solid #d9dee3;border-radius:4px">
+          <li style="display:flex;align-items:stretch;border-bottom:1px solid #d9dee3">
+            <button type="button" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:8px 12px;border:none;background:rgba(43,167,86,.12);color:#1a1a1a;font:inherit;font-weight:600;text-align:left;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(212,65%,45%)">LM</span>
+              <span>Lautaro Martinez (Inter, A)</span>
+            </button>
+            <button type="button" style="flex-shrink:0;width:40px;border:none;border-left:1px solid #d9dee3;background:#fff;color:#ff8300;font-size:1.1rem;line-height:1;cursor:pointer">★</button>
+          </li>
+          <li style="display:flex;align-items:stretch;border-bottom:1px solid #d9dee3">
+            <button type="button" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:8px 12px;border:none;background:#fff;color:#1a1a1a;font:inherit;text-align:left;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:28px;height:28px;font-size:.7rem;background:#2a6fb0;color:#fff;font-weight:700;border:2px solid hsl(48,65%,45%)">AA</span>
+              <span>Alessandro Bastoni (Inter, D)</span>
+            </button>
+            <button type="button" style="flex-shrink:0;width:40px;border:none;border-left:1px solid #d9dee3;background:#fff;color:#5f6b7a;font-size:1.1rem;line-height:1;cursor:pointer">☆</button>
+          </li>
+          <li style="display:flex;align-items:stretch;border-bottom:1px solid #d9dee3">
+            <button type="button" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:8px 12px;border:none;background:rgba(255,131,0,.08);color:#1a1a1a;font:inherit;text-align:left;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:28px;height:28px;font-size:.7rem;background:#2ba756;color:#fff;font-weight:700;border:2px solid hsl(96,65%,45%)">NB</span>
+              <span>Nicolo Barella (Inter, C)</span>
+            </button>
+            <button type="button" style="flex-shrink:0;width:40px;border:none;border-left:1px solid #d9dee3;background:#fff;color:#ff8300;font-size:1.1rem;line-height:1;cursor:pointer">★</button>
+          </li>
+          <li style="display:flex;align-items:stretch;border-bottom:1px solid #d9dee3">
+            <button type="button" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:8px 12px;border:none;background:#fff;color:#1a1a1a;font:inherit;text-align:left;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:28px;height:28px;font-size:.7rem;background:#c98a1d;color:#fff;font-weight:700;border:2px solid hsl(300,65%,45%)">MM</span>
+              <span>Michele Di Gregorio (Juventus, P)</span>
+            </button>
+            <button type="button" style="flex-shrink:0;width:40px;border:none;border-left:1px solid #d9dee3;background:#fff;color:#5f6b7a;font-size:1.1rem;line-height:1;cursor:pointer">☆</button>
+          </li>
+          <li style="display:flex;align-items:stretch">
+            <button type="button" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:8px 12px;border:none;background:#fff;color:#1a1a1a;font:inherit;text-align:left;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(160,65%,45%)">MR</span>
+              <span>Matteo Retegui (Atalanta, A)</span>
+            </button>
+            <button type="button" style="flex-shrink:0;width:40px;border:none;border-left:1px solid #d9dee3;background:#fff;color:#5f6b7a;font-size:1.1rem;line-height:1;cursor:pointer">☆</button>
+          </li>
+        </ul>
+        <p style="margin:0 0 12px">Selezionato: <strong>Lautaro Martinez</strong> (Inter, A)</p>
+        <p style="margin:0 0 12px">Valutazione: tier A1 · fair value 218 · max bid 245 · panic price 265</p>
+        <select style="font:inherit;padding:8px 12px;border:1px solid #d9dee3;border-radius:4px;background:#fff;color:#1a1a1a"><option>Io</option></select>
+        <p style="margin:0 0 12px">Max bid rettificato per Io: <strong style="font-size:1.1rem;color:#077449">331</strong> (residuo 348)</p>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.9rem;font-weight:600">Prezzo
+          <input type="number" min="0" step="1" value="" style="font:inherit;padding:8px 12px;border:1px solid #d9dee3;border-radius:4px;background:#fff;color:#1a1a1a">
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="submit" style="font:inherit;padding:8px 16px;border-radius:4px;border:1px solid #2ba756;background:#2ba756;color:#fff;font-weight:600;cursor:pointer">Assegna</button>
+        </div>
+      </form>
+    </section>
+
+    <section style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:1.1rem">Confronto per ruolo</h2>
+      <p style="margin:0 0 12px">Bisogni di Io per il ruolo A: slot liberi <strong>4</strong>/6 · residuo <strong>348</strong> · max bid rettificato <strong style="font-size:1.1rem;color:#077449">331</strong></p>
+      <div style="overflow-x:auto;border:1px solid #d9dee3;border-radius:8px;max-height:420px;overflow-y:auto">
+        <table style="border-collapse:collapse;width:100%;font-size:.9rem">
+          <thead><tr>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8"></th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Giocatore</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Squadra</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Tier</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8;font-variant-numeric:tabular-nums">Fair value</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Target</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Max bid</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Panic price</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Min</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Gol</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Assist</th>
+          </tr></thead>
+          <tbody>
+            <tr style="background:rgba(43,167,86,.16);font-weight:600">
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(212,65%,45%)">LM</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Lautaro Martinez</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Inter</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A1</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">218</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">205</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">245</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">265</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">2612</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">18</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">6</td>
+            </tr>
+            <tr style="background:#f4f6f8">
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(160,65%,45%)">MR</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Matteo Retegui</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Atalanta</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A1</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">201</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">190</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">228</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">250</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">2380</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">25</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">3</td>
+            </tr>
+            <tr>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(24,65%,45%)">DV</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Dusan Vlahovic</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Juventus</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A2</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">164</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">150</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">185</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">205</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">1990</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">16</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">2</td>
+            </tr>
+            <tr style="background:#f4f6f8">
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(268,65%,45%)">MT</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Mateo Thuram</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Inter</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A2</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">158</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">145</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">178</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">198</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">2104</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">13</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">7</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2 style="margin:0;font-size:1.1rem">Obiettivi d'asta (wishlist)</h2></header>
+      <div style="overflow-x:auto;border:1px solid #d9dee3;border-radius:8px;max-height:420px;overflow-y:auto">
+        <table style="border-collapse:collapse;width:100%;font-size:.9rem">
+          <thead><tr>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;background:#f4f6f8"></th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Giocatore</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Squadra</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Ruolo</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Stato</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;background:#f4f6f8"></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(212,65%,45%)">LM</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Lautaro Martinez</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Inter</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;background:rgba(43,167,86,.12);color:#077449">disponibile</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:default;opacity:.4;line-height:1">↑</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">↓</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">✕</button></div></td>
+            </tr>
+            <tr style="background:#f4f6f8">
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#2ba756;color:#fff;font-weight:700;border:2px solid hsl(96,65%,45%)">NB</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Nicolo Barella</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Inter</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">C</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;background:rgba(43,167,86,.12);color:#077449">disponibile</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">↑</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">↓</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">✕</button></div></td>
+            </tr>
+            <tr>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#2a6fb0;color:#fff;font-weight:700;border:2px solid hsl(48,65%,45%)">TH</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Theo Hernandez</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Milan</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px">D</td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;background:#f4f6f8;color:#5f6b7a">assegnato</span></td>
+              <td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">↑</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:default;opacity:.4;line-height:1">↓</button><button type="button" style="font:inherit;width:28px;height:28px;padding:0;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer;line-height:1">✕</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:1.1rem">Stato asta</h2>
+      <div style="overflow-x:auto;border:1px solid #d9dee3;border-radius:8px;max-height:420px;overflow-y:auto">
+        <table style="border-collapse:collapse;width:100%;font-size:.9rem">
+          <thead><tr>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Manager</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Budget</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Speso</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Residuo</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Slot P</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Slot D</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Slot C</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;white-space:nowrap;background:#f4f6f8">Slot A</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;white-space:nowrap;background:#f4f6f8">Max bid rettificato</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Io</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">1000</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">652</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">348</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">2/3 (liberi: 1)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">6/8 (liberi: 2)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">5/8 (liberi: 3)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">2/6 (liberi: 4)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums"><strong>331</strong></td></tr>
+            <tr style="background:#f4f6f8"><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Cippa</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">1000</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">781</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">219</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">3/3 (liberi: 0)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">7/8 (liberi: 1)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">6/8 (liberi: 2)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">3/6 (liberi: 3)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums"><strong>214</strong></td></tr>
+            <tr><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Ludo</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">1000</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">498</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">502</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">1/3 (liberi: 2)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">4/8 (liberi: 4)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">4/8 (liberi: 4)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">2/6 (liberi: 4)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums"><strong>489</strong></td></tr>
+            <tr style="background:#f4f6f8"><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Fede</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">1000</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">870</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">130</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">2/3 (liberi: 1)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">8/8 (liberi: 0)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">7/8 (liberi: 1)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">4/6 (liberi: 2)</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums"><strong>127</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:12px">
+      <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <h2 style="margin:0;font-size:1.1rem">Log acquisti</h2>
+        <button type="button" style="font:inherit;padding:8px 16px;border-radius:4px;border:1px solid #d9dee3;background:#fff;color:#1a1a1a;cursor:pointer">Annulla ultimo acquisto</button>
+      </header>
+      <div style="overflow-x:auto;border:1px solid #d9dee3;border-radius:8px;max-height:420px;overflow-y:auto">
+        <table style="border-collapse:collapse;width:100%;font-size:.9rem">
+          <thead><tr>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;background:#f4f6f8"></th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Giocatore</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Squadra</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Ruolo</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:left;background:#f4f6f8">Manager</th>
+            <th style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;background:#f4f6f8">Prezzo</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#2a6fb0;color:#fff;font-weight:700;border:2px solid hsl(48,65%,45%)">TH</span></td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Theo Hernandez</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Milan</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">D</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Io</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">96</td></tr>
+            <tr style="background:#f4f6f8"><td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c0392b;color:#fff;font-weight:700;border:2px solid hsl(24,65%,45%)">KY</span></td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Kenan Yildiz</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Juventus</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">A</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Cippa</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">143</td></tr>
+            <tr><td style="border-bottom:1px solid #d9dee3;padding:8px 12px"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;font-size:.7rem;background:#c98a1d;color:#fff;font-weight:700;border:2px solid hsl(212,65%,45%)">YS</span></td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;white-space:nowrap">Yann Sommer</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Inter</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">P</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px">Ludo</td><td style="border-bottom:1px solid #d9dee3;padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">42</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <details style="background:#fff;border:1px solid #d9dee3;border-radius:8px;padding:24px"><summary>Coppie portieri (consultazione)</summary></details>
+
+    <footer style="margin-top:40px;padding:12px 24px;text-align:center;font-size:.8rem;opacity:.6">FantaProfeta v1.8.0</footer>
+  </div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -63,37 +63,39 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
   }
 
   return (
-    <section className="card">
-      <h2>Import valutazioni</h2>
-
+    <div>
       {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
-      <form onSubmit={handleSubmit}>
-        <label>
-          File JSON
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}
+      >
+        <div className="field" style={{ width: 320 }}>
+          <label htmlFor="valuations-json">Importa JSON</label>
           <input
+            id="valuations-json"
+            className="input"
+            style={{ padding: 6 }}
             type="file"
             accept=".json,application/json"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
-        </label>
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? "Import in corso…" : "Importa"}
-          </button>
         </div>
+        <button type="submit" className="btn btn-secondary" disabled={submitting}>
+          {submitting ? "Import in corso…" : "Importa JSON"}
+        </button>
       </form>
 
       {report && (
-        <p>
+        <p className="text-muted" style={{ fontSize: 13, marginTop: 10 }}>
           Importate: {report.imported} · Aggiornate: {report.updated} · Unmatched:{" "}
           {unmatched.length}
         </p>
       )}
 
       {unmatched.length > 0 && (
-        <div className="table-wrap">
-          <table>
+        <div className="table-scroll">
+          <table className="table" style={{ maxWidth: 760 }}>
             <thead>
               <tr>
                 <th>Nome</th>
@@ -123,6 +125,6 @@ export function ValuationImportForm({ leagueId, onResolved }: ValuationImportFor
           </table>
         </div>
       )}
-    </section>
+    </div>
   );
 }
