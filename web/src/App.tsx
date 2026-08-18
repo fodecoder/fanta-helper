@@ -25,7 +25,10 @@ function App() {
   return (
     <main>
       <header className="app-header">
-        <h1>FantaProfeta</h1>
+        <h1 className="app-title">
+          <img src="/logo.png" alt="" className="app-logo" />
+          FantaProfeta
+        </h1>
         <p className="status">Backend: {status}</p>
         <nav className="nav">
           <button

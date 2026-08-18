@@ -65,6 +65,18 @@ h2 {
   color: var(--color-text-on-dark);
 }
 
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-logo {
+  height: 1.75rem;
+  width: auto;
+  display: block;
+}
+
 .app-header .status {
   margin: 0;
   font-size: 0.85rem;
