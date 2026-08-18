@@ -8,6 +8,7 @@ import { valuationsRouter } from "./routes/valuations";
 import { purchasesRouter } from "./routes/purchases";
 import { wishlistRouter } from "./routes/wishlist";
 import { goalkeeperGridRouter } from "./routes/goalkeeperGrid";
+import { probableLineupRouter } from "./routes/probableLineup";
 import { statsEnrichmentRouter } from "./routes/statsEnrichment";
 import { errorHandler } from "./http/errorHandler";
 
@@ -30,6 +31,7 @@ export function createApp(): Express {
   app.use("/players/stats-enrichment", statsEnrichmentRouter);
   app.use("/players", playersRouter);
   app.use("/goalkeeper-grid", goalkeeperGridRouter);
+  app.use("/probable-lineup", probableLineupRouter);
 
   app.use(errorHandler);
 

@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-08-18
+
+### Added
+
+- **Probabili formazioni**: nuova tabella globale `probable_lineup`
+  (indipendente da league/purchase, come `goalkeeper_grid`) popolata caricando
+  uno screenshot editoriale per squadra. Il backend estrae le righe con
+  Claude (vision, chiave solo server-side) e le restituisce come bozza
+  modificabile — nessuna riga viene salvata finché l'utente non la rivede in
+  UI e conferma; le righe che il modello segnala come incerte sono
+  evidenziate con il motivo, mai inventate. La conferma sostituisce in
+  transazione solo le righe della squadra confermata, lasciando intatte le
+  altre. Lo screenshot originale resta salvato per squadra (sovrascritto al
+  nuovo upload). Nuova tab "Probabili formazioni" con undici probabile,
+  ballottaggi, panchina e modulo calcolato quando i dati lo consentono.
+  L'integrazione con una fonte editoriale esterna resta backlog opzionale.
+
 ## [1.6.0] - 2026-08-17
 
 ### Added

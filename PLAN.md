@@ -57,7 +57,7 @@ portale. Prompt operativi 19–22 in `PROMPTS.md`.
 - [ ] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
       ruolo dalle valutazioni in-app; arricchimento opzionale da API stats
       esterna (API-Football free) via backend, con cache e rate-limit
-- [ ] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
+- [x] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
       estrazione e/o integrazione esterna; visualizzazione a tab
 - [ ] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
       formazioni): stessa pipeline di ingest

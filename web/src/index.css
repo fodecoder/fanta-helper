@@ -542,6 +542,19 @@ tbody tr.rank-row--current {
   font-weight: 600;
 }
 
+/* Probable lineup draft review */
+
+tr.probable-lineup-row--uncertain {
+  background: rgba(255, 131, 0, 0.08);
+}
+
+.probable-lineup-row__reason {
+  color: var(--color-accent-orange);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: normal;
+}
+
 /* Status messages (loading / error / empty) */
 
 .status-message {

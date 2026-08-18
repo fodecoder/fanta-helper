@@ -3,9 +3,10 @@ import { HomePage } from "./pages/HomePage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
 import { GoalkeeperGridPage } from "./pages/GoalkeeperGridPage";
+import { ProbableLineupPage } from "./pages/ProbableLineupPage";
 
 type ConnectionStatus = "checking" | "ok" | "error";
-type View = "home" | "leagues" | "import" | "goalkeepers";
+type View = "home" | "leagues" | "import" | "goalkeepers" | "probableLineups";
 
 function App() {
   const [status, setStatus] = useState<ConnectionStatus>("checking");
@@ -59,6 +60,14 @@ function App() {
           >
             Griglia portieri
           </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setView("probableLineups")}
+            disabled={view === "probableLineups"}
+          >
+            Probabili formazioni
+          </button>
         </nav>
       </header>
       {view === "home" ? (
@@ -67,8 +76,10 @@ function App() {
         <LeaguesPage />
       ) : view === "import" ? (
         <PlayerImportPage />
-      ) : (
+      ) : view === "goalkeepers" ? (
         <GoalkeeperGridPage />
+      ) : (
+        <ProbableLineupPage />
       )}
     </main>
   );
