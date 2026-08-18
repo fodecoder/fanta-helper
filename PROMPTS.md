@@ -9,8 +9,9 @@ Le correzioni pre-release 13–18 (Fase 2.1) e la **Fase 4** (prompt 19–22:
 wishlist, confronto in asta, probabili formazioni, rigoristi) sono state eseguite
 e portano a `v1.8.0`; sono elencate sotto come storico. L'**hosting è in
 produzione** (Neon + Render + Cloudflare Pages). Il backlog attivo è la
-**correzione della griglia portieri** (prompt 23) e la **Fase 3 — v2** (prompt
-24: valutazioni generate via LLM in-app).
+**correzione della griglia portieri** (prompt 23), la **Fase 3 — v2** (prompt
+24: valutazioni generate via LLM in-app) e il **redesign UI** (prompt 25, da
+eseguire dopo 23 e 24).
 
 Regole trasversali valide per tutte le operazioni:
 
@@ -218,3 +219,39 @@ Commit `feat:` + bump MINOR + `CHANGELOG` + tag.
 > **Fase 3 — opzionali** (dipendenze esterne/legali, da valutare a parte):
 > ricerca news qualitative a supporto delle valutazioni; backfill foto reali
 > in `player.image_url`.
+
+### 25 — Redesign UI (solo presentazione)
+
+**Timing.** Da eseguire **dopo** i prompt 23 e 24: il redesign tocca solo il
+layer di presentazione, quindi conviene farlo a superficie funzionale congelata
+per non ristilare due volte le schermate nuove (coppie portieri, generazione
+valutazioni). Eccezione: la sola definizione/consolidamento dei design token
+(palette come variabili CSS) può precedere, è a costo quasi nullo.
+
+**Contesto.** SPA React+TS (Vite), monorepo npm workspaces (`web`/`server`/
+`shared`). Il backend è sottile e deriva TUTTO lo stato dal log immutabile
+`purchase`. L'intervento è **solo UI**.
+
+**Ambito consentito.** `web/src/components/**`, `web/src/pages/**`,
+`web/src/index.css`, layout e navigazione in `App.tsx`.
+
+**Vietato (rifiuta e riprogetta se serve):**
+
+- toccare la derivazione dello stato: `residuo`/`slot`/`max_bid` sono funzioni
+  pure del log `purchase`, mai campi mutabili;
+- modificare contratti API, route, o i moduli `web/src/api/**`, `server/**`,
+  `shared/**`;
+- aggiungere dipendenze pesanti o nuovi UI framework; tipi TypeScript stretti.
+
+**Design.** Palette come design token (variabili CSS): verde brand `#2BA756`,
+blu header `#11246F`/`#144F89`, arancio accenti `#FF8300`, verde scuro `#077449`,
+bianco `#FFFFFF`. Mobile-first, priorità alla schermata Asta. Mantieni logo
+nell'header e versione nel footer.
+
+**Disciplina.** Conventional Commits in inglese, MAI `git push`, nessun
+riferimento ad AI/assistenti in codice o commit; `build` e `lint` verdi prima di
+ogni commit. Prima di modifiche ampie **proponi il piano**, non riscrivere in
+massa.
+
+**Done.** UI ristrutturata sull'intera superficie, invariante intatta, build e
+lint verdi. Commit `feat:`/`refactor:` + bump + `CHANGELOG` + tag.
