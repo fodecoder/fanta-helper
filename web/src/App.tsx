@@ -25,7 +25,7 @@ function App() {
   return (
     <main>
       <header className="app-header">
-        <h1>Fanta Helper</h1>
+        <h1>FantaProfeta</h1>
         <p className="status">Backend: {status}</p>
         <nav className="nav">
           <button
@@ -81,6 +81,9 @@ function App() {
       ) : (
         <ProbableLineupPage />
       )}
+      <footer className="app-footer">
+        <span>FantaProfeta v{__APP_VERSION__}</span>
+      </footer>
     </main>
   );
 }
