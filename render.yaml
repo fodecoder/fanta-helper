@@ -33,3 +33,11 @@ services:
         value: claude-sonnet-5
       - key: ANTHROPIC_BASE_URL
         value: https://api.anthropic.com
+      # Arricchimento statistiche (minutes/goals/assists) per il confronto ruoli
+      # in asta. Off di default; nessuna funzionalità base ne dipende.
+      - key: STATS_API_ENABLED
+        value: false
+      - key: STATS_API_KEY
+        sync: false
+      - key: STATS_API_BASE_URL
+        value: https://v3.football.api-sports.io
