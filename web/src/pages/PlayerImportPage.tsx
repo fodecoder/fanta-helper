@@ -111,6 +111,41 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
               </tbody>
             </table>
           )}
+
+          {report.quotation && (
+            <div style={{ marginTop: 34 }}>
+              <h3 style={{ marginBottom: 10 }}>
+                Quotazioni {report.quotation.season}: {report.quotation.written} scritte,{" "}
+                {report.quotation.discarded.length} scartate
+              </h3>
+              {report.quotation.discarded.length > 0 && (
+                <table className="table" style={{ maxWidth: 720 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "right" }}>Riga</th>
+                      <th>Nome</th>
+                      <th>Squadra</th>
+                      <th>Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.quotation.discarded.map((row) => (
+                      <tr key={row.row}>
+                        <td className="num" style={{ textAlign: "right" }}>
+                          {row.row}
+                        </td>
+                        <td>{row.name === "" ? "—" : row.name}</td>
+                        <td>{row.team}</td>
+                        <td style={{ color: "var(--color-accent-2-700)", fontSize: 13 }}>
+                          {row.reason}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>
