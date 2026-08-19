@@ -1,6 +1,14 @@
 import "dotenv/config";
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import type { PoolClient } from "pg";
+
+// node-postgres restituisce le colonne NUMERIC come stringa (OID 1700) per
+// non perdere precisione sui BIGNUMERIC — ma qui i valori (es. `mv`/`fm` di
+// player_season_stats) sono voti/fantamedie su cui il motore di consiglio fa
+// aritmetica: senza questo parser un'addizione diventa una concatenazione di
+// stringhe. Nessuna colonna DECIMAL/NUMERIC della lega richiede precisione
+// arbitraria, quindi il parsing a float è sicuro per l'intera app.
+types.setTypeParser(1700, (value) => (value === null ? null : parseFloat(value)));
 
 const connectionString = process.env.DATABASE_URL;
 

@@ -62,3 +62,14 @@ export async function listPlayerSeasonStatsBySeason(
   );
   return result.rows;
 }
+
+// Stagioni in formato "AAAA-AA" ordinano correttamente come stringa: MAX()
+// individua quella più recente senza dover parsare l'anno. Le statistiche
+// esistono solo per stagioni concluse, quindi tipicamente precede la
+// stagione più recente in `quotation` (che include anche quella corrente).
+export async function getLatestStatsSeason(): Promise<string | null> {
+  const result = await pool.query<{ season: string | null }>(
+    "SELECT MAX(season) AS season FROM player_season_stats",
+  );
+  return result.rows[0]?.season ?? null;
+}
