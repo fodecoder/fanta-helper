@@ -1,5 +1,6 @@
 import express, { Router } from "express";
-import { importPlayersFromCsv, importPlayersFromXlsx } from "../import/playerImport";
+import { importPlayersFromCsv } from "../import/playerImport";
+import { importPlayersAndQuotationsFromXlsx } from "../import/currentSeasonImport";
 import { listPlayers } from "../db/players";
 import { ApiError } from "../http/errors";
 
@@ -29,7 +30,8 @@ playersRouter.post(
         if (req.body.length === 0) {
           throw ApiError.badRequest("empty xlsx body");
         }
-        res.json(await importPlayersFromXlsx(req.body));
+        const filename = req.get("X-Filename") ?? null;
+        res.json(await importPlayersAndQuotationsFromXlsx(req.body, filename));
         return;
       }
       if (typeof req.body !== "string" || req.body.trim() === "") {

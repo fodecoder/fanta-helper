@@ -5,6 +5,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-08-19
+
+### Added
+
+- **Quotazioni e statistiche storiche a DB**: nuove tabelle globali
+  `quotation` (`qt_i`, `qt_a`, `fvm` per stagione) e `player_season_stats`
+  (presenze, media voto, fantamedia e bonus/malus per stagione), entrambe
+  univoche per `(player_id, season)`; nuova colonna `player.fanta_id`
+  (nullable, univoca) come chiave di join stabile con i listoni ufficiali,
+  con fallback a matching per `name`+`team` quando l'`Id` manca o non è
+  ancora noto — righe ambigue o senza corrispondenza finiscono in un report
+  di scarto, mai stimate.
+- **Import a sostituzione per stagione**, in transazione: un reimport
+  riflette esattamente l'ultimo file per quella stagione.
+- **Comando di seed storico locale** (`db:seed:historical:*`, mai una route
+  pubblica) che legge i listoni xlsx già presenti in `docs/` e popola
+  `quotation`/`player_season_stats` per tutte le stagioni disponibili.
+- **Upload portale esteso**: l'import xlsx già usato per il pool `player`
+  scrive ora anche `quotation` per la stagione corrente, ricavata dal nome
+  del file.
+- **Rigoristi/calci piazzati da PDF**: seed one-off che alimenta il
+  `set_piece_taker` esistente a partire dal PDF ufficiale, con estrazione
+  testuale via Claude (il PDF si è rivelato un vero export testuale, non una
+  scansione) — le righe incerte non vengono scritte, restano solo un report
+  a console; la pagina "Rigoristi e calci piazzati" resta la fonte di
+  correzione.
+
+### Notes
+
+- Nessun cambiamento all'invariante di dominio: le nuove tabelle sono puro
+  riferimento globale, `purchase` resta l'unico log da cui deriva lo stato
+  d'asta.
+
 ## [2.2.0] - 2026-08-18
 
 ### Changed

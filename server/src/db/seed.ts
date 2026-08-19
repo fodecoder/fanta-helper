@@ -17,9 +17,27 @@ async function seed(): Promise<void> {
     modificatori: defaultModificatori,
   });
 
-  const goalkeeper = await insertPlayer({ name: "Mario Rossi", team: "Demo FC", ruolo: "P", image_url: null });
-  const defender = await insertPlayer({ name: "Luca Bianchi", team: "Demo FC", ruolo: "D", image_url: null });
-  const striker = await insertPlayer({ name: "Paolo Verdi", team: "Demo United", ruolo: "A", image_url: null });
+  const goalkeeper = await insertPlayer({
+    name: "Mario Rossi",
+    team: "Demo FC",
+    ruolo: "P",
+    image_url: null,
+    fanta_id: null,
+  });
+  const defender = await insertPlayer({
+    name: "Luca Bianchi",
+    team: "Demo FC",
+    ruolo: "D",
+    image_url: null,
+    fanta_id: null,
+  });
+  const striker = await insertPlayer({
+    name: "Paolo Verdi",
+    team: "Demo United",
+    ruolo: "A",
+    image_url: null,
+    fanta_id: null,
+  });
 
   await insertValuation({
     league_id: league.id,

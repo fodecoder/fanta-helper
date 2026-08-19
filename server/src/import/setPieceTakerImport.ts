@@ -1,7 +1,11 @@
 import type { SetPieceTakerExtractionResponse, SetPieceTakerDraftRow } from "@fanta-helper/shared";
 import { setPieceTakerDraftRowSchema } from "@fanta-helper/shared";
 import { getClaudeExtractionConfig } from "../claudeExtraction/config";
-import { requestVisionExtraction, type ImageMediaType } from "../claudeExtraction/client";
+import {
+  requestVisionExtraction,
+  stripCodeFence,
+  type ImageMediaType,
+} from "../claudeExtraction/client";
 import { ApiError } from "../http/errors";
 
 function buildPrompt(team: string): string {
@@ -19,12 +23,6 @@ Regole tassative:
   sufficiente sicurezza, includila comunque ma con "uncertain": true e un
   "reason" chiaro, così l'utente può correggerla o scartarla in fase di
   revisione.`;
-}
-
-function stripCodeFence(text: string): string {
-  const trimmed = text.trim();
-  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  return match ? match[1]! : trimmed;
 }
 
 export async function extractSetPieceTakersFromImage(

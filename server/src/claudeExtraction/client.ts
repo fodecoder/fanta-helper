@@ -117,3 +117,12 @@ export async function requestTextExtraction(
 ): Promise<string> {
   return requestExtraction(config, [{ type: "text", text: promptText }], maxTokens);
 }
+
+// Il modello a volte avvolge il JSON richiesto in un blocco ```json ... ```
+// nonostante il prompt lo vieti: normalizzato qui, unico punto condiviso da
+// tutti i moduli import/* che fanno JSON.parse su una risposta testuale.
+export function stripCodeFence(text: string): string {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  return match ? match[1]! : trimmed;
+}

@@ -12,10 +12,37 @@ export interface LeagueRow {
 
 export interface PlayerRow {
   id: number;
+  fanta_id: number | null;
   name: string;
   team: string;
   ruolo: Role;
   image_url: string | null;
+}
+
+export interface QuotationRow {
+  player_id: number;
+  season: string;
+  qt_i: number | null;
+  qt_a: number | null;
+  fvm: number | null;
+}
+
+export interface PlayerSeasonStatsRow {
+  player_id: number;
+  season: string;
+  presenze: number | null;
+  mv: number | null;
+  fm: number | null;
+  gf: number | null;
+  gs: number | null;
+  assist: number | null;
+  rp: number | null;
+  rc: number | null;
+  rig_plus: number | null;
+  rig_minus: number | null;
+  amm: number | null;
+  esp: number | null;
+  autogol: number | null;
 }
 
 export interface ValuationRow {
