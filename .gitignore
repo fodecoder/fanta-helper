@@ -38,3 +38,10 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Dati grezzi proprietari (listoni/statistiche Fantacalcio, PDF calci piazzati):
+# repo pubblico, non ridistribuibili. Sorgente locale per il seed; la verita
+# vive nel DB dopo l'ingest. Fixture di esempio versionabili sotto docs/sample/.
+docs/*.xlsx
+docs/*.pdf
+!docs/sample/**
