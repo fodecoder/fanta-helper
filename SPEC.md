@@ -55,21 +55,90 @@ acquisti continuano a referenziare `manager.id`.
 
 ### `player`
 
-| campo       | tipo | note                                        |
-|-------------|------|---------------------------------------------|
-| `id`        | PK   |                                             |
-| `name`      | text |                                             |
-| `team`      | text | squadra di appartenenza                     |
-| `ruolo`     | enum | `P` / `D` / `C` / `A`                       |
-| `image_url` | text | nullable; pronta per backfill foto reali    |
+| campo       | tipo | note                                          |
+|-------------|------|-----------------------------------------------|
+| `id`        | PK   | chiave interna                                |
+| `fanta_id`  | int  | id ufficiale Fantacalcio (`Id` dei listoni), nullable, univoco — chiave di join stabile per quotazioni e statistiche storiche |
+| `name`      | text |                                               |
+| `team`      | text | squadra di appartenenza                       |
+| `ruolo`     | enum | `P` / `D` / `C` / `A`                         |
+| `image_url` | text | nullable; pronta per backfill foto reali      |
 
 Il pool `player` è condiviso tra tutte le leghe.
+
+> **`fanta_id` — perché.** I file `docs/` (quotazioni e statistiche) condividono
+> tutti la colonna `Id` ufficiale di Fantacalcio. È l'unica chiave stabile per
+> unire quotazioni e statistiche allo stesso giocatore senza affidarsi al
+> matching fragile per `name`+`team` (che cambia con trasferimenti e grafie). Il
+> matching testuale resta il fallback per le righe prive di `Id`.
 
 **Import quotazioni.** Il pool si popola dal listone ufficiale in formato **CSV
 (`;`) o xlsx**. Il parser individua la riga di intestazione (tollerando una
 riga-titolo iniziale) e richiede le colonne `R`, `Nome`, `Squadra`. Le righe con
 ruolo non valido o campi mancanti finiscono in un report di scarto, non vengono
 inventate. Un reimport non azzera `image_url`.
+
+### `quotation` — quotazioni per stagione (storico + corrente)
+
+Dati dei file `docs/Quotazioni_Fantacalcio_Stagione_*.xlsx`. Riferimento globale,
+non per-lega. Una riga per `(player_id, season)`.
+
+| campo       | tipo | note                                                    |
+|-------------|------|---------------------------------------------------------|
+| `player_id` | FK   | → `player.id` (join via `fanta_id`)                     |
+| `season`    | text | es. `2025-26`                                           |
+| `qt_i`      | int  | `Qt.I` — quotazione iniziale (Classic)                  |
+| `qt_a`      | int  | `Qt.A` — quotazione attuale (Classic)                   |
+| `fvm`       | int  | `FVM` — FantaValore di Mercato (Classic)                |
+
+Colonne del listone: `Id, R, RM, Nome, Squadra, Qt.A, Qt.I, Diff., Qt.A M,
+Qt.I M, Diff.M, FVM, FVM M`. Si importano le colonne **Classic** (`Qt.A`, `Qt.I`,
+`FVM`); le varianti Mantra (`* M`) non servono in questa lega e si ignorano.
+Import a sostituzione per stagione (snapshot in transazione). La stagione si
+ricava dal nome file, non si indovina.
+
+> **Nota — "quanto pagato di media nelle altre aste".** Questo dato **non è
+> presente** nei listoni ufficiali. La colonna più vicina è `FVM` (FantaValore di
+> Mercato), un indice del trend dei prezzi ad asta, che usiamo come **proxy**
+> dichiarato del prezzo di mercato — non è una media di aggiudicazioni reali. Un
+> vero "prezzo medio pagato" richiederebbe una fonte esterna (aggregatori di
+> leghe) qui assente; se servisse, va aggiunto come campo separato e non spacciato
+> per `FVM`.
+
+### `player_season_stats` — statistiche per stagione (storico)
+
+Dati dei file `docs/Statistiche_Fantacalcio_Stagione_*.xlsx`. Riferimento
+globale. Una riga per `(player_id, season)`.
+
+| campo       | tipo    | note                                              |
+|-------------|---------|---------------------------------------------------|
+| `player_id` | FK      | → `player.id` (join via `fanta_id`)               |
+| `season`    | text    | es. `2024-25`                                      |
+| `presenze`  | int     | `Pv` — partite a voto                             |
+| `mv`        | numeric | `Mv` — media voto                                 |
+| `fm`        | numeric | `Fm` — fantamedia (media fantavoto)              |
+| `gf`        | int     | `Gf` — gol fatti                                  |
+| `gs`        | int     | `Gs` — gol subiti (portieri)                      |
+| `assist`    | int     | `Ass`                                             |
+| `rp`        | int     | `Rp` — rigori parati                             |
+| `rc`        | int     | `Rc` — rigori calciati                           |
+| `rig_plus`  | int     | `R+` — rigori segnati                            |
+| `rig_minus` | int     | `R-` — rigori sbagliati                          |
+| `amm`       | int     | `Amm` — ammonizioni                              |
+| `esp`       | int     | `Esp` — espulsioni                               |
+| `autogol`   | int     | `Au`                                             |
+
+Colonne complete del file: `Id, R, Rm, Nome, Squadra, Pv, Mv, Fm, Gf, Gs, Rp,
+Rc, R+, R-, Ass, Amm, Esp, Au`. Per ogni stagione esistono **tre varianti** di
+file (base, `_Italia`, `_Statistico`): differiscono solo per la fonte dei voti.
+Si adotta come canonica la variante **base** (fonte Fantacalcio); le altre due si
+ignorano salvo decisione esplicita. `Mv`/`Fm` sono decimali, si conservano come
+`numeric`, non arrotondati all'import.
+
+> **Nota — API esterna in gran parte ridondante per lo storico.** Le statistiche
+> reali di rendimento (minuti/presenze, gol, assist) delle stagioni passate sono
+> **già** in questi file. Per lo storico l'API stats esterna non aggiunge nulla:
+> serve al più per la stagione **in corso** aggiornata giornata per giornata.
 
 ### `goalkeeper_grid`
 
@@ -175,11 +244,18 @@ Regole di validazione all'import:
 - Il matching `name`+`team` → `player_id`: i match ambigui o assenti finiscono
   in una lista unmatched per revisione manuale, non vengono inventati.
 
-## Estensioni pianificate (Fase 4)
+> **UI — la struttura va mostrata a chi carica.** Oggi lo schema è solo qui in
+> `SPEC.md`: chi usa l'import JSON non sa cosa caricare. La schermata di import
+> deve **esporre lo schema** (campi, tipi, enum) e offrire un **template
+> scaricabile** (JSON di esempio valido) e/o un riepilogo inline degli errori di
+> validazione riga per riga. La verità dello schema resta `shared/src/valuation.ts`
+> (Zod): la UI ne è il riflesso, non una seconda definizione.
 
-Modello previsto, **non ancora implementato** (prompt 19–22 in `PROMPTS.md`).
-Vale sempre l'invariante: nessuno di questi dati è stato mutabile dell'asta; il
-residuo/slot restano funzione del log `purchase`.
+## Dati Serie A — wishlist, formazioni, calci piazzati (Fase 4, implementata)
+
+Modello **implementato** (`v1.5.0`→`v1.8.0`). Vale sempre l'invariante: nessuno
+di questi dati è stato mutabile dell'asta; il residuo/slot restano funzione del
+log `purchase`.
 
 ### `wishlist` — giocatori desiderati (per-lega)
 
@@ -207,14 +283,87 @@ sostituzione (snapshot).
 
 I rigoristi/tiratori si mostrano nella stessa vista delle formazioni.
 
-### API stats esterna (opzionale, solo backend)
+### API stats/attributi esterna (opzionale, solo backend, provider pluggable)
 
-Per il confronto in asta tra il giocatore uscito e i disponibili dello stesso
-ruolo, il ranking **base** usa solo dati in-app (valutazioni + bisogni rosa). Un
-arricchimento opzionale (minuti, gol, assist) può arrivare da un'API stats
-gratuita (es. API-Football, free ~100 req/giorno). Vincoli: chiave **solo lato
-backend** (mai nel client), chiamate proxied, risposte in **cache** e con
-**rate-limit**. L'assenza dell'API non deve degradare il confronto base.
+Per il confronto in asta il ranking **base** usa solo dati in-app (valutazioni +
+statistiche storiche dei file `docs/` + bisogni rosa). L'arricchimento esterno è
+**opzionale** e non deve mai degradare la base. Il provider è **pluggable** dietro
+un'interfaccia unica lato backend; chiave **solo lato backend**, chiamate proxied,
+risposte in **cache** e con **rate-limit**.
+
+**Provider previsti e cosa forniscono (assi di dato diversi — non intercambiabili):**
+
+| provider           | tipo di dato                                   | uso                                    |
+|--------------------|------------------------------------------------|----------------------------------------|
+| API-Football (attuale) | statistiche **reali** di partita: minuti, gol, assist | rendimento stagione in corso           |
+| SoFIFA             | **attributi di gioco EA FC**: overall, potential, età, ruolo, valore FIFA | profilo/potenziale, non rendimento reale |
+
+> **Attenzione — SoFIFA non sostituisce API-Football alla pari.** Sono due assi
+> diversi: API-Football dà il **rendimento reale** (minuti/gol/assist), SoFIFA dà
+> i **rating del videogioco** (overall, potential, attributi). Sostituire l'una
+> con l'altra **cambia la natura dell'arricchimento**, non è un drop-in. Inoltre
+> il rendimento reale storico è già nei file `docs/` (vedi `player_season_stats`),
+> quindi API-Football serve solo per la stagione viva. Decisione consigliata:
+> **non rimuovere** l'interfaccia stats reali; aggiungere SoFIFA come **secondo
+> provider** (attributi/potential), separato e disattivabile. Note su SoFIFA:
+> l'accesso richiede un **API token** dalle impostazioni account (solo da PC) ed è
+> soggetto ai loro termini; va citata l'attribuzione ai creatori come richiesto.
+> Se l'obiettivo è solo ridurre i costi, il punto non è SoFIFA vs API-Football ma
+> che **entrambe** restino opzionali e a costo nullo quando spente.
+
+### Engine — consiglio giocatori
+
+Motore di raccomandazione che, dato lo stato della rosa `Io` e il pool
+disponibile (derivato dal log `purchase`), ordina i giocatori per **valore
+RELATIVO alla lega**. Deterministico e derivato: nessun campo di stato mutabile.
+
+**Principi (allineati alle pratiche note del dominio):**
+
+- **Valore sopra il rimpiazzo (replacement level).** Non conta il valore assoluto
+  ma il margine rispetto al giocatore marginale acquistabile in quel ruolo con il
+  budget/slot residui. È la trasposizione fantacalcistica del VORP.
+- **Affidabilità = presenze.** A pari `Fm`, chi gioca di più vale di più: si pesa
+  la fantamedia per la quota di presenze (`presenze / partite_stagione`). Una `Fm`
+  alta su poche presenze è un segnale debole, va scontata.
+- **Potenziale di bonus per ruolo.** Gol/assist/rigori (da `player_season_stats`)
+  contano diversamente per ruolo; il peso dipende dallo `scoring` della lega.
+- **Regole della lega.** `scoring` e `modificatori` cambiano il valore: es. col
+  modificatore difesa attivo i difensori/portieri affidabili valgono di più. Il
+  motore legge le regole della lega, non usa pesi fissi.
+- **Scarsità di reparto e bisogni residui.** Il valore sale se il reparto è
+  scarso e `Io` ha ancora slot da riempire lì; scende sui reparti già coperti.
+- **Trend/proxy prezzo.** `FVM` e `Qt.A` correnti calibrano il prezzo atteso; il
+  motore segnala il divario tra valore stimato e prezzo di mercato (occasioni).
+
+**Output.** Per ogni giocatore disponibile: punteggio di valore, fascia, e i
+componenti (affidabilità, bonus attesi, aggiustamento regole, scarsità) così che
+il suggerimento sia **spiegabile**, non una scatola nera. L'engine alimenta sia
+una vista "consigli" sia l'ordinamento delle alternative in asta.
+
+## Vista Asta — dati mostrati (requisiti)
+
+Tutti derivati; nessuno è stato mutabile. Fonti tra parentesi.
+
+**Giocatore in asta** (quello che si sta battendo): oltre a `Tier`, `Fair value`,
+`Target`, `Max`, `Panic`, `Δ vs prezzo in asta` (da `valuation` + log), mostra:
+
+- **Media fantavoto** `Fm` e **media voto** `Mv` (`player_season_stats`, ultima
+  stagione con presenze; opzionale media pesata multi-stagione).
+- **Quotazione attuale** `Qt.A` e **FVM** (`quotation`, stagione corrente).
+- **Prezzo medio pagato**: usa `FVM` come proxy dichiarato (vedi nota su
+  `quotation`); non è un dato reale di aggiudicazioni.
+- Info giocatore: squadra, ruolo, presenze stagione, gol/assist, eventuale ruolo
+  nei calci piazzati e stato nelle probabili formazioni (dati già in-app).
+
+**Lista a sinistra — giocatori ancora da chiamare** (non nel log `purchase`):
+**ordinabile** per `FVM`, `Qt.A` (quotazione attuale) o `Qt.I` (quotazione
+iniziale).
+
+**Alternative disponibili stesso ruolo**: almeno **10** ancora disponibili,
+**ordinabili** per i vari valori (fair value, target, max bid, `Fm`, `FVM`,
+`Qt.A`, punteggio engine). Per non affollare la vista, i dettagli estesi di ogni
+alternativa stanno dietro un **bottone "Dettagli"** (pannello/espansione), con le
+stesse info del giocatore in asta.
 
 ## Palette
 

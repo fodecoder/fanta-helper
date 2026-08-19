@@ -19,9 +19,20 @@ Uso personale, nessun login. Ogni asta è una riga `league` con nome univoco.
 Note d'uso: alla creazione, una lega parte da default modificabili (rosa
 `3/8/8/6`, 8 squadre, budget 1000, punteggio e modificatori standard) e viene
 popolata con i manager (`Io` + avversari generati). L'import quotazioni accetta
-**CSV o xlsx**; è disponibile anche l'import di una **griglia portieri** di
-riferimento (titolare→riserve per squadra), consultabile durante l'asta. Modello
-dati e formati in [SPEC.md](./SPEC.md).
+**CSV o xlsx**; è disponibile anche l'import della **matrice coppie portieri** di
+riferimento, consultabile durante l'asta. Modello dati e formati in
+[SPEC.md](./SPEC.md).
+
+I file storici in `docs/` (quotazioni e statistiche Fantacalcio delle ultime
+stagioni) sono la sorgente per l'ingest a database di quotazioni
+(`quotation`) e statistiche (`player_season_stats`), usate dall'engine di
+consiglio — vedi Fase 5 in [PLAN.md](./PLAN.md).
+
+### Attribuzioni fonti dati
+
+- Quotazioni e statistiche: listoni ufficiali Fantacalcio®.
+- Attributi giocatore (EA FC): [SoFIFA](https://sofifa.com/) — attribuzione ai
+  creatori richiesta dai loro termini d'uso.
 
 ---
 
@@ -121,9 +132,11 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-08-18, `v1.8.0`).** **In produzione**: Neon + Render + Cloudflare
-Pages attivi, app funzionante end-to-end. La procedura sotto resta come
-riferimento per un nuovo ambiente. I passi eseguiti:
+**Stato (2026-08-19, `v2.2.0`).** **In produzione**: Neon + Render + Cloudflare
+Pages attivi, app funzionante end-to-end. Fasi 0–4, matrice coppie portieri,
+valutazioni generate via LLM e redesign UI (design system Broadsheet) complete.
+In lavorazione la Fase 5 (ingest storico `docs/` + engine di consiglio). La
+procedura sotto resta come riferimento per un nuovo ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati
 - [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
