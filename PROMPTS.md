@@ -1,257 +1,159 @@
-# PROMPTS.md — Prompt per le prossime operazioni
+# PROMPTS.md — Backlog operativo
 
-Backlog operativo. Le operazioni 1–12 (scaffolding → schema DB → deploy pipeline
-→ CRUD lega → import giocatori CSV → CRUD manager → import valutazioni JSON →
-asta live → selettore lega → max bid rettificato → rifinitura UI → miniature
-giocatori) sono completate fino a `v1.0.0`; i relativi prompt sono stati rimossi.
+Storico svuotato: tutte le operazioni fino a `v2.2.0` (scaffolding → MVP →
+Fase 2.1 → Fase 4 → matrice coppie portieri → valutazioni LLM in-app → redesign
+UI Broadsheet) sono **eseguite**. Il riepilogo dello stato è in [PLAN.md](./PLAN.md);
+i dettagli di modello in [SPEC.md](./SPEC.md).
 
-Le correzioni pre-release 13–18 (Fase 2.1) e la **Fase 4** (prompt 19–22:
-wishlist, confronto in asta, probabili formazioni, rigoristi) sono state eseguite
-e portano a `v1.8.0`; sono elencate sotto come storico. L'**hosting è in
-produzione** (Neon + Render + Cloudflare Pages). Il backlog attivo è la
-**correzione della griglia portieri** (prompt 23), la **Fase 3 — v2** (prompt
-24: valutazioni generate via LLM in-app) e il **redesign UI** (prompt 25, da
-eseguire dopo 23 e 24).
+Questo file contiene solo il **backlog attivo** (Fase 5), in ordine di priorità.
 
-Regole trasversali valide per tutte le operazioni:
+## Regole trasversali (valgono per ogni operazione)
 
-- Rispetta `CLAUDE.md`: commit locale a fine feature, MAI push, Conventional
-  Commits in inglese, SemVer + `CHANGELOG.md` + tag locale, build e lint verdi
-  prima del commit, nessun riferimento ad AI/assistenti/proprietario.
-- Rispetta l'invariante di dominio: lo stato dell'asta è derivato dal log
-  `purchase`. Nessun campo mutabile di stato.
-- Nessun segreto nel client; le chiamate esterne passano dal backend.
-- Prima di modifiche ampie, proponi il piano; non riscrivere in massa.
+- Rispetta `CLAUDE.md`: commit locale a fine feature, **MAI push**, Conventional
+  Commits in inglese, SemVer + `CHANGELOG.md` + tag locale, `build` e `lint`
+  verdi prima del commit, nessun riferimento ad AI/assistenti/proprietario.
+- **Invariante di dominio**: lo stato dell'asta è funzione pura del log
+  `purchase`. Nessun campo mutabile di stato (residuo, slot, max bid). I dati
+  storici (quotazioni, statistiche, attributi) sono di **riferimento globale**,
+  non stato d'asta.
+- Nessun segreto nel client; le chiamate esterne passano dal backend, in cache e
+  con rate-limit.
+- Nessun dato inventato: gli unmatched restano vuoti/segnalati, non stimati.
+- Prima di modifiche ampie **proponi il piano**, non riscrivere in massa.
 
 ---
 
-## Storico — Fase 2.1 (eseguite)
+## Fase 5 — Dati storici + Engine
 
-- **13 — Default di lega.** Rosa `3/8/8/6`, `n_squadre = 8`, `budget = 1000`
-  precompilati nel form nuova lega. `v1.1.0`.
-- **14 — Form punti/modificatori.** Sostituite le textarea JSON grezze con un
-  form strutturato; default standard Fantagazzetta (bonus/malus, fasce gol,
-  modificatore difesa e toggle). `v1.1.0`.
-- **15 — Manager automatici.** Alla creazione lega: `Io` + `n−1` manager con
-  nomi generati divertenti. `v1.2.0`.
-- **16 — Import xlsx.** L'import quotazioni accetta CSV o xlsx con header
-  tollerante (riga-titolo iniziale gestita). `v1.3.0`.
-- **17 — Griglia portieri.** Import CSV/xlsx di un riferimento globale
-  titolare→riserve, consultabile in asta. `v1.4.0`.
-- **18 — render.yaml.** Blueprint del backend Render alla root. Incluso in
-  `v1.4.0` (chore).
+### 1 — Ingest quotazioni e statistiche storiche (`docs/`)
 
-- **Provisioning (manuale)** — eseguito: Neon → Render → Cloudflare Pages, CORS
-  chiuso, push su `main`. App in produzione.
-
----
-
-## Storico — Fase 4 (eseguite)
-
-Le quattro operazioni sotto sono state completate (`v1.5.0`→`v1.8.0`): wishlist
-per-lega (19), confronto in asta stesso-ruolo con arricchimento stats opzionale
-(20), probabili formazioni via screenshot con estrazione Claude vision (21),
-rigoristi e tiratori (22). Restano come riferimento.
-
-Quattro operazioni in ordine di dipendenza. Le prime due non richiedono fonti
-esterne obbligatorie; le ultime due portano dati Serie A editoriali (probabili
-formazioni, rigoristi) per i quali **non esiste un'API gratuita affidabile**: la
-via principale è l'upload di screenshot con estrazione, con eventuale
-integrazione esterna come complemento.
-
-### 19 — Giocatori desiderati (wishlist per-lega)
-
-**Contesto.** Serve marcare gli obiettivi d'asta per non perderli di vista. È una
-lista di supporto, non stato dell'asta: non tocca residuo/slot/max bid.
+**Contesto.** I file `docs/Quotazioni_*.xlsx` e `docs/Statistiche_*.xlsx`
+contengono quotazioni e statistiche delle ultime stagioni. Sono la base dati
+dell'engine e delle colonne extra in asta. Modello in `SPEC.md`
+(`quotation`, `player_season_stats`, chiave di join `player.fanta_id`).
 
 **Task.**
 
-- Tabella `wishlist (league_id FK, player_id FK, priority int null, note text
-  null)`, univoca `(league_id, player_id)`, `ON DELETE CASCADE` su `league`.
-  Migrazione + data-access tipato + route CRUD sotto `/leagues/:leagueId/wishlist`.
-- UI: aggiungi/rimuovi un giocatore alla wishlist (dalla ricerca giocatori) e
-  riordina per `priority`. In **Asta** evidenzia i giocatori in wishlist ancora
-  disponibili (non ancora nel log `purchase`).
+- Migrazione: aggiungi `player.fanta_id` (int, nullable, univoco). Nuove tabelle
+  globali `quotation (player_id, season, qt_i, qt_a, fvm)` e
+  `player_season_stats (player_id, season, presenze, mv, fm, gf, gs, assist, rp,
+  rc, rig_plus, rig_minus, amm, esp, autogol)`, univoche per `(player_id, season)`.
+- Parser xlsx (riusa `fileRows.ts`): individua l'header tollerando la riga-titolo.
+  Quotazioni → colonne Classic `Qt.A`, `Qt.I`, `FVM` (ignora le varianti `* M`).
+  Statistiche → variante **base** canonica (ignora `_Italia`/`_Statistico`);
+  `Mv`/`Fm` come decimali. La stagione si ricava dal nome file.
+- Join su `fanta_id` (`Id` del file); righe senza `Id` → fallback matching
+  `name`+`team`; ambigue/assenti in report di scarto, non inventate.
+- Import **a sostituzione per stagione** (snapshot in transazione).
+- Data-access tipato + route di import sotto le rotte globali di riferimento.
 
-**Vincoli.** Nessun campo mutabile di stato d'asta; la wishlist è ortogonale al
-log acquisti. Nessun segreto nel client.
+**Done.** Quotazioni e statistiche multi-stagione a DB, interrogabili per
+`player_id`+`season`. Commit `feat:` + bump MINOR + `CHANGELOG` + tag.
 
-**Done.** Wishlist per-lega gestibile e visibile in asta. Commit `feat:` + bump
-MINOR + `CHANGELOG` + tag.
+### 2 — Engine di consiglio giocatori
 
-### 20 — Confronto in asta (stesso ruolo)
-
-**Contesto.** Quando un giocatore esce all'asta, serve capire in fretta come si
-colloca rispetto ai disponibili dello **stesso ruolo**. Il valore è RELATIVO alla
-lega: la base del confronto sono le **valutazioni già in-app**.
-
-**Task.**
-
-- Dato il giocatore selezionato, calcola e mostra il ranking dei giocatori dello
-  stesso ruolo **ancora disponibili** (esclusi quelli nel log `purchase` della
-  lega), ordinati per valutazione (`fair_value`/`target`/`tier`) con indicazione
-  di `max_bid` e dei bisogni di reparto/residuo del manager `Io`.
-- Il confronto **base è puramente derivato** (valutazioni + log + roster): nessuna
-  dipendenza esterna, deterministico, coerente con l'invariante.
-- **Arricchimento opzionale** (dietro feature-flag): minuti/gol/assist da un'API
-  stats gratuita (es. API-Football, free ~100 req/giorno). Regole: chiave **solo
-  lato backend**, chiamate proxied dal server, risposte in **cache** (per
-  stagione/giornata) e con **rate-limit**; se l'API manca o è esaurita, il
-  confronto base non degrada. Mappatura nome→giocatore esplicita, niente dati
-  inventati: gli unmatched restano vuoti, non stimati.
-
-**Vincoli.** Nessun segreto nel client (invariante). L'API è un extra, non un
-prerequisito. Nessuna scrittura di stato d'asta.
-
-**Done.** In asta, selezionando un giocatore, compare il confronto per ruolo dai
-dati in-app; l'arricchimento esterno è attivabile e isolato nel backend. Commit
-`feat:` + bump MINOR + `CHANGELOG` + tag.
-
-### 21 — Probabili formazioni Serie A (20 squadre)
-
-**Contesto.** Riferimento **globale** (non per-lega), come la griglia portieri.
-Non esiste un'API gratuita affidabile per le probabili: la fonte è editoriale
-(Gazzetta/SosFanta/FantaCalcioPedia). Ingest primario via **upload screenshot**.
+**Contesto.** Motore che ordina i disponibili per **valore relativo alla lega**.
+Spec in `SPEC.md` → "Engine — consiglio giocatori". Deterministico e derivato.
 
 **Task.**
 
-- Tabella globale `probable_lineup (team, player_name, ruolo null, stato)` con
-  `stato ∈ {titolare, panchina, ballottaggio}`; import **a sostituzione**
-  (snapshot in transazione), come `goalkeeper_grid`.
-- Ingest via **upload di screenshot**: il backend estrae i dati (OCR/LLM →
-  struttura tipizzata) e/o conserva l'immagine per squadra; passaggio di
-  revisione manuale per le righe non riconosciute (niente dati inventati).
-- **Complemento opzionale**: integrazione esterna (fonte editoriale) isolata nel
-  backend, da trattare come fragile (parsing difensivo, nessun segreto nel
-  client, disattivabile).
-- UI: **tab Probabili formazioni** con le 20 squadre (modulo + undici probabile).
+- Modulo puro (in `shared` dove possibile) che, dati: pool giocatori,
+  `quotation`+`player_season_stats`, regole della lega (`scoring`, `modificatori`,
+  `roster_config`) e log `purchase` (per residuo/slot/bisogni di `Io`), calcola
+  per ogni giocatore disponibile un **punteggio di valore** scomposto in
+  componenti (affidabilità = presenze, bonus attesi per ruolo, aggiustamento
+  regole lega, scarsità di reparto, divario prezzo via `FVM`/`Qt.A`).
+- Valore **sopra il rimpiazzo**: margine rispetto al marginale acquistabile nel
+  ruolo con budget/slot residui.
+- Output **spiegabile**: componenti visibili, non solo il numero finale.
+- Endpoint di lettura + vista "Consigli"; l'engine alimenta anche l'ordinamento
+  delle alternative in asta (operazione 6).
 
-**Vincoli.** Rispetta i ToS delle fonti; lo scraping è complemento, non
-requisito. Estrazione lato backend, mai chiavi/scraper nel client. Import
-idempotente a sostituzione.
+**Vincoli.** Nessuna dipendenza esterna obbligatoria: l'engine gira sui dati
+in-app. I pesi derivano dalle regole della lega, non hardcoded.
 
-**Done.** Tab formazioni popolabile da screenshot (ed eventualmente da fonte
-esterna), con revisione degli unmatched. Commit `feat:` + bump MINOR +
+**Done.** Ranking di valore per lega, spiegabile. Commit `feat:` + bump MINOR +
 `CHANGELOG` + tag.
 
-### 22 — Rigoristi e tiratori di punizioni (nella vista formazioni)
+### 3 — Import JSON valutazioni: schema visibile e template
 
-**Contesto.** Gerarchie dei calci piazzati per squadra, dato editoriale come le
-formazioni. Vive nella stessa vista della 21.
+**Contesto.** Chi carica il JSON non conosce la struttura attesa (è solo in
+`SPEC.md`/`shared/src/valuation.ts`).
 
 **Task.**
 
-- Tabella globale `set_piece_taker (team, tipo, player_name, rank)` con
-  `tipo ∈ {rigore, punizione, corner}` e `rank` = gerarchia (1 = primo tiratore);
-  import a sostituzione. Stessa pipeline di ingest della 21 (screenshot +
-  eventuale esterno).
-- UI: nella **tab Probabili formazioni**, per ogni squadra mostra rigoristi e
-  tiratori di punizioni in gerarchia.
+- Nella schermata di import valutazioni, mostra lo **schema** (campi, tipi, enum
+  `ruolo`/`confidence`) e offri un **template JSON scaricabile** valido.
+- Riepilogo errori di validazione riga per riga (già c'è la lista unmatched:
+  estendila agli errori di schema). La verità resta lo schema Zod in `shared`.
 
-**Vincoli.** Come la 21: fonti nel backend, nessun dato inventato, import
-idempotente.
+**Done.** L'utente vede cosa caricare e scarica un esempio. Commit `feat:` + bump
+MINOR + `CHANGELOG` + tag.
 
-**Done.** Rigoristi/tiratori visibili per squadra nella vista formazioni. Commit
+### 4 — Asta: lista "da chiamare" ordinabile
+
+**Task.**
+
+- Nella modalità asta, la lista a sinistra dei giocatori **ancora da chiamare**
+  (non nel log `purchase`) diventa **ordinabile** per `FVM`, `Qt.A` (quotazione
+  attuale) o `Qt.I` (quotazione iniziale), da `quotation` stagione corrente.
+
+**Vincoli.** Solo presentazione/derivazione; nessuna scrittura di stato d'asta.
+
+**Done.** Ordinamento selezionabile sulla lista. Commit `feat:` + bump MINOR +
+`CHANGELOG` + tag.
+
+### 5 — Asta: colonne extra sul giocatore in asta
+
+**Contesto.** Requisiti in `SPEC.md` → "Vista Asta — dati mostrati".
+
+**Task.**
+
+- Oltre a `Tier`, `Fair value`, `Target`, `Max`, `Panic`, `Δ vs prezzo in asta`,
+  mostra per il giocatore in asta: **media fantavoto** (`Fm`) e media voto (`Mv`)
+  da `player_season_stats`; **quotazione attuale** (`Qt.A`) e **FVM** da
+  `quotation`. Il "prezzo medio pagato" usa `FVM` come **proxy dichiarato** (non
+  è una media di aggiudicazioni reali — vedi nota in `SPEC.md`).
+- Aggiungi altre info del giocatore battuto (squadra, ruolo, presenze,
+  gol/assist, calci piazzati, stato probabili formazioni).
+
+**Done.** Colonne extra visibili in asta. Commit `feat:` + bump MINOR +
+`CHANGELOG` + tag.
+
+### 6 — Asta: alternative disponibili (≥10, ordinabili, dettagli)
+
+**Task.**
+
+- Per il ruolo del giocatore in asta, mostra almeno **10** alternative ancora
+  disponibili (escluse quelle nel log `purchase`), **ordinabili** per i vari
+  valori: fair value, target, max bid, `Fm`, `FVM`, `Qt.A`, punteggio engine.
+- Info estese di ogni alternativa dietro un **bottone "Dettagli"**
+  (pannello/espansione) per non affollare la vista: stesse info del giocatore in
+  asta.
+
+**Done.** Alternative ordinabili con dettagli a richiesta. Commit `feat:` + bump
+MINOR + `CHANGELOG` + tag.
+
+### 7 — Provider stats SoFIFA (attributi EA FC)
+
+**Contesto.** SoFIFA fornisce **attributi di gioco** (overall, potential, età,
+valore FIFA), non rendimento reale. **Non** sostituisce API-Football (minuti/gol/
+assist reali): è un asse di dato diverso. Vedi nota in `SPEC.md`. Attribuzione ai
+creatori richiesta.
+
+**Task.**
+
+- Astrai il provider stats dietro un'unica interfaccia backend; mantieni
+  API-Football (rendimento reale, stagione viva) e aggiungi **SoFIFA** come
+  secondo provider (attributi/potential), separato, opzionale e disattivabile via
+  flag. Token SoFIFA solo lato backend, chiamate proxied, cache + rate-limit.
+- Mostra gli attributi come arricchimento nelle info giocatore/alternative;
+  l'assenza del provider non degrada la base. Nessun dato inventato.
+- Cita l'attribuzione a SoFIFA dove i dati sono mostrati.
+
+**Nota decisionale.** Se l'obiettivo è ridurre i costi, la leva non è "SoFIFA al
+posto di API-Football" ma tenere **entrambi** opzionali e a costo nullo da spenti;
+per lo storico l'API esterna è già ridondante (dati in `player_season_stats`).
+
+**Done.** SoFIFA affiancato come provider opzionale, con attribuzione. Commit
 `feat:` + bump MINOR + `CHANGELOG` + tag.
-
----
-
-## Backlog attivo
-
-### 23 — Griglia portieri come matrice di accoppiamenti
-
-**Contesto.** Il modello attuale (`goalkeeper_grid`: gerarchia titolare→riserve
-per squadra) non rappresenta la sorgente reale. La "griglia portieri" è una
-**matrice simmetrica squadra×squadra** con un punteggio di favorevolezza della
-*coppia* di portieri: più basso = i due portieri giocano meno spesso in casa
-nella stessa giornata (calendari-casa più complementari). Le coppie che
-condividono lo stadio (Roma-Lazio, Inter-Milan, Juve-Torino) valgono `0` e sono
-l'accoppiamento ideale. La gerarchia va **sostituita** da questo modello.
-
-**Task.**
-
-- Nuova tabella globale `gk_pairing (team_a text, team_b text, score int)`,
-  simmetrica (una riga per coppia non ordinata o entrambe le direzioni),
-  import **a sostituzione** (snapshot in transazione) come `goalkeeper_grid`.
-- Import da xlsx/CSV in **formato matrice**: prima riga/colonna = sigle squadre,
-  celle = punteggio; diagonale vuota; ignora le righe di legenda finali. Righe
-  non riconosciute in report di scarto, mai inventate.
-- Rimuovi il modello e la UI della gerarchia titolare→riserve (sostituzione, non
-  affiancamento — decisione confermata).
-- UI "Coppie portieri": scelta una squadra, mostra i migliori compagni di coppia
-  ordinati per favorevolezza. **Display invertibile** (`display = max − score`)
-  così alto = più favorevole; il fattore campo è già nella metrica, non
-  aggiungerlo due volte.
-
-**Vincoli.** Dato di riferimento globale, non stato d'asta: nessun impatto su
-residuo/slot/max bid. Import idempotente a sostituzione. Nessun segreto nel client.
-
-**Done.** Matrice coppie importabile e consultabile, gerarchia rimossa. Commit
-`feat:` (breaking sul modello → valuta bump) + `CHANGELOG` + tag.
-
-### 24 — Valutazioni generate via LLM in-app (Fase 3)
-
-**Contesto.** Generare/aggiornare le `valuation` per-lega con Claude, invece
-dell'import JSON manuale. Lo schema stretto delle valutazioni esiste già in
-`SPEC.md` e la validazione+matching nome→ID in `server/src/import/valuationJson.ts`.
-
-**Task.**
-
-- Riusa `server/src/claudeExtraction` aggiungendo un path **text-only** (nessuna
-  immagine): input = pool giocatori + regole della lega (`scoring`,
-  `modificatori`, `roster_config`); output = il JSON valutazioni già specificato.
-- **Chunk per ruolo** (P/D/C/A): `max_tokens` attuale (4096) non basta per l'intero
-  listone in un colpo. Ogni chunk validato e riconciliato prima del salvataggio.
-- Endpoint backend `POST /leagues/:leagueId/valuations/generate` (chiave solo
-  server-side). UI: trigger dalla schermata Valutazioni, con anteprima
-  modificabile prima di persistere; gli unmatched restano per revisione, non
-  stimati.
-- Il `confidence` per riga arriva dal modello: la qualità non è verificabile a
-  priori, il campo esiste apposta.
-
-**Vincoli.** Chiave Anthropic **solo lato backend** (invariante). Le valutazioni
-non entrano nel loop dell'asta live: si generano una volta / su refresh. Nessun
-dato inventato nel matching.
-
-**Done.** Valutazioni generabili da Claude per lega, con anteprima e revisione.
-Commit `feat:` + bump MINOR + `CHANGELOG` + tag.
-
-> **Fase 3 — opzionali** (dipendenze esterne/legali, da valutare a parte):
-> ricerca news qualitative a supporto delle valutazioni; backfill foto reali
-> in `player.image_url`.
-
-### 25 — Redesign UI (solo presentazione)
-
-**Timing.** Da eseguire **dopo** i prompt 23 e 24: il redesign tocca solo il
-layer di presentazione, quindi conviene farlo a superficie funzionale congelata
-per non ristilare due volte le schermate nuove (coppie portieri, generazione
-valutazioni). Eccezione: la sola definizione/consolidamento dei design token
-(palette come variabili CSS) può precedere, è a costo quasi nullo.
-
-**Contesto.** SPA React+TS (Vite), monorepo npm workspaces (`web`/`server`/
-`shared`). Il backend è sottile e deriva TUTTO lo stato dal log immutabile
-`purchase`. L'intervento è **solo UI**.
-
-**Ambito consentito.** `web/src/components/**`, `web/src/pages/**`,
-`web/src/index.css`, layout e navigazione in `App.tsx`.
-
-**Vietato (rifiuta e riprogetta se serve):**
-
-- toccare la derivazione dello stato: `residuo`/`slot`/`max_bid` sono funzioni
-  pure del log `purchase`, mai campi mutabili;
-- modificare contratti API, route, o i moduli `web/src/api/**`, `server/**`,
-  `shared/**`;
-- aggiungere dipendenze pesanti o nuovi UI framework; tipi TypeScript stretti.
-
-**Design.** Palette come design token (variabili CSS): verde brand `#2BA756`,
-blu header `#11246F`/`#144F89`, arancio accenti `#FF8300`, verde scuro `#077449`,
-bianco `#FFFFFF`. Mobile-first, priorità alla schermata Asta. Mantieni logo
-nell'header e versione nel footer.
-
-**Disciplina.** Conventional Commits in inglese, MAI `git push`, nessun
-riferimento ad AI/assistenti in codice o commit; `build` e `lint` verdi prima di
-ogni commit. Prima di modifiche ampie **proponi il piano**, non riscrivere in
-massa.
-
-**Done.** UI ristrutturata sull'intera superficie, invariante intatta, build e
-lint verdi. Commit `feat:`/`refactor:` + bump + `CHANGELOG` + tag.
