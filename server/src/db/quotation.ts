@@ -46,3 +46,12 @@ export async function listQuotationsBySeason(season: string): Promise<QuotationR
   ]);
   return result.rows;
 }
+
+// Stagioni in formato "AAAA-AA" ordinano correttamente come stringa: MAX()
+// individua quella più recente senza dover parsare l'anno.
+export async function getLatestQuotationSeason(): Promise<string | null> {
+  const result = await pool.query<{ season: string | null }>(
+    "SELECT MAX(season) AS season FROM quotation",
+  );
+  return result.rows[0]?.season ?? null;
+}

@@ -12,5 +12,6 @@ export * from "./setPieceTaker";
 export * from "./manager";
 export * from "./purchase";
 export * from "./maxBid";
+export * from "./recommendationEngine";
 export * from "./wishlist";
 export * from "./statsEnrichment";

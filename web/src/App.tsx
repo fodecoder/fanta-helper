@@ -7,6 +7,7 @@ import { StatusMessage } from "./components/StatusMessage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ManagersPage } from "./pages/ManagersPage";
 import { ValuationsPage } from "./pages/ValuationsPage";
+import { RecommendationsPage } from "./pages/RecommendationsPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
 import { GkPairingPage } from "./pages/GkPairingPage";
 import { ProbableLineupPage } from "./pages/ProbableLineupPage";
@@ -141,6 +142,8 @@ function App() {
           <ManagersPage league={activeLeague} calls={purchaseCount} />
         ) : effectivePage === "valutazioni" ? (
           <ValuationsPage league={activeLeague} calls={purchaseCount} />
+        ) : effectivePage === "consigli" ? (
+          <RecommendationsPage league={activeLeague} calls={purchaseCount} />
         ) : effectivePage === "quotazioni" ? (
           <PlayerImportPage calls={purchaseCount} />
         ) : effectivePage === "portieri" ? (

@@ -5,6 +5,52 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-08-19
+
+### Added
+
+- **Motore di consiglio giocatori**: nuovo modulo puro (`shared`) che
+  ordina i disponibili per valore relativo alla lega, non assoluto. La
+  fantamedia viene ricostruita dai bonus/malus grezzi (`gf`, `assist`,
+  `rig_plus/minus`, `rp`, `amm`, `esp`, `autogol`, `gs` per i portieri) pesati
+  con lo `scoring` della lega, invece di fidarsi della `fm` importata (che
+  riflette il sistema di punteggio della fonte, non quello scelto in lega);
+  il modificatore `difesa` (unico con una tabella media→bonus) si applica a
+  portieri e difensori usando il `mv` del giocatore come proxy della difesa
+  di reparto.
+- **Affidabilità pesata sulle presenze**: la fantamedia regolata è scalata
+  per la quota di presenze sulle giornate finora disputate (dedotte dal
+  massimo osservato nella stagione, non un `38` fisso), così un rendimento
+  alto su poche partite pesa meno di uno stabile su tutta la stagione.
+- **Punteggio come valore sopra il rimpiazzo (VORP)**: per ogni ruolo il
+  punteggio finale è il margine rispetto al giocatore marginale ancora
+  disponibile al rank corrispondente agli slot liberi residui di "Io",
+  aggiustato per la scarsità di reparto (domanda residua di lega contro
+  offerta ancora disponibile). Segnala anche il divario tra valore stimato e
+  prezzo di mercato (`FVM`) come possibile occasione.
+- **Endpoint di lettura e vista "Consigli"**: `GET
+  /leagues/:leagueId/recommendations` e nuova pagina in navigazione con
+  filtro per ruolo e pannello "Dettagli" per componente (affidabilità, bonus
+  attesi, aggiustamento regole, scarsità), così il suggerimento resta
+  spiegabile e non una scatola nera.
+
+### Fixed
+
+- Le colonne `NUMERIC` (`mv`, `fm` di `player_season_stats`) tornavano dal
+  driver Postgres come stringhe: un'addizione diventava una concatenazione
+  di testo. Aggiunto un parser di tipo globale che le converte in numeri,
+  corretto per qualunque futura colonna `NUMERIC`.
+
+### Notes
+
+- Nessun cambiamento all'invariante di dominio: il motore è puro e
+  deterministico, non introduce stato — ricalcola sempre da pool,
+  quotazioni/statistiche dell'ultima stagione disponibile, log `purchase` e
+  regole lega. I modificatori senza una tabella di bonus definita
+  (`centrocampo`, `attacco`, `portiere`, `capitano`, `modulo`) restano flag
+  di configurazione visibili ma non contribuiscono al punteggio: nessun dato
+  inventato.
+
 ## [2.3.1] - 2026-08-19
 
 ### Fixed

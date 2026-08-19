@@ -1,12 +1,20 @@
 import type { League } from "@fanta-helper/shared";
 
 export type SetupPage =
-  "panoramica" | "manager" | "valutazioni" | "quotazioni" | "portieri" | "formazioni" | "leghe";
+  | "panoramica"
+  | "manager"
+  | "valutazioni"
+  | "consigli"
+  | "quotazioni"
+  | "portieri"
+  | "formazioni"
+  | "leghe";
 
 export const NAV_ITEMS: { key: SetupPage; label: string }[] = [
   { key: "panoramica", label: "Panoramica" },
   { key: "manager", label: "Manager" },
   { key: "valutazioni", label: "Valutazioni" },
+  { key: "consigli", label: "Consigli" },
   { key: "quotazioni", label: "Quotazioni · import" },
   { key: "portieri", label: "Coppie portieri" },
   { key: "formazioni", label: "Probabili formazioni" },
