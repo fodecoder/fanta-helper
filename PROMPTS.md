@@ -25,30 +25,47 @@ Questo file contiene solo il **backlog attivo** (Fase 5), in ordine di priorità
 
 ## Fase 5 — Dati storici + Engine
 
-### 1 — Ingest quotazioni e statistiche storiche (`docs/`)
+### 1 — Ingest dati a database (quotazioni, statistiche, calci piazzati)
 
-**Contesto.** I file `docs/Quotazioni_*.xlsx` e `docs/Statistiche_*.xlsx`
-contengono quotazioni e statistiche delle ultime stagioni. Sono la base dati
-dell'engine e delle colonne extra in asta. Modello in `SPEC.md`
-(`quotation`, `player_season_stats`, chiave di join `player.fanta_id`).
+**Contesto.** Primo punto: portare i dati a DB. **Repo pubblico → i dati grezzi
+NON entrano in git** (listoni proprietari): committato è solo l'**importer**; i
+dati vivono nel DB dopo l'ingest. Cambiare formato (SQL/JSON/TS) non elimina il
+vincolo di copyright — non generare né committare file di seed con i dati dentro.
+Gli excel/PDF sono gitignorati (`docs/*.xlsx`, `docs/*.pdf`), locali, cancellabili
+dopo il seed (ri-seedare richiede ri-scaricarli). Modello in `SPEC.md`
+(`quotation`, `player_season_stats`, join `player.fanta_id`; `set_piece_taker`
+esiste già dalla Fase 4).
+
+**Un solo importer, due trigger.**
+
+- **Storico** → **comando di seed locale** (script committato, girato una volta
+  contro Neon leggendo i file locali `docs/`). Non è una route pubblica.
+- **Stagione corrente** (volatile) → **upload da portale**, riusando/estendendo
+  l'import esistente (`PlayerImportPage`) che oggi popola solo `player`.
 
 **Task.**
 
-- Migrazione: aggiungi `player.fanta_id` (int, nullable, univoco). Nuove tabelle
-  globali `quotation (player_id, season, qt_i, qt_a, fvm)` e
-  `player_season_stats (player_id, season, presenze, mv, fm, gf, gs, assist, rp,
-  rc, rig_plus, rig_minus, amm, esp, autogol)`, univoche per `(player_id, season)`.
-- Parser xlsx (riusa `fileRows.ts`): individua l'header tollerando la riga-titolo.
-  Quotazioni → colonne Classic `Qt.A`, `Qt.I`, `FVM` (ignora le varianti `* M`).
-  Statistiche → variante **base** canonica (ignora `_Italia`/`_Statistico`);
-  `Mv`/`Fm` come decimali. La stagione si ricava dal nome file.
-- Join su `fanta_id` (`Id` del file); righe senza `Id` → fallback matching
-  `name`+`team`; ambigue/assenti in report di scarto, non inventate.
-- Import **a sostituzione per stagione** (snapshot in transazione).
-- Data-access tipato + route di import sotto le rotte globali di riferimento.
+- Migrazione: `player.fanta_id` (int, nullable, univoco). Tabelle globali
+  `quotation (player_id, season, qt_i, qt_a, fvm)` e `player_season_stats
+  (player_id, season, presenze, mv, fm, gf, gs, assist, rp, rc, rig_plus,
+  rig_minus, amm, esp, autogol)`, univoche per `(player_id, season)`.
+- Parser xlsx (riusa `fileRows.ts`), header tollerante. Quotazioni → colonne
+  Classic `Qt.A`, `Qt.I`, `FVM` (ignora `* M`). Statistiche → variante **base**
+  canonica (ignora `_Italia`/`_Statistico`); `Mv`/`Fm` decimali. La stagione dal
+  nome file.
+- Join su `fanta_id` (`Id` del file); righe senza `Id` → fallback `name`+`team`;
+  ambigue/assenti in report di scarto, non inventate. Import **a sostituzione per
+  stagione** (snapshot in transazione).
+- **PDF rigoristi/calci piazzati** → one-off verso il **`set_piece_taker`
+  esistente**, riusando la pipeline di estrazione Claude della Fase 4 (attenzione:
+  PDF probabilmente scannerizzato → serve OCR/vision, non parsing testo). La
+  pagina editabile "Rigoristi e calci piazzati" resta la fonte viva che li
+  modifica: il PDF è solo il seme iniziale.
+- Data-access tipato + route di upload sotto le rotte globali di riferimento.
 
-**Done.** Quotazioni e statistiche multi-stagione a DB, interrogabili per
-`player_id`+`season`. Commit `feat:` + bump MINOR + `CHANGELOG` + tag.
+**Done.** Quotazioni, statistiche multi-stagione e calci piazzati a DB
+(storico via seed locale, corrente via portale), dati grezzi fuori da git. Commit
+`feat:` + bump MINOR + `CHANGELOG` + tag.
 
 ### 2 — Engine di consiglio giocatori
 

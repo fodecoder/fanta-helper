@@ -88,8 +88,11 @@ portale. Prompt operativi 19–22 in `PROMPTS.md` (storico).
 
 In ordine di priorità. Prompt operativi in [PROMPTS.md](./PROMPTS.md).
 
-- [ ] **Ingest dati `docs/`**: quotazioni (`quotation`) e statistiche
-      (`player_season_stats`) storiche e correnti a database, join via `fanta_id`.
+- [ ] **Ingest dati a DB** *(primo punto)*: un solo importer, storico via **seed
+      locale** e corrente via **upload portale**; quotazioni (`quotation`),
+      statistiche (`player_season_stats`, join `fanta_id`) e PDF calci piazzati
+      nel `set_piece_taker` esistente. Repo pubblico: **dati grezzi fuori da git**,
+      solo l'importer è committato.
 - [ ] **Engine di consiglio giocatori**: valore relativo alla lega (replacement
       level, affidabilità=presenze, bonus per ruolo, regole lega, scarsità).
 - [ ] **Import JSON valutazioni**: esporre schema + template scaricabile nella UI.
