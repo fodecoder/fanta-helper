@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-08-20
+
+### Added
+
+- **Alternative in asta ordinabili, almeno 15 sempre visibili**: la tabella
+  "Alternative nello stesso ruolo" mostra ora fino a 15 giocatori ancora
+  liberi (prima 7), ordinabili per fair value, target, max bid, `Fm`,
+  `FVM`, `Qt.A` o punteggio del motore di raccomandazione (nuove colonne
+  Fm/Score, nuovo endpoint già esistente `GET
+  /leagues/:leagueId/recommendations` riusato dalla vista asta). Il
+  bottone "Dettagli" per riga resta invariato e mostra le stesse info
+  estese del giocatore in asta. Per ordinare per `Fm` su tutto il pool del
+  ruolo (non solo le righe mostrate) il cap dell'endpoint `GET
+  /players/season-stats?ids=` sale da 50 a 300 id — endpoint interno,
+  nessuna chiamata esterna.
+
 ## [2.9.0] - 2026-08-20
 
 ### Added
