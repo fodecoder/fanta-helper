@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-08-20
+
+### Added
+
+- **SoFIFA come secondo provider stats opzionale (attributi EA FC)**: il layer
+  backend degli arricchimenti esterni è ora dietro un'unica interfaccia
+  `StatsProvider` (`server/src/stats/`). API-Football (rendimento reale:
+  minuti/gol/assist) resta invariato come provider `stats/apiFootball/`; si
+  aggiunge `stats/sofifa/` come secondo provider che espone gli attributi del
+  videogioco EA FC (overall, potential, età, valore FIFA) — un asse di dato
+  diverso, non un rimpiazzo. Entrambi i provider sono opzionali, indipendenti e
+  a costo nullo da spenti; token SoFIFA solo lato backend, chiamate proxied,
+  cache e rate-limit dedicati. Nuove env `SOFIFA_ENABLED`, `SOFIFA_API_TOKEN`,
+  `SOFIFA_BASE_URL` (off di default). Gli attributi compaiono come arricchimento
+  nel pannello info giocatore e come colonne extra (Ovr/Pot/Età/Val) nella
+  tabella alternative d'asta, con attribuzione a SoFIFA dove mostrati. L'assenza
+  del provider non degrada la comparazione base e nessun dato viene inventato.
+  La risposta di `GET /players/stats-enrichment` evolve nella forma combinata
+  `{ performance, attributes }`, ciascuna sezione con flag `enabled` proprio.
+
 ## [2.10.0] - 2026-08-20
 
 ### Added

@@ -43,7 +43,8 @@ const COMPARE_SORT_KEYS: CompareSortKey[] = [
 export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
-  const showStats = view.enrichment?.enabled === true;
+  const showStats = view.enrichment?.performance.enabled === true;
+  const showAttributes = view.enrichment?.attributes.enabled === true;
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
 
   return (
@@ -172,6 +173,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     seasonStats={view.seasonStatsById.get(sel.id)}
                     lineupStatus={lineupStatusFor(sel, view.probableLineup)}
                     setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+                    attributes={view.attributesFor(sel.id)}
                   />
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -368,6 +370,26 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   </button>
                 ))}
               </div>
+              {showAttributes && (
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "var(--color-neutral-700)",
+                    margin: "4px 0",
+                    textAlign: "right",
+                  }}
+                >
+                  Ovr / Pot / Età / Val — Attributi EA FC —{" "}
+                  <a
+                    href="https://sofifa.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "inherit" }}
+                  >
+                    SoFIFA
+                  </a>
+                </div>
+              )}
               <div className="table-scroll">
                 <table className="table">
                   <thead>
@@ -389,15 +411,34 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                           <th style={{ textAlign: "right" }}>Ass</th>
                         </>
                       )}
+                      {showAttributes && (
+                        <>
+                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
+                            Ovr
+                          </th>
+                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
+                            Pot
+                          </th>
+                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
+                            Età
+                          </th>
+                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
+                            Val
+                          </th>
+                        </>
+                      )}
                       <th style={{ width: 90 }}>Dettagli</th>
                     </tr>
                   </thead>
                   <tbody>
                     {view.compareRows.map(
                       ({ player, valuation, delta, isCurrent, seasonStats, score }) => {
-                        const stats = view.enrichment?.stats.find((s) => s.player_id === player.id);
+                        const stats = view.enrichment?.performance.stats.find(
+                          (s) => s.player_id === player.id,
+                        );
+                        const attrs = view.attributesFor(player.id);
                         const expanded = expandedPlayerId === player.id;
-                        const columnCount = showStats ? 14 : 11;
+                        const columnCount = 11 + (showStats ? 3 : 0) + (showAttributes ? 4 : 0);
                         return (
                           <Fragment key={player.id}>
                             <tr
@@ -520,6 +561,34 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                   </td>
                                 </>
                               )}
+                              {showAttributes && (
+                                <>
+                                  <td
+                                    className="num"
+                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                                  >
+                                    {attrs?.overall ?? "—"}
+                                  </td>
+                                  <td
+                                    className="num"
+                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                                  >
+                                    {attrs?.potential ?? "—"}
+                                  </td>
+                                  <td
+                                    className="num"
+                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                                  >
+                                    {attrs?.age ?? "—"}
+                                  </td>
+                                  <td
+                                    className="num"
+                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                                  >
+                                    {attrs?.value ?? "—"}
+                                  </td>
+                                </>
+                              )}
                               <td style={{ textAlign: "right" }}>
                                 <button
                                   type="button"
@@ -540,6 +609,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                     seasonStats={view.seasonStatsById.get(player.id)}
                                     lineupStatus={lineupStatusFor(player, view.probableLineup)}
                                     setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                                    attributes={view.attributesFor(player.id)}
                                   />
                                 </td>
                               </tr>

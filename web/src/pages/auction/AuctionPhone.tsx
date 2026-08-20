@@ -151,6 +151,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               seasonStats={view.seasonStatsById.get(sel.id)}
               lineupStatus={lineupStatusFor(sel, view.probableLineup)}
               setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+              attributes={view.attributesFor(sel.id)}
             />
 
             {view.ladder && (
@@ -499,6 +500,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                         seasonStats={view.seasonStatsById.get(player.id)}
                         lineupStatus={lineupStatusFor(player, view.probableLineup)}
                         setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                        attributes={view.attributesFor(player.id)}
                       />
                     </div>
                   )}
