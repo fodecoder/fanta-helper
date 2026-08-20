@@ -12,6 +12,7 @@ import { gkPairingRouter } from "./routes/gkPairing";
 import { probableLineupRouter } from "./routes/probableLineup";
 import { setPieceTakerRouter } from "./routes/setPieceTaker";
 import { statsEnrichmentRouter } from "./routes/statsEnrichment";
+import { quotationRouter } from "./routes/quotation";
 import { errorHandler } from "./http/errorHandler";
 
 export function createApp(): Express {
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use("/leagues/:leagueId/purchases", purchasesRouter);
   app.use("/leagues/:leagueId/wishlist", wishlistRouter);
   app.use("/players/stats-enrichment", statsEnrichmentRouter);
+  app.use("/players/quotations", quotationRouter);
   app.use("/players", playersRouter);
   app.use("/gk-pairing", gkPairingRouter);
   app.use("/probable-lineup", probableLineupRouter);
