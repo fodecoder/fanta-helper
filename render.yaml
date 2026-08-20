@@ -14,7 +14,7 @@ services:
     buildCommand: npm ci && npm run build --workspace server
     startCommand: node server/dist/index.js
     healthCheckPath: /health
-    autoDeploy: false
+    autoDeploy: true
     envVars:
       # Render inietta PORT automaticamente; il server la legge da process.env.PORT.
       - key: NODE_VERSION
