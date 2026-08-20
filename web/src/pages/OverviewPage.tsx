@@ -111,62 +111,64 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
       {statuses === null ? (
         <StatusMessage kind="loading">Caricamento…</StatusMessage>
       ) : (
-        <table className="table" style={{ marginBottom: 44 }}>
-          <thead>
-            <tr>
-              <th>Manager</th>
-              <th style={{ textAlign: "right" }}>Speso</th>
-              <th style={{ textAlign: "right" }}>Residuo</th>
-              <th style={{ width: 170 }}>Budget consumato</th>
-              {ROLES.map((r) => (
-                <th key={r}>{r}</th>
-              ))}
-              <th style={{ textAlign: "right" }}>Max bid rett.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {statuses.map((s) => {
-              const isMe = s.isOwner;
-              const pct = s.budget > 0 ? Math.round((s.spent / s.budget) * 100) : 0;
-              return (
-                <tr key={s.managerId}>
-                  <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                    <span className={isMe ? "mgr-dot mgr-dot--me" : "mgr-dot"} />
-                    {s.managerName}
-                  </td>
-                  <td className="num" style={{ textAlign: "right" }}>
-                    {s.spent}
-                  </td>
-                  <td className="num" style={{ textAlign: "right" }}>
-                    {s.residuo}
-                  </td>
-                  <td>
-                    <span className="bar-track">
-                      <span
-                        className="bar-fill"
-                        style={{
-                          width: `${pct}%`,
-                          background: isMe ? "var(--color-accent)" : "var(--color-neutral-600)",
-                        }}
-                      />
-                    </span>
-                  </td>
-                  {ROLES.map((r) => {
-                    const slot = s.slots.find((x) => x.ruolo === r);
-                    return (
-                      <td key={r} className="num" style={{ color: "var(--color-neutral-800)" }}>
-                        {slot ? `${slot.used}/${slot.total}` : "—"}
-                      </td>
-                    );
-                  })}
-                  <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
-                    {s.adjustedMaxBid}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="table-scroll" style={{ marginBottom: 44 }}>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Manager</th>
+                <th style={{ textAlign: "right" }}>Speso</th>
+                <th style={{ textAlign: "right" }}>Residuo</th>
+                <th style={{ width: 170 }}>Budget consumato</th>
+                {ROLES.map((r) => (
+                  <th key={r}>{r}</th>
+                ))}
+                <th style={{ textAlign: "right" }}>Max bid rett.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {statuses.map((s) => {
+                const isMe = s.isOwner;
+                const pct = s.budget > 0 ? Math.round((s.spent / s.budget) * 100) : 0;
+                return (
+                  <tr key={s.managerId}>
+                    <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                      <span className={isMe ? "mgr-dot mgr-dot--me" : "mgr-dot"} />
+                      {s.managerName}
+                    </td>
+                    <td className="num" style={{ textAlign: "right" }}>
+                      {s.spent}
+                    </td>
+                    <td className="num" style={{ textAlign: "right" }}>
+                      {s.residuo}
+                    </td>
+                    <td>
+                      <span className="bar-track">
+                        <span
+                          className="bar-fill"
+                          style={{
+                            width: `${pct}%`,
+                            background: isMe ? "var(--color-accent)" : "var(--color-neutral-600)",
+                          }}
+                        />
+                      </span>
+                    </td>
+                    {ROLES.map((r) => {
+                      const slot = s.slots.find((x) => x.ruolo === r);
+                      return (
+                        <td key={r} className="num" style={{ color: "var(--color-neutral-800)" }}>
+                          {slot ? `${slot.used}/${slot.total}` : "—"}
+                        </td>
+                      );
+                    })}
+                    <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
+                      {s.adjustedMaxBid}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <div className="two-col">
@@ -175,35 +177,37 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
           {wishRows.length === 0 ? (
             <StatusMessage kind="empty">Nessun obiettivo in wishlist ancora libero.</StatusMessage>
           ) : (
-            <table className="table" style={{ tableLayout: "fixed" }}>
-              <thead>
-                <tr>
-                  <th>Giocatore</th>
-                  <th>Ruolo</th>
-                  <th style={{ textAlign: "right" }}>Fair value</th>
-                  <th style={{ textAlign: "right" }}>Max bid</th>
-                </tr>
-              </thead>
-              <tbody>
-                {wishRows.map((w) => (
-                  <tr key={w.player_id}>
-                    <td className="ellipsis">
-                      {w.name}{" "}
-                      <span className="text-muted" style={{ fontSize: 12 }}>
-                        {w.team}
-                      </span>
-                    </td>
-                    <td style={{ color: roleColor(w.ruolo) }}>{w.ruolo}</td>
-                    <td className="num" style={{ textAlign: "right" }}>
-                      {w.fv ?? "—"}
-                    </td>
-                    <td className="num" style={{ textAlign: "right" }}>
-                      {w.max ?? "—"}
-                    </td>
+            <div className="table-scroll">
+              <table className="table" style={{ tableLayout: "fixed" }}>
+                <thead>
+                  <tr>
+                    <th>Giocatore</th>
+                    <th>Ruolo</th>
+                    <th style={{ textAlign: "right" }}>Fair value</th>
+                    <th style={{ textAlign: "right" }}>Max bid</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {wishRows.map((w) => (
+                    <tr key={w.player_id}>
+                      <td className="ellipsis">
+                        {w.name}{" "}
+                        <span className="text-muted" style={{ fontSize: 12 }}>
+                          {w.team}
+                        </span>
+                      </td>
+                      <td style={{ color: roleColor(w.ruolo) }}>{w.ruolo}</td>
+                      <td className="num" style={{ textAlign: "right" }}>
+                        {w.fv ?? "—"}
+                      </td>
+                      <td className="num" style={{ textAlign: "right" }}>
+                        {w.max ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
         <div>
@@ -211,36 +215,38 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
           {logRows.length === 0 ? (
             <StatusMessage kind="empty">Nessuna chiamata registrata.</StatusMessage>
           ) : (
-            <table className="table" style={{ tableLayout: "fixed" }}>
-              <thead>
-                <tr>
-                  <th>Giocatore</th>
-                  <th>A</th>
-                  <th style={{ textAlign: "right" }}>Prezzo</th>
-                  <th style={{ textAlign: "right" }}>vs FV</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logRows.map((l) => (
-                  <tr key={l.key}>
-                    <td className="ellipsis">{l.name}</td>
-                    <td className="ellipsis">{l.manager}</td>
-                    <td className="num" style={{ textAlign: "right" }}>
-                      {l.prezzo}
-                    </td>
-                    <td
-                      className="num"
-                      style={{
-                        textAlign: "right",
-                        color: l.delta === null ? undefined : deltaColor(l.delta),
-                      }}
-                    >
-                      {l.delta === null ? "—" : formatDelta(l.delta)}
-                    </td>
+            <div className="table-scroll">
+              <table className="table" style={{ tableLayout: "fixed" }}>
+                <thead>
+                  <tr>
+                    <th>Giocatore</th>
+                    <th>A</th>
+                    <th style={{ textAlign: "right" }}>Prezzo</th>
+                    <th style={{ textAlign: "right" }}>vs FV</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {logRows.map((l) => (
+                    <tr key={l.key}>
+                      <td className="ellipsis">{l.name}</td>
+                      <td className="ellipsis">{l.manager}</td>
+                      <td className="num" style={{ textAlign: "right" }}>
+                        {l.prezzo}
+                      </td>
+                      <td
+                        className="num"
+                        style={{
+                          textAlign: "right",
+                          color: l.delta === null ? undefined : deltaColor(l.delta),
+                        }}
+                      >
+                        {l.delta === null ? "—" : formatDelta(l.delta)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

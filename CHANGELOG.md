@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.0] - 2026-08-20
+
+### Added
+
+- **Shell responsive su mobile**: sotto i 768px la sidebar sparisce e la
+  navigazione (voci principali, selettore lega, "Entra in asta") si
+  trasferisce in una barra sticky in fondo allo schermo (`BottomNav`).
+  Panoramica lega usabile in verticale: statistiche e le due colonne
+  obiettivi/chiamate collassano a colonna singola, le tabelle diventano
+  scrollabili in orizzontale invece di traboccare dalla pagina. Tipografia
+  (h1-h6, corpo, titolo di pagina) scalata sotto il breakpoint tramite
+  custom property dedicate. Aggiunto un bottone "Esci" sempre visibile
+  nell'header della modalità asta su telefono, che prima non esponeva alcun
+  modo per uscire dall'asta se non da tastiera fisica.
+
 ## [2.13.1] - 2026-08-20
 
 ### Fixed
