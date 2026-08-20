@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-08-20
+
+### Added
+
+- **Schema visibile e template scaricabile nell'import JSON valutazioni**: la
+  schermata di import (`ValuationImportForm`) mostra ora un riepilogo dei
+  campi attesi (nomi, tipi, enum `ruolo`/`confidence` letti direttamente da
+  `shared/src/valuation.ts`) e offre un template JSON di esempio scaricabile,
+  già valido per la lega corrente. L'import lato server
+  (`server/src/import/valuationJson.ts`) è diventato tollerante riga per
+  riga: un singolo elemento di `players[]` che non rispetta lo schema non fa
+  più fallire l'intero import, ma finisce in un nuovo elenco "scartate" con
+  motivo leggibile, accanto all'elenco "unmatched" già esistente.
+
+### Changed
+
+- `ValuationImportReport` (`shared/src/valuation.ts`) include ora anche
+  `discarded`, l'elenco delle righe scartate per errore di schema.
+
 ## [2.6.0] - 2026-08-20
 
 ### Added

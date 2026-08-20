@@ -64,7 +64,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
       />
 
       <ValuationGenerateForm leagueId={league.id} onResolved={refresh} />
-      <ValuationImportForm leagueId={league.id} onResolved={refresh} />
+      <ValuationImportForm leagueId={league.id} leagueName={league.name} onResolved={refresh} />
 
       <div
         style={{

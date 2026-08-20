@@ -29,12 +29,35 @@ export type ValuationImport = z.infer<typeof valuationImportSchema>;
 export const unmatchedValuationSchema = valuationEntrySchema.extend({ reason: z.string() });
 export type UnmatchedValuation = z.infer<typeof unmatchedValuationSchema>;
 
+// Riga di players[] che non rispetta valuationEntrySchema (campo mancante,
+// tipo sbagliato, enum non valido). name/team/ruolo sono estratti
+// best-effort dalla riga grezza e possono essere null se non estraibili.
+export const discardedValuationRowSchema = z.object({
+  row: z.number().int().positive(),
+  name: z.string().nullable(),
+  team: z.string().nullable(),
+  ruolo: z.string().nullable(),
+  reason: z.string(),
+});
+export type DiscardedValuationRow = z.infer<typeof discardedValuationRowSchema>;
+
 export const valuationImportReportSchema = z.object({
   imported: z.number().int().nonnegative(),
   updated: z.number().int().nonnegative(),
   unmatched: z.array(unmatchedValuationSchema),
+  discarded: z.array(discardedValuationRowSchema),
 });
 export type ValuationImportReport = z.infer<typeof valuationImportReportSchema>;
+
+// Valida solo l'involucro del documento di import: i singoli elementi di
+// players[] restano unknown, per poter essere validati uno a uno lato server
+// (safeParse per riga) invece di far fallire l'intero import su una riga sola.
+export const valuationImportEnvelopeSchema = z.object({
+  league_name: z.string().trim().min(1),
+  generated_at: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "invalid ISO 8601 date"),
+  players: z.array(z.unknown()).min(1),
+});
+export type ValuationImportEnvelope = z.infer<typeof valuationImportEnvelopeSchema>;
 
 // Used by the manual reconciliation endpoint, where the player is already
 // resolved by id, so name/team/ruolo (matching-only fields) are omitted.
