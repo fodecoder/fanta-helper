@@ -5,6 +5,31 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2026-08-20
+
+### Added
+
+- **SoFIFA cablato sull'API reale + mapping `sofifa_id`**: il provider SoFIFA
+  ora usa l'endpoint pubblico documentato `GET https://api.sofifa.net/player/{id}`
+  (overall ← `overallRating`, potential, età ← `age`, valore FIFA ← `price`).
+  Poiché l'API non offre ricerca per nome, si aggiunge la colonna nullable
+  `player.sofifa_id` (migrazione + vincolo unico) come chiave verso quell'id, e
+  uno script di seed `db:seed:sofifa` che percorre le rose Serie A
+  (`/league/{id}/{roster}` + `/team/{id}/{roster}`) e associa per nome
+  (disambiguato per squadra), senza mai indovinare: un match ambiguo lascia il
+  giocatore non mappato. Gli attributi si mostrano solo per i giocatori mappati;
+  gli altri restano senza dato, nessuna regressione.
+- **Variabili SoFIFA su `render.yaml`**: `SOFIFA_ENABLED` (false di default),
+  `SOFIFA_BASE_URL`, `SOFIFA_API_TOKEN` (`sync:false`).
+
+### Changed
+
+- Il provider SoFIFA non richiede più un token per funzionare: l'endpoint
+  `/player/{id}` è pubblico, quindi `enabled` dipende solo da `SOFIFA_ENABLED`.
+  `SOFIFA_API_TOKEN` resta opzionale e riservato ai soli endpoint
+  `customizedPlayers` (non usati). `SOFIFA_BASE_URL` di default punta ora a
+  `https://api.sofifa.net`.
+
 ## [2.11.0] - 2026-08-20
 
 ### Added

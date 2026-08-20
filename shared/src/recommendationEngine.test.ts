@@ -8,7 +8,7 @@ import type { PlayerSeasonStatsRow } from "./playerSeasonStats";
 import type { ManagerAuctionStatus } from "./purchase";
 
 function player(id: number, name: string, ruolo: Player["ruolo"]): Player {
-  return { id, fanta_id: id, name, team: "Team", ruolo, image_url: null };
+  return { id, fanta_id: id, sofifa_id: null, name, team: "Team", ruolo, image_url: null };
 }
 
 function stat(playerId: number, overrides: Partial<PlayerSeasonStatsRow> = {}): PlayerSeasonStatsRow {

@@ -1,5 +1,4 @@
 import type { SofifaConfig } from "./config";
-import { isSamePlayer } from "../matchPlayer";
 
 export interface RemotePlayerAttributes {
   overall: number | null;
@@ -8,20 +7,18 @@ export interface RemotePlayerAttributes {
   value: number | null;
 }
 
-// SoFIFA's contract is not publicly documented and requires an account token;
-// the response is parsed defensively. The shape below is the expected search
-// payload — any field that is missing or non-numeric collapses to null rather
-// than a guessed value. `SOFIFA_BASE_URL` lets a deployment point at the exact
-// endpoint its token is provisioned for without a code change.
-interface SofifaSearchResponse {
-  results?: Array<{
-    name?: unknown;
-    team?: unknown;
-    overall?: unknown;
+// Shape of GET https://api.sofifa.net/player/{id} (public, no auth). Only the
+// fields we surface are typed; everything else in the documented payload is
+// ignored. Parsed defensively — any missing or non-numeric field collapses to
+// null rather than a guessed value.
+interface SofifaPlayerResponse {
+  data?: {
+    overallRating?: unknown;
     potential?: unknown;
     age?: unknown;
-    value?: unknown;
-  }>;
+    // `price` is the EA FC market value in euros (e.g. 58500000).
+    price?: unknown;
+  };
 }
 
 function toIntOrNull(value: unknown): number | null {
@@ -29,39 +26,28 @@ function toIntOrNull(value: unknown): number | null {
   return Math.trunc(value);
 }
 
-function toStringOrEmpty(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-// Any network/HTTP/parsing failure or absent match resolves to `null`
-// ("no data for this player"), never thrown — the base comparison must never
-// degrade because of this optional call, and no attribute is ever invented.
+// Any network/HTTP/parsing failure resolves to `null` ("no data for this
+// player"), never thrown — the base comparison must never degrade because of
+// this optional call, and no attribute is ever invented.
 export async function fetchPlayerAttributes(
   config: SofifaConfig,
-  target: { name: string; team: string; season: number },
+  sofifaId: number,
 ): Promise<RemotePlayerAttributes | null> {
   try {
-    const url = new URL("/api/players", config.baseUrl);
-    url.searchParams.set("q", target.name);
-
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${config.apiToken}` },
-    });
+    const url = new URL(`/player/${sofifaId}`, config.baseUrl);
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
     if (!res.ok) return null;
 
-    const body = (await res.json()) as SofifaSearchResponse;
-    for (const entry of body.results ?? []) {
-      const candidate = { name: toStringOrEmpty(entry.name), team: toStringOrEmpty(entry.team) };
-      if (candidate.name !== "" && isSamePlayer(candidate, target)) {
-        return {
-          overall: toIntOrNull(entry.overall),
-          potential: toIntOrNull(entry.potential),
-          age: toIntOrNull(entry.age),
-          value: toIntOrNull(entry.value),
-        };
-      }
-    }
-    return null;
+    const body = (await res.json()) as SofifaPlayerResponse;
+    const data = body.data;
+    if (!data) return null;
+
+    return {
+      overall: toIntOrNull(data.overallRating),
+      potential: toIntOrNull(data.potential),
+      age: toIntOrNull(data.age),
+      value: toIntOrNull(data.price),
+    };
   } catch {
     return null;
   }

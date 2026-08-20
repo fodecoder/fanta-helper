@@ -13,6 +13,7 @@ export interface LeagueRow {
 export interface PlayerRow {
   id: number;
   fanta_id: number | null;
+  sofifa_id: number | null;
   name: string;
   team: string;
   ruolo: Role;

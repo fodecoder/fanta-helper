@@ -41,3 +41,14 @@ services:
         sync: false
       - key: STATS_API_BASE_URL
         value: https://v3.football.api-sports.io
+      # Attributi EA FC (overall/potential/età/valore) via SoFIFA. Asse diverso,
+      # non un rimpiazzo di API-Football. Off di default; l'endpoint pubblico
+      # /player/{id} non richiede auth (il token serve solo per i customized
+      # players, non usati qui). Gli attributi si mostrano solo per i giocatori
+      # con sofifa_id mappato (script db:seed:sofifa, da lanciare in locale).
+      - key: SOFIFA_ENABLED
+        value: false
+      - key: SOFIFA_BASE_URL
+        value: https://api.sofifa.net
+      - key: SOFIFA_API_TOKEN
+        sync: false

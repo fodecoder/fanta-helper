@@ -5,6 +5,7 @@ import { quotationImportReportSchema } from "./quotation";
 export const playerSchema = z.object({
   id: z.number().int().positive(),
   fanta_id: z.number().int().positive().nullable(),
+  sofifa_id: z.number().int().positive().nullable(),
   name: z.string(),
   team: z.string(),
   ruolo: roleSchema,

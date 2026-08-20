@@ -20,7 +20,7 @@ async function resolveRefs(playerIds: number[]): Promise<PlayerRef[]> {
   const players = await Promise.all(playerIds.map((id) => getPlayerById(id)));
   return players
     .filter((p): p is NonNullable<typeof p> => p != null)
-    .map((p) => ({ id: p.id, name: p.name, team: p.team }));
+    .map((p) => ({ id: p.id, name: p.name, team: p.team, sofifaId: p.sofifa_id }));
 }
 
 async function section<T extends { player_id: number }>(
