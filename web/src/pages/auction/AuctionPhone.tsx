@@ -74,6 +74,9 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
           <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-700)" }}>
             {view.callsLabel}
           </span>
+          <button type="button" className="btn btn-secondary phone-exit" onClick={view.onExit}>
+            Esci
+          </button>
         </div>
         <div className="rule-heavy" style={{ height: 2, margin: "8px 0 1px" }} />
         <div className="rule-thin" style={{ marginBottom: 10 }} />

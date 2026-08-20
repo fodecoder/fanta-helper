@@ -57,6 +57,15 @@
   --font-heading-weight: 600;
   --font-body: "Source Serif 4", system-ui, serif;
 
+  --text-h1: 42px;
+  --text-h2: 32px;
+  --text-h3: 25px;
+  --text-h4: 20px;
+  --text-h5: 16px;
+  --text-h6: 13px;
+  --text-body: 15px;
+  --text-masthead-title: 46px;
+
   --space-1: 5px;
   --space-2: 10px;
   --space-3: 15px;
@@ -71,6 +80,8 @@
   --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
   --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+
+  --bottom-nav-h: 92px;
 }
 
 *,
@@ -84,7 +95,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--text-body);
   line-height: 1.55;
   font-weight: 400;
 }
@@ -102,22 +113,22 @@ h6 {
   margin: 0 0 var(--space-2);
 }
 h1 {
-  font-size: 42px;
+  font-size: var(--text-h1);
 }
 h2 {
-  font-size: 32px;
+  font-size: var(--text-h2);
 }
 h3 {
-  font-size: 25px;
+  font-size: var(--text-h3);
 }
 h4 {
-  font-size: 20px;
+  font-size: var(--text-h4);
 }
 h5 {
-  font-size: 16px;
+  font-size: var(--text-h5);
 }
 h6 {
-  font-size: 13px;
+  font-size: var(--text-h6);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -582,7 +593,7 @@ select.input {
   margin-bottom: 22px;
 }
 .masthead h1 {
-  font-size: 46px;
+  font-size: var(--text-masthead-title);
   margin: 0 0 4px;
 }
 .masthead-sub {
@@ -1106,6 +1117,11 @@ select.input {
   align-items: baseline;
   gap: 8px;
 }
+.phone-exit {
+  flex: none;
+  padding: 5px 10px;
+  font-size: 12px;
+}
 .phone-figures {
   display: flex;
   align-items: flex-end;
@@ -1179,4 +1195,101 @@ select.input {
   overflow-x: auto;
   padding: 10px 0 2px;
   margin: 0 -2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Bottom nav (mobile) — mostrata solo sotto il breakpoint, vedi il
+   @media in fondo al file.
+   ══════════════════════════════════════════════════════════════════════ */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  flex-direction: column;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-divider);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav-utility {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+}
+.bottom-nav-league {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  font: 600 13px/1.2 var(--font-heading);
+  color: var(--color-text);
+}
+.bottom-nav-cta {
+  flex: none;
+  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  white-space: nowrap;
+}
+.bottom-nav-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 0 var(--space-2);
+}
+.bottom-nav-tab {
+  flex: none;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.bottom-nav-tab[aria-current="page"] {
+  color: var(--color-accent);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-accent);
+}
+
+/* — shell responsive (mobile) —
+   768px va tenuto in sync con MOBILE_BREAKPOINT_PX in useMediaQuery.ts.
+   Blocco in fondo al file: le override devono vincere sulle regole base
+   di .two-col/.bottom-nav definite sopra, a parità di specificità. */
+@media (max-width: 768px) {
+  :root {
+    --text-h1: 28px;
+    --text-h2: 22px;
+    --text-h3: 19px;
+    --text-h4: 17px;
+    --text-h5: 15px;
+    --text-h6: 12px;
+    --text-body: 14px;
+    --text-masthead-title: 26px;
+  }
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    display: none;
+  }
+  .main {
+    padding: var(--space-4) var(--space-3)
+      calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--space-4));
+    max-width: 100%;
+  }
+  .two-col {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .bottom-nav {
+    display: flex;
+  }
 }

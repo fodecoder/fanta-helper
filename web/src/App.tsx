@@ -3,6 +3,7 @@ import type { League } from "@fanta-helper/shared";
 import * as leaguesApi from "./api/leagues";
 import * as purchasesApi from "./api/purchases";
 import { Sidebar, type SetupPage } from "./components/shell/Sidebar";
+import { BottomNav } from "./components/shell/BottomNav";
 import { StatusMessage } from "./components/StatusMessage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ManagersPage } from "./pages/ManagersPage";
@@ -152,6 +153,14 @@ function App() {
           <ProbableLineupPage calls={purchaseCount} />
         )}
       </main>
+      <BottomNav
+        leagues={leagues ?? []}
+        activeLeague={activeLeague}
+        onSelectLeague={handleSelectLeague}
+        page={effectivePage}
+        onNavigate={setPage}
+        onEnterAuction={() => setMode("auction")}
+      />
     </div>
   );
 }

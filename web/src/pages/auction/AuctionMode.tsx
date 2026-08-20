@@ -28,7 +28,7 @@ import * as playerSeasonStatsApi from "../../api/playerSeasonStats";
 import * as probableLineupApi from "../../api/probableLineup";
 import * as setPieceTakerApi from "../../api/setPieceTaker";
 import * as recommendationsApi from "../../api/recommendations";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import {
   impact as computeImpact,
   ladderModel,
@@ -158,7 +158,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [assignError, setAssignError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  const isPhone = useMediaQuery("(max-width: 768px)");
+  const isPhone = useMediaQuery(MOBILE_QUERY);
 
   useEffect(() => {
     const controller = new AbortController();
