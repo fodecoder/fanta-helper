@@ -2,13 +2,14 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-> Stato al 2026-08-19 — `v2.2.0`. Fasi 0–4 complete. Completate anche la
+> Stato al 2026-08-20 — `v2.12.1`. Fasi 0–5 complete. Completate anche la
 > **correzione griglia portieri** (matrice coppie `gk_pairing`), le **valutazioni
 > generate via LLM in-app** e il **redesign UI** (design system Broadsheet).
 > **Hosting in produzione**: Neon + Render + Cloudflare Pages attivi, app
-> funzionante end-to-end. Il lavoro attivo è la **Fase 5 — Dati storici + Engine**
-> (ingest dei file `docs/`, motore di consiglio, UX asta, provider SoFIFA) — prompt
-> in [PROMPTS.md](./PROMPTS.md).
+> funzionante end-to-end. La **Fase 5 — Dati storici + Engine** è chiusa (ingest
+> storico + corrente, engine di consiglio, UX asta, provider SoFIFA opzionale).
+> Il lavoro attivo è la **Fase 6 — Rifiniture v3.0** (correzioni UX emerse dall'uso
+> reale + import/export rose) — prompt in [PROMPTS.md](./PROMPTS.md).
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -84,25 +85,52 @@ portale. Prompt operativi 19–22 in `PROMPTS.md` (storico).
       `web/src/index.css`, shell lega-centrica, modalità asta a schermo pieno).
       Invariante intatta: stato asta derivato dal log `purchase`. `v2.2.0`.
 
-## Fase 5 — Dati storici + Engine  *(backlog attivo)*
+## Fase 5 — Dati storici + Engine  *(completa)*
 
-In ordine di priorità. Prompt operativi in [PROMPTS.md](./PROMPTS.md).
+Eseguita end-to-end (commit `82100fd` → `9e7c747`, fino a `v2.12.1`).
 
-- [ ] **Ingest dati a DB** *(primo punto)*: un solo importer, storico via **seed
-      locale** e corrente via **upload portale**; quotazioni (`quotation`),
-      statistiche (`player_season_stats`, join `fanta_id`) e PDF calci piazzati
-      nel `set_piece_taker` esistente. Repo pubblico: **dati grezzi fuori da git**,
-      solo l'importer è committato.
-- [ ] **Engine di consiglio giocatori**: valore relativo alla lega (replacement
+- [x] **Ingest dati a DB**: un solo importer, storico via **seed locale** e corrente
+      via **upload portale**; quotazioni (`quotation`), statistiche
+      (`player_season_stats`, join `fanta_id`) e PDF calci piazzati nel
+      `set_piece_taker` esistente. Repo pubblico: dati grezzi fuori da git.
+- [x] **Engine di consiglio giocatori**: valore relativo alla lega (replacement
       level, affidabilità=presenze, bonus per ruolo, regole lega, scarsità).
-- [ ] **Import JSON valutazioni**: esporre schema + template scaricabile nella UI.
-- [ ] **Asta — lista "da chiamare"** ordinabile per `FVM` / `Qt.A` / `Qt.I`.
-- [ ] **Asta — colonne extra**: media fantavoto, quotazione attuale, FVM (proxy
+- [x] **Import JSON valutazioni**: schema + template scaricabile + errori per riga.
+- [x] **Asta — lista "da chiamare"** ordinabile per `FVM` / `Qt.A` / `Qt.I`.
+- [x] **Asta — colonne extra**: media fantavoto, quotazione attuale, FVM (proxy
       prezzo), sul giocatore in asta e sulle alternative.
-- [ ] **Asta — alternative**: ≥10 disponibili stesso ruolo, ordinabili per più
+- [x] **Asta — alternative**: ≥10 disponibili stesso ruolo, ordinabili per più
       valori, con bottone "Dettagli" per le info estese.
-- [ ] **Provider SoFIFA** (attributi EA FC) come secondo provider stats,
-      affiancato ad API-Football (rendimento reale), non in sostituzione.
+- [x] **Provider SoFIFA** (attributi EA FC) come secondo provider stats opzionale,
+      affiancato ad API-Football (rendimento reale). NB: `api.sofifa.net` è
+      whitelist-only → provider OFF di default, degrada senza dati (`v2.12.1`).
+
+## Fase 6 — Rifiniture v3.0  *(backlog attivo)*
+
+Correzioni UX emerse dall'uso reale + import/export rose. Prompt operativi in
+[PROMPTS.md](./PROMPTS.md). Traguardo: taglio `v3.0.0`.
+
+- [ ] **Fix — identità stabile del proprietario**: il manager "Io" oggi è
+      identificato per **nome letterale** (`OWNER_MANAGER_NAME`) in 5 punti;
+      rinominarlo rompe consigli/asta/panoramica (`manager "Io" not found`).
+      Introdurre identità stabile (`is_owner`) disaccoppiata dal nome editabile.
+- [ ] **Fix — asta: escludere il giocatore in asta dalle alternative libere**
+      (oggi compare tra le alternative dello stesso ruolo).
+- [ ] **Fix — layout sidebar desktop**: non deve allungarsi con la pagina; il
+      bottone "entra in asta" deve restare sempre raggiungibile (sticky).
+- [ ] **Feat — responsive mobile**: su cellulare in verticale la sidebar sparisce
+      (nav sticky in fondo), home usabile, font ridimensionato, bottone di uscita
+      dall'asta visibile.
+- [ ] **Feat — warning modificatori**: banner quando la lega ha `modificatori.portiere`
+      o `modificatori.difesa` attivi.
+- [ ] **Feat — export/import rose d'asta** in formato leghe Fantacalcio (CSV
+      `manager,fanta_id,prezzo` con separatore `$,$,$`, confermato dal campione).
+
+## Traguardo v3.0.0
+
+Rilascio `3.0.0` = Fase 6 completa (correzioni UX + import/export rose). Il salto di
+MAJOR è motivato dall'import/export rose come formato di interscambio pubblico e
+dal cambio del modello di identità del proprietario (migrazione schema).
 
 ## Traguardo v1.0.0
 
