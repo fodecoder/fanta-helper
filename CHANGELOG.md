@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-08-20
+
+### Changed
+
+- **Seed rigoristi indipendente dall'estrazione AI**: lo script
+  `db:seed:historical:rigoristi` ora legge un dataset statico
+  (`server/src/scripts/data/setPieceTakersSeed.ts`), trascritto dal PDF
+  "Rigoristi e tiratori da fermo Serie A", invece di inviare il testo del PDF
+  all'API Claude. Il seed non richiede più `ANTHROPIC_API_KEY`; il flusso
+  in-app di upload screenshot + estrazione resta invariato come fonte di
+  correzione. Copre tutte e 20 le squadre (sezione "Rigori" → `rigore`,
+  "Calci piazzati" → `punizione`), con il `rank` dato dall'ordine di lista.
+
 ## [2.4.0] - 2026-08-19
 
 ### Added
