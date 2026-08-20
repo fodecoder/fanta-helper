@@ -49,40 +49,42 @@ export function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        <img src="/logo.png" alt="" />
-        <span>FantaProfeta</span>
-      </div>
+      <div className="sidebar-scroll">
+        <div className="sidebar-brand">
+          <img src="/logo.png" alt="" />
+          <span>FantaProfeta</span>
+        </div>
 
-      <div className="sidebar-league">
-        <span className="sidebar-kicker">Lega attiva</span>
-        <select
-          aria-label="Lega attiva"
-          value={activeLeague?.id ?? ""}
-          onChange={(e) => onSelectLeague(e.target.value === "" ? null : Number(e.target.value))}
-        >
-          {activeLeague === null && <option value="">— seleziona lega —</option>}
-          {leagues.map((league) => (
-            <option key={league.id} value={league.id}>
-              {league.name}
-            </option>
-          ))}
-        </select>
-        <span className="sidebar-meta">{meta}</span>
-      </div>
-
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            aria-current={page === item.key ? "page" : undefined}
-            onClick={() => onNavigate(item.key)}
+        <div className="sidebar-league">
+          <span className="sidebar-kicker">Lega attiva</span>
+          <select
+            aria-label="Lega attiva"
+            value={activeLeague?.id ?? ""}
+            onChange={(e) => onSelectLeague(e.target.value === "" ? null : Number(e.target.value))}
           >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+            {activeLeague === null && <option value="">— seleziona lega —</option>}
+            {leagues.map((league) => (
+              <option key={league.id} value={league.id}>
+                {league.name}
+              </option>
+            ))}
+          </select>
+          <span className="sidebar-meta">{meta}</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              aria-current={page === item.key ? "page" : undefined}
+              onClick={() => onNavigate(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       <div className="sidebar-foot">
         <button
