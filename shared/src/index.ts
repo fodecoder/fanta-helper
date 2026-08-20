@@ -15,3 +15,4 @@ export * from "./maxBid";
 export * from "./recommendationEngine";
 export * from "./wishlist";
 export * from "./statsEnrichment";
+export * from "./matchPlayer";

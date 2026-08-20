@@ -1,4 +1,13 @@
-import type { ManagerAuctionStatus, Player, Role, ValuationWithPlayer } from "@fanta-helper/shared";
+import type {
+  ManagerAuctionStatus,
+  Player,
+  ProbableLineupEntry,
+  ProbableLineupStato,
+  Role,
+  SetPieceTakerEntry,
+  ValuationWithPlayer,
+} from "@fanta-helper/shared";
+import { isSamePlayer } from "@fanta-helper/shared";
 
 // Colori semantici del verdetto/impatto (token del design system).
 export const COLOR_MUTED = "var(--color-neutral-700)";
@@ -6,8 +15,35 @@ export const COLOR_GOOD = "var(--color-accent-700)";
 export const COLOR_WARN = "var(--color-accent-2-700)";
 export const COLOR_INK = "var(--color-text)";
 
+export const ROLE_LABEL: Record<Role, string> = {
+  P: "Portiere",
+  D: "Difensore",
+  C: "Centrocampista",
+  A: "Attaccante",
+};
+
 export function roleColor(ruolo: Role): string {
   return `var(--role-${ruolo.toLowerCase()})`;
+}
+
+// Match esplicito e conservativo (niente fuzzy matching): se nome+squadra
+// normalizzati non coincidono esattamente, il giocatore resta senza dato,
+// mai una stima.
+export function lineupStatusFor(
+  player: Pick<Player, "name" | "team">,
+  rows: ProbableLineupEntry[] | null,
+): ProbableLineupStato | null {
+  return (
+    (rows ?? []).find((r) => isSamePlayer(player, { name: r.player_name, team: r.team }))?.stato ??
+    null
+  );
+}
+
+export function setPieceRanksFor(
+  player: Pick<Player, "name" | "team">,
+  rows: SetPieceTakerEntry[] | null,
+): SetPieceTakerEntry[] {
+  return (rows ?? []).filter((r) => isSamePlayer(player, { name: r.player_name, team: r.team }));
 }
 
 // `+` (più caro / fair value superiore) in magenta, `−` in ciano — come il log

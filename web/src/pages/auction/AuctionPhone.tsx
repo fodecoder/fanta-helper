@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { deltaColor, formatDelta, roleColor } from "../../lib/auctionDerivations";
+import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
+import {
+  deltaColor,
+  formatDelta,
+  lineupStatusFor,
+  roleColor,
+  setPieceRanksFor,
+} from "../../lib/auctionDerivations";
 import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
 const ROLE_FILTERS: RoleFilter[] = ["tutti", "P", "D", "C", "A"];
@@ -21,6 +28,7 @@ type Tab = "lista" | "alternative" | "log";
 
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
+  const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const selectedManagerName =
@@ -110,6 +118,13 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               {val &&
                 ` · tier ${val.tier} · fv ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
             </div>
+            <PlayerDetailPanel
+              player={sel}
+              quotation={view.quotationFor(sel.id)}
+              seasonStats={view.seasonStatsById.get(sel.id)}
+              lineupStatus={lineupStatusFor(sel, view.probableLineup)}
+              setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+            />
 
             {view.ladder && (
               <div className="ladder" style={{ margin: "30px 16px 58px 6px" }}>
@@ -346,73 +361,103 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 ? `${view.compareRows.length} libere · ordinate per fair value`
                 : "Nessun giocatore in asta."}
             </div>
-            {view.compareRows.map(({ player, valuation, delta }) => (
-              <button
-                key={player.id}
-                type="button"
-                onClick={() => view.onSelect(player.id)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "left",
-                  background: "transparent",
-                  border: 0,
-                  borderBottom: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
-                  padding: "11px 16px",
-                  cursor: "pointer",
-                  color: "var(--color-text)",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span
+            {view.compareRows.map(({ player, valuation, delta }) => {
+              const expanded = expandedPlayerId === player.id;
+              return (
+                <div
+                  key={player.id}
+                  style={{
+                    borderBottom: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => view.onSelect(player.id)}
                     style={{
-                      font: "600 11px/1 var(--font-heading)",
-                      color: "var(--color-accent-700)",
-                      width: 24,
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      background: "transparent",
+                      border: 0,
+                      padding: "11px 16px",
+                      cursor: "pointer",
+                      color: "var(--color-text)",
                     }}
                   >
-                    {valuation?.tier ?? ""}
-                  </span>
-                  <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
-                    {player.name}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                    {player.team}
-                  </span>
-                  <span
-                    className="num"
-                    style={{ fontWeight: 600, fontSize: 15, width: 38, textAlign: "right" }}
+                    <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span
+                        style={{
+                          font: "600 11px/1 var(--font-heading)",
+                          color: "var(--color-accent-700)",
+                          width: 24,
+                        }}
+                      >
+                        {valuation?.tier ?? ""}
+                      </span>
+                      <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
+                        {player.name}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                        {player.team}
+                      </span>
+                      <span
+                        className="num"
+                        style={{ fontWeight: 600, fontSize: 15, width: 38, textAlign: "right" }}
+                      >
+                        {valuation?.fair_value ?? "—"}
+                      </span>
+                      <span
+                        className="num"
+                        style={{
+                          fontSize: 12,
+                          width: 40,
+                          textAlign: "right",
+                          color: delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
+                        }}
+                      >
+                        {delta === null ? "—" : formatDelta(delta)}
+                      </span>
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
+                      <span className="bar-track" style={{ flex: 1, height: 6 }}>
+                        <span
+                          className="bar-fill"
+                          style={{
+                            width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
+                            background: "var(--color-neutral-600)",
+                          }}
+                        />
+                      </span>
+                      <span
+                        style={{ fontSize: 11, color: "var(--color-neutral-700)" }}
+                        className="num"
+                      >
+                        max {valuation?.max_bid ?? "—"} · panic {valuation?.panic_price ?? "—"}
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ margin: "0 16px 10px", padding: "3px 10px", fontSize: 12 }}
+                    onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
                   >
-                    {valuation?.fair_value ?? "—"}
-                  </span>
-                  <span
-                    className="num"
-                    style={{
-                      fontSize: 12,
-                      width: 40,
-                      textAlign: "right",
-                      color: delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
-                    }}
-                  >
-                    {delta === null ? "—" : formatDelta(delta)}
-                  </span>
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
-                  <span className="bar-track" style={{ flex: 1, height: 6 }}>
-                    <span
-                      className="bar-fill"
-                      style={{
-                        width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
-                        background: "var(--color-neutral-600)",
-                      }}
-                    />
-                  </span>
-                  <span style={{ fontSize: 11, color: "var(--color-neutral-700)" }} className="num">
-                    max {valuation?.max_bid ?? "—"} · panic {valuation?.panic_price ?? "—"}
-                  </span>
-                </span>
-              </button>
-            ))}
+                    {expanded ? "Chiudi" : "Dettagli"}
+                  </button>
+                  {expanded && (
+                    <div style={{ padding: "0 16px 10px" }}>
+                      <PlayerDetailPanel
+                        player={player}
+                        quotation={view.quotationFor(player.id)}
+                        seasonStats={view.seasonStatsById.get(player.id)}
+                        lineupStatus={lineupStatusFor(player, view.probableLineup)}
+                        setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
