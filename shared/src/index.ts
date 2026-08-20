@@ -2,6 +2,7 @@ export * from "./roles";
 export * from "./extraction";
 export * from "./league";
 export * from "./valuation";
+export * from "./valuationScale";
 export * from "./referenceImport";
 export * from "./quotation";
 export * from "./playerSeasonStats";

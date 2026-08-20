@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-08-20
+
+### Added
+
+- **Valutazioni JSON su base 1000 crediti**: `target`, `fair_value`,
+  `max_bid` e `panic_price` importati (o generati) sono sempre su base 1000
+  crediti, ora dichiarato esplicitamente nel form di import e in `SPEC.md`.
+  Il dato salvato resta quello importato, invariato; le viste che lo
+  mostrano (Asta, Panoramica, Valutazioni) lo ricalcolano a lettura per il
+  budget reale della lega (`shared/src/valuationScale.ts`), così una lega da
+  500 o 1500 crediti vede valori coerenti senza dover reimportare se il
+  budget cambia.
+
 ## [3.1.0] - 2026-08-20
 
 ### Added

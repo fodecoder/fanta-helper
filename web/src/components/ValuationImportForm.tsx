@@ -24,10 +24,18 @@ const SCHEMA_FIELDS: { field: string; type: string; note: string }[] = [
   { field: "team", type: "stringa", note: "disambigua il matching" },
   { field: "ruolo", type: "enum", note: ROLES.join(" / ") },
   { field: "tier", type: "stringa", note: "fascia" },
-  { field: "target", type: "intero ≥ 0", note: "prezzo obiettivo" },
-  { field: "fair_value", type: "intero ≥ 0", note: "valore equo" },
-  { field: "max_bid", type: "intero ≥ 0", note: "rilancio massimo suggerito" },
-  { field: "panic_price", type: "intero ≥ 0", note: "soglia oltre cui non inseguire" },
+  { field: "target", type: "intero ≥ 0", note: "prezzo obiettivo, su base 1000 crediti" },
+  { field: "fair_value", type: "intero ≥ 0", note: "valore equo, su base 1000 crediti" },
+  {
+    field: "max_bid",
+    type: "intero ≥ 0",
+    note: "rilancio massimo suggerito, su base 1000 crediti",
+  },
+  {
+    field: "panic_price",
+    type: "intero ≥ 0",
+    note: "soglia oltre cui non inseguire, su base 1000 crediti",
+  },
   { field: "confidence", type: "enum", note: CONFIDENCE_LEVELS.join(" / ") },
   { field: "note", type: "stringa o null", note: "opzionale" },
 ];
@@ -126,6 +134,12 @@ export function ValuationImportForm({ leagueId, leagueName, onResolved }: Valuat
           <p className="text-muted" style={{ fontSize: 13 }}>
             Documento radice: <code>league_name</code> (stringa), <code>generated_at</code> (data
             ISO 8601), <code>players</code> (array di almeno un elemento con i campi seguenti).
+          </p>
+          <p className="text-muted" style={{ fontSize: 13 }}>
+            <code>target</code>, <code>fair_value</code>, <code>max_bid</code> e{" "}
+            <code>panic_price</code> vanno inseriti su <strong>base 1000 crediti</strong>,
+            indipendentemente dal budget reale della lega: alla lettura vengono ricalcolati
+            proporzionalmente al budget della lega configurato.
           </p>
           <div className="table-scroll">
             <table className="table" style={{ maxWidth: 640 }}>
