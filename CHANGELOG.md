@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-20
+
+### Added
+
+- **Suggerimento coppia portieri in asta**: dopo l'acquisto di un portiere,
+  la colonna "Io" (desktop) e la testata (telefono) mostrano la squadra più
+  favorevole per accoppiarlo, in base alla matrice `gk_pairing` già presente
+  in "Coppie portieri". Sceglie la squadra col punteggio migliore tra quelle
+  che hanno ancora un portiere libero nel pool, scartando quelle già mie e
+  passando alla successiva se il portiere suggerito è già stato acquistato
+  da un altro manager. Puro derivato dal log `purchase` e dalla matrice
+  coppie, nessuno stato salvato.
+
 ## [3.0.1] - 2026-08-20
 
 ### Fixed

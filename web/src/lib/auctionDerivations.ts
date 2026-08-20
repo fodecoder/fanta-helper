@@ -1,4 +1,5 @@
 import type {
+  GkPairingEntry,
   ManagerAuctionStatus,
   Player,
   ProbableLineupEntry,
@@ -177,6 +178,34 @@ export function impact(
     text: `${status.managerName} resterebbe con ${residuoAfter} crediti per ${freeAfter} slot — ${avg} di media.`,
     color: COLOR_MUTED,
   };
+}
+
+export interface GkPairingSuggestion {
+  referenceTeam: string;
+  team: string;
+  score: number;
+}
+
+// Suggerisce la squadra più favorevole per il prossimo portiere, in base
+// all'ultimo portiere acquistato (riferimento) e alla matrice `gk_pairing`
+// (punteggio più basso = coppia più favorevole, vedi shared/src/gkPairing.ts).
+// Scarta le squadre di cui possiedo già un portiere e quelle senza portieri
+// ancora liberi nel pool, passando alla successiva per favorevolezza.
+export function gkPairingSuggestionFor(
+  myGoalkeeperTeams: string[],
+  pairing: GkPairingEntry[],
+  isTeamGoalkeeperAvailable: (team: string) => boolean,
+): GkPairingSuggestion | null {
+  if (myGoalkeeperTeams.length === 0) return null;
+  const referenceTeam = myGoalkeeperTeams[myGoalkeeperTeams.length - 1]!;
+  const owned = new Set(myGoalkeeperTeams);
+  const candidates = pairing
+    .filter((e) => e.teamA === referenceTeam || e.teamB === referenceTeam)
+    .map((e) => ({ team: e.teamA === referenceTeam ? e.teamB : e.teamA, score: e.score }))
+    .filter((c) => !owned.has(c.team))
+    .sort((a, b) => a.score - b.score);
+  const best = candidates.find((c) => isTeamGoalkeeperAvailable(c.team));
+  return best ? { referenceTeam, ...best } : null;
 }
 
 export interface RankRow {

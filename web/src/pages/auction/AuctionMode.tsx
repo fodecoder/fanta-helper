@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
+  GkPairingEntry,
   League,
   Manager,
   ManagerAuctionStatus,
@@ -27,14 +28,17 @@ import * as statsEnrichmentApi from "../../api/statsEnrichment";
 import * as playerSeasonStatsApi from "../../api/playerSeasonStats";
 import * as probableLineupApi from "../../api/probableLineup";
 import * as setPieceTakerApi from "../../api/setPieceTaker";
+import * as gkPairingApi from "../../api/gkPairing";
 import * as recommendationsApi from "../../api/recommendations";
 import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import {
+  gkPairingSuggestionFor,
   impact as computeImpact,
   ladderModel,
   rankSameRole,
   verdict as computeVerdict,
   type CompareSortKey,
+  type GkPairingSuggestion,
   type RankRow,
 } from "../../lib/auctionDerivations";
 import { AuctionDesktop } from "./AuctionDesktop";
@@ -109,6 +113,7 @@ export interface AuctionView {
   seasonStatsById: Map<number, PlayerLatestSeasonStats>;
   probableLineup: ProbableLineupEntry[] | null;
   setPieceTakers: SetPieceTakerEntry[] | null;
+  gkPairingSuggestion: GkPairingSuggestion | null;
 
   logRows: {
     key: string;
@@ -146,6 +151,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [seasonStats, setSeasonStats] = useState<PlayerLatestSeasonStats[] | null>(null);
   const [probableLineup, setProbableLineup] = useState<ProbableLineupEntry[] | null>(null);
   const [setPieceTakers, setSetPieceTakers] = useState<SetPieceTakerEntry[] | null>(null);
+  const [gkPairing, setGkPairing] = useState<GkPairingEntry[] | null>(null);
   const [recommendations, setRecommendations] = useState<PlayerRecommendation[] | null>(null);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
@@ -206,6 +212,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     void setPieceTakerApi
       .listSetPieceTakers(controller.signal)
       .then(setSetPieceTakers)
+      .catch(() => {});
+    void gkPairingApi
+      .listGkPairing(controller.signal)
+      .then(setGkPairing)
       .catch(() => {});
     return () => controller.abort();
   }, [league.id]);
@@ -270,6 +280,28 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
 
   const me = statuses?.find((s) => s.isOwner);
   const selectedManagerStatus = statuses?.find((s) => s.managerId === effectiveManagerId);
+
+  // Squadre dei portieri già presi dal manager owner, in ordine di acquisto:
+  // riferimento per il suggerimento di accoppiata (ultimo acquistato = squadra
+  // di riferimento).
+  const myGoalkeeperTeams = useMemo(
+    () =>
+      (purchases ?? [])
+        .filter((p) => p.manager_id === me?.managerId && p.player_ruolo === "P")
+        .map((p) => p.player_team),
+    [purchases, me?.managerId],
+  );
+  const isTeamGoalkeeperAvailable = useCallback(
+    (team: string) =>
+      (players ?? []).some(
+        (p) => p.team === team && p.ruolo === "P" && !purchasedPlayerIds.has(p.id),
+      ),
+    [players, purchasedPlayerIds],
+  );
+  const gkPairingSuggestion = useMemo(
+    () => gkPairingSuggestionFor(myGoalkeeperTeams, gkPairing ?? [], isTeamGoalkeeperAvailable),
+    [myGoalkeeperTeams, gkPairing, isTeamGoalkeeperAvailable],
+  );
 
   const verdict = computeVerdict(priceNum, selectedValuation);
   const ladder = ladderModel(selectedValuation, priceNum);
@@ -541,6 +573,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     seasonStatsById,
     probableLineup,
     setPieceTakers,
+    gkPairingSuggestion,
     logRows,
     wishRows,
     assignError,
