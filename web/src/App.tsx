@@ -11,6 +11,7 @@ import { ValuationsPage } from "./pages/ValuationsPage";
 import { RecommendationsPage } from "./pages/RecommendationsPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
 import { GkPairingPage } from "./pages/GkPairingPage";
+import { RosterExchangePage } from "./pages/RosterExchangePage";
 import { ProbableLineupPage } from "./pages/ProbableLineupPage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { AuctionMode } from "./pages/auction/AuctionMode";
@@ -149,6 +150,8 @@ function App() {
           <PlayerImportPage calls={purchaseCount} />
         ) : effectivePage === "portieri" ? (
           <GkPairingPage calls={purchaseCount} />
+        ) : effectivePage === "rose" ? (
+          <RosterExchangePage league={activeLeague} calls={purchaseCount} />
         ) : (
           <ProbableLineupPage calls={purchaseCount} />
         )}

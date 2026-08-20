@@ -7,6 +7,7 @@ import { managersRouter } from "./routes/managers";
 import { valuationsRouter } from "./routes/valuations";
 import { recommendationsRouter } from "./routes/recommendations";
 import { purchasesRouter } from "./routes/purchases";
+import { rosterExchangeRouter } from "./routes/rosterExchange";
 import { wishlistRouter } from "./routes/wishlist";
 import { gkPairingRouter } from "./routes/gkPairing";
 import { probableLineupRouter } from "./routes/probableLineup";
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use("/leagues/:leagueId/valuations", valuationsRouter);
   app.use("/leagues/:leagueId/recommendations", recommendationsRouter);
   app.use("/leagues/:leagueId/purchases", purchasesRouter);
+  app.use("/leagues/:leagueId/roster-exchange", rosterExchangeRouter);
   app.use("/leagues/:leagueId/wishlist", wishlistRouter);
   app.use("/players/stats-enrichment", statsEnrichmentRouter);
   app.use("/players/season-stats", playerSeasonStatsRouter);

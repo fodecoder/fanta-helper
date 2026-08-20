@@ -6,9 +6,9 @@ export function cell(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-export function parseCsvRows(raw: string): unknown[][] {
+export function parseCsvRows(raw: string, delimiter = ";"): unknown[][] {
   return parse(raw, {
-    delimiter: ";",
+    delimiter,
     bom: true,
     relax_column_count: true,
     skip_empty_lines: true,

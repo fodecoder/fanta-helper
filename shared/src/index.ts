@@ -11,6 +11,7 @@ export * from "./probableLineup";
 export * from "./setPieceTaker";
 export * from "./manager";
 export * from "./purchase";
+export * from "./rosterExchange";
 export * from "./maxBid";
 export * from "./recommendationEngine";
 export * from "./wishlist";
