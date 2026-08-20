@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
 import { CmykNum } from "../../components/CmykNum";
+import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import {
   ROLE_LABEL,
@@ -63,6 +64,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
         </div>
         <div className="rule-heavy" />
         <div className="rule-thin" />
+        <ModifierWarning
+          modificatori={view.league.modificatori}
+          className="modifier-warning--tight"
+        />
       </header>
 
       <div className="auction-grid">

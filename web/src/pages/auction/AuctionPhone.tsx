@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import {
   deltaColor,
@@ -80,6 +81,10 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
         </div>
         <div className="rule-heavy" style={{ height: 2, margin: "8px 0 1px" }} />
         <div className="rule-thin" style={{ marginBottom: 10 }} />
+        <ModifierWarning
+          modificatori={view.league.modificatori}
+          className="modifier-warning--tight"
+        />
         <div className="phone-figures">
           <div>
             <div className="phone-maxbid">{me?.adjustedMaxBid ?? 0}</div>
