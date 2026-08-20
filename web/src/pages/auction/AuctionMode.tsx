@@ -5,6 +5,7 @@ import type {
   ManagerAuctionStatus,
   Player,
   PlayerLatestSeasonStats,
+  PlayerRecommendation,
   ProbableLineupEntry,
   PurchaseWithDetails,
   QuotationRow,
@@ -26,12 +27,14 @@ import * as statsEnrichmentApi from "../../api/statsEnrichment";
 import * as playerSeasonStatsApi from "../../api/playerSeasonStats";
 import * as probableLineupApi from "../../api/probableLineup";
 import * as setPieceTakerApi from "../../api/setPieceTaker";
+import * as recommendationsApi from "../../api/recommendations";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import {
   impact as computeImpact,
   ladderModel,
   rankSameRole,
   verdict as computeVerdict,
+  type CompareSortKey,
   type RankRow,
 } from "../../lib/auctionDerivations";
 import { AuctionDesktop } from "./AuctionDesktop";
@@ -45,9 +48,16 @@ interface AuctionModeProps {
 export type RoleFilter = "tutti" | Role;
 export type PlayerSortKey = "valore" | "fvm" | "qt_a" | "qt_i";
 
+// Almeno 10 alternative visibili come richiesto; 15 lascia un margine senza
+// affollare la tabella (se il ruolo ne ha meno disponibili, mostra tutte).
+const COMPARE_ROWS = 15;
+
 export interface CompareRow extends RankRow {
   delta: number | null;
   isCurrent: boolean;
+  quotation: QuotationRow | undefined;
+  seasonStats: PlayerLatestSeasonStats | undefined;
+  score: number | null;
 }
 
 // Modello di vista condiviso tra desktop e telefono: tutto derivato, nulla di
@@ -91,6 +101,9 @@ export interface AuctionView {
 
   compareRows: CompareRow[];
   compareMaxFv: number;
+  compareSortKey: CompareSortKey;
+  onCompareSortKey: (k: CompareSortKey) => void;
+  compareSortValueFor: (playerId: number) => number | null;
   enrichment: StatsEnrichmentResponse | null;
   seasonStatsById: Map<number, PlayerLatestSeasonStats>;
   probableLineup: ProbableLineupEntry[] | null;
@@ -132,6 +145,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [seasonStats, setSeasonStats] = useState<PlayerLatestSeasonStats[] | null>(null);
   const [probableLineup, setProbableLineup] = useState<ProbableLineupEntry[] | null>(null);
   const [setPieceTakers, setSetPieceTakers] = useState<SetPieceTakerEntry[] | null>(null);
+  const [recommendations, setRecommendations] = useState<PlayerRecommendation[] | null>(null);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [price, setPrice] = useState("");
@@ -139,6 +153,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
   const [sortKey, setSortKey] = useState<PlayerSortKey>("valore");
+  const [compareSortKey, setCompareSortKey] = useState<CompareSortKey>("fair_value");
   const [assignError, setAssignError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -161,6 +176,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     void valuationsApi
       .listValuations(league.id, controller.signal)
       .then(setValuations)
+      .catch(() => {});
+    void recommendationsApi
+      .listRecommendations(league.id, controller.signal)
+      .then(setRecommendations)
       .catch(() => {});
     return () => controller.abort();
   }, [league.id, refreshToken]);
@@ -210,6 +229,11 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     return map;
   }, [quotations]);
   const quotationFor = useCallback((id: number) => quotationById.get(id), [quotationById]);
+  const recommendationById = useMemo(() => {
+    const map = new Map<number, PlayerRecommendation>();
+    for (const r of recommendations ?? []) map.set(r.player_id, r);
+    return map;
+  }, [recommendations]);
   // Chiave attiva = criterio di ordinamento e stesso valore mostrato in lista.
   const sortValueFor = useCallback(
     (playerId: number): number | null => {
@@ -252,10 +276,44 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     ? computeImpact(priceNum, selectedManagerStatus, selectedPlayer.ruolo)
     : { text: "", color: "var(--color-neutral-700)" };
 
+  const seasonStatsById = useMemo(() => {
+    const map = new Map<number, PlayerLatestSeasonStats>();
+    for (const s of seasonStats ?? []) map.set(s.player_id, s);
+    return map;
+  }, [seasonStats]);
+
+  const compareSortValueFor = useCallback(
+    (playerId: number): number | null => {
+      switch (compareSortKey) {
+        case "fair_value":
+          return valuationById.get(playerId)?.fair_value ?? null;
+        case "target":
+          return valuationById.get(playerId)?.target ?? null;
+        case "max_bid":
+          return valuationById.get(playerId)?.max_bid ?? null;
+        case "fm":
+          return seasonStatsById.get(playerId)?.fm ?? null;
+        case "fvm":
+          return quotationById.get(playerId)?.fvm ?? null;
+        case "qt_a":
+          return quotationById.get(playerId)?.qt_a ?? null;
+        case "score":
+          return recommendationById.get(playerId)?.score ?? null;
+      }
+    },
+    [compareSortKey, valuationById, quotationById, seasonStatsById, recommendationById],
+  );
+
   const compareBase = useMemo(() => {
     if (!selectedPlayer || !players || !valuations) return [] as RankRow[];
-    return rankSameRole(players, valuations, purchasedPlayerIds, selectedPlayer.ruolo).slice(0, 7);
-  }, [selectedPlayer, players, valuations, purchasedPlayerIds]);
+    return rankSameRole(
+      players,
+      valuations,
+      purchasedPlayerIds,
+      selectedPlayer.ruolo,
+      compareSortValueFor,
+    ).slice(0, COMPARE_ROWS);
+  }, [selectedPlayer, players, valuations, purchasedPlayerIds, compareSortValueFor]);
 
   const compareRows: CompareRow[] = compareBase.map((row) => ({
     ...row,
@@ -264,8 +322,11 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       selectedValuation && row.valuation
         ? row.valuation.fair_value - selectedValuation.fair_value
         : null,
+    quotation: quotationById.get(row.player.id),
+    seasonStats: seasonStatsById.get(row.player.id),
+    score: recommendationById.get(row.player.id)?.score ?? null,
   }));
-  const compareMaxFv = compareBase[0]?.valuation?.fair_value ?? 1;
+  const compareMaxFv = Math.max(1, ...compareBase.map((r) => r.valuation?.fair_value ?? 0));
 
   // Arricchimento stat opzionale per le alternative (gated su `enabled`).
   useEffect(() => {
@@ -280,29 +341,27 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       .catch(() => setEnrichment(null));
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds]);
+  }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds, compareSortKey]);
 
-  // Ultima stagione con presenze per il giocatore in asta + le alternative
-  // (compareBase): una sola chiamata copre sia il pannello sempre visibile
-  // sia tutti i pannelli "Dettagli" espandibili, senza una fetch per riga.
+  // Statistiche stagionali per l'intero pool disponibile dello stesso ruolo
+  // del giocatore in asta (non solo le righe poi mostrate): servono a
+  // ordinare per Fm su tutti i candidati, altrimenti la maggior parte del
+  // pool risulterebbe senza dato.
   useEffect(() => {
-    const ids = new Set(compareBase.map((r) => r.player.id));
-    if (selectedPlayer) ids.add(selectedPlayer.id);
-    if (ids.size === 0) return;
+    if (!selectedPlayer || !players) return;
+    const ids = new Set(
+      players
+        .filter((p) => p.ruolo === selectedPlayer.ruolo && !purchasedPlayerIds.has(p.id))
+        .map((p) => p.id),
+    );
+    ids.add(selectedPlayer.id);
     const controller = new AbortController();
     playerSeasonStatsApi
       .getLatestPlayerSeasonStats(Array.from(ids), controller.signal)
       .then(setSeasonStats)
       .catch(() => setSeasonStats(null));
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds]);
-
-  const seasonStatsById = useMemo(() => {
-    const map = new Map<number, PlayerLatestSeasonStats>();
-    for (const s of seasonStats ?? []) map.set(s.player_id, s);
-    return map;
-  }, [seasonStats]);
+  }, [selectedPlayer, players, purchasedPlayerIds]);
 
   const logRows = (purchases ?? [])
     .slice()
@@ -461,6 +520,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     impact,
     compareRows,
     compareMaxFv,
+    compareSortKey,
+    onCompareSortKey: setCompareSortKey,
+    compareSortValueFor,
     enrichment,
     seasonStatsById,
     probableLineup,

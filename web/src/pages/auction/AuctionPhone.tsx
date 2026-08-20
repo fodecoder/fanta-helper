@@ -6,6 +6,7 @@ import {
   lineupStatusFor,
   roleColor,
   setPieceRanksFor,
+  type CompareSortKey,
 } from "../../lib/auctionDerivations";
 import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
@@ -17,6 +18,25 @@ const SORT_LABEL: Record<PlayerSortKey, string> = {
   qt_i: "Qt.I",
 };
 const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
+
+const COMPARE_SORT_LABEL: Record<CompareSortKey, string> = {
+  fair_value: "Fair value",
+  target: "Target",
+  max_bid: "Max",
+  fm: "Fm",
+  fvm: "FVM",
+  qt_a: "Qt.A",
+  score: "Score",
+};
+const COMPARE_SORT_KEYS: CompareSortKey[] = [
+  "fair_value",
+  "target",
+  "max_bid",
+  "fm",
+  "fvm",
+  "qt_a",
+  "score",
+];
 const SHORT_LABEL: Record<string, string> = {
   Target: "TGT",
   "Fair value": "FV",
@@ -25,6 +45,13 @@ const SHORT_LABEL: Record<string, string> = {
 };
 
 type Tab = "lista" | "alternative" | "log";
+
+// Il punteggio motore non è mai un intero: arrotondato per la lettura,
+// gli altri valori (fair value, target, Qt.A, FVM) restano interi as-is.
+function formatCompareValue(v: number | null): string {
+  if (v === null) return "—";
+  return Number.isInteger(v) ? String(v) : v.toFixed(2);
+}
 
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
@@ -358,9 +385,29 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               style={{ padding: "12px 16px 6px", fontSize: 12, color: "var(--color-neutral-700)" }}
             >
               {sel
-                ? `${view.compareRows.length} libere · ordinate per fair value`
+                ? `${view.compareRows.length} libere · ordinate per ${COMPARE_SORT_LABEL[view.compareSortKey]}`
                 : "Nessun giocatore in asta."}
             </div>
+            {sel && (
+              <div
+                className="seg"
+                role="group"
+                aria-label="Ordina alternative per"
+                style={{ margin: "0 16px 8px", flexWrap: "wrap" }}
+              >
+                {COMPARE_SORT_KEYS.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className="seg-opt"
+                    aria-pressed={view.compareSortKey === k}
+                    onClick={() => view.onCompareSortKey(k)}
+                  >
+                    {COMPARE_SORT_LABEL[k]}
+                  </button>
+                ))}
+              </div>
+            )}
             {view.compareRows.map(({ player, valuation, delta }) => {
               const expanded = expandedPlayerId === player.id;
               return (
@@ -404,7 +451,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                         className="num"
                         style={{ fontWeight: 600, fontSize: 15, width: 38, textAlign: "right" }}
                       >
-                        {valuation?.fair_value ?? "—"}
+                        {formatCompareValue(view.compareSortValueFor(player.id))}
                       </span>
                       <span
                         className="num"

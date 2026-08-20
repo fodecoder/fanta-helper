@@ -184,15 +184,18 @@ export interface RankRow {
   valuation: ValuationWithPlayer | undefined;
 }
 
+export type CompareSortKey = "fair_value" | "target" | "max_bid" | "fm" | "fvm" | "qt_a" | "score";
+
 // Confronto per ruolo derivato client-side dai dati già scaricati (players +
 // valutazioni per-lega + log): stesso ruolo, non ancora acquistati, ordinati
-// per fair value desc → target desc → nome. I giocatori senza valutazione
-// finiscono in fondo. Nessun endpoint dedicato, nessuno stato memorizzato.
+// per `sortValueFor` desc (nulls in fondo) → nome. Nessun endpoint dedicato,
+// nessuno stato memorizzato.
 export function rankSameRole(
   players: Player[],
   valuations: ValuationWithPlayer[],
   purchasedPlayerIds: Set<number>,
   ruolo: Role,
+  sortValueFor: (playerId: number) => number | null,
 ): RankRow[] {
   const rows: RankRow[] = players
     .filter((player) => player.ruolo === ruolo && !purchasedPlayerIds.has(player.id))
@@ -202,17 +205,14 @@ export function rankSameRole(
     }));
 
   return rows.sort((a, b) => {
-    if (a.valuation && b.valuation) {
-      if (b.valuation.fair_value !== a.valuation.fair_value) {
-        return b.valuation.fair_value - a.valuation.fair_value;
-      }
-      if (b.valuation.target !== a.valuation.target) {
-        return b.valuation.target - a.valuation.target;
-      }
+    const av = sortValueFor(a.player.id);
+    const bv = sortValueFor(b.player.id);
+    if (av !== null && bv !== null) {
+      if (bv !== av) return bv - av;
       return a.player.name.localeCompare(b.player.name);
     }
-    if (a.valuation) return -1;
-    if (b.valuation) return 1;
+    if (av !== null) return -1;
+    if (bv !== null) return 1;
     return a.player.name.localeCompare(b.player.name);
   });
 }

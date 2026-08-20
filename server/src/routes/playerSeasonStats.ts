@@ -10,7 +10,7 @@ const idsQuerySchema = z.object({
     .string()
     .min(1)
     .transform((raw) => raw.split(",").map((part) => part.trim()))
-    .pipe(z.array(z.string().regex(/^\d+$/, "id must be a positive integer")).max(50))
+    .pipe(z.array(z.string().regex(/^\d+$/, "id must be a positive integer")).max(300))
     .transform((parts) => parts.map(Number)),
 });
 

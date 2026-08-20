@@ -8,6 +8,7 @@ import {
   lineupStatusFor,
   roleColor,
   setPieceRanksFor,
+  type CompareSortKey,
 } from "../../lib/auctionDerivations";
 import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
@@ -19,6 +20,25 @@ const SORT_LABEL: Record<PlayerSortKey, string> = {
   qt_i: "Qt.I",
 };
 const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
+
+const COMPARE_SORT_LABEL: Record<CompareSortKey, string> = {
+  fair_value: "Fair value",
+  target: "Target",
+  max_bid: "Max",
+  fm: "Fm",
+  fvm: "FVM",
+  qt_a: "Qt.A",
+  score: "Score",
+};
+const COMPARE_SORT_KEYS: CompareSortKey[] = [
+  "fair_value",
+  "target",
+  "max_bid",
+  "fm",
+  "fvm",
+  "qt_a",
+  "score",
+];
 
 export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
@@ -326,8 +346,27 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   Alternative nello stesso ruolo — ancora libere
                 </h6>
                 <span className="text-muted" style={{ fontSize: 12 }}>
-                  {view.compareRows.length} libere · ordinate per fair value
+                  {view.compareRows.length} libere · ordinate per{" "}
+                  {COMPARE_SORT_LABEL[view.compareSortKey]}
                 </span>
+              </div>
+              <div
+                className="seg"
+                role="group"
+                aria-label="Ordina alternative per"
+                style={{ marginBottom: 8, flexWrap: "wrap" }}
+              >
+                {COMPARE_SORT_KEYS.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className="seg-opt"
+                    aria-pressed={view.compareSortKey === k}
+                    onClick={() => view.onCompareSortKey(k)}
+                  >
+                    {COMPARE_SORT_LABEL[k]}
+                  </button>
+                ))}
               </div>
               <div className="table-scroll">
                 <table className="table">
@@ -340,6 +379,8 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                       <th style={{ textAlign: "right" }}>Target</th>
                       <th style={{ textAlign: "right" }}>Max</th>
                       <th style={{ textAlign: "right" }}>Panic</th>
+                      <th style={{ textAlign: "right" }}>Fm</th>
+                      <th style={{ textAlign: "right" }}>Score</th>
                       <th style={{ textAlign: "right" }}>Δ vs in asta</th>
                       {showStats && (
                         <>
@@ -352,138 +393,161 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {view.compareRows.map(({ player, valuation, delta, isCurrent }) => {
-                      const stats = view.enrichment?.stats.find((s) => s.player_id === player.id);
-                      const expanded = expandedPlayerId === player.id;
-                      const columnCount = showStats ? 12 : 9;
-                      return (
-                        <Fragment key={player.id}>
-                          <tr
-                            style={
-                              isCurrent
-                                ? {
-                                    background:
-                                      "color-mix(in srgb, var(--color-accent) 12%, transparent)",
-                                  }
-                                : undefined
-                            }
-                          >
-                            <td style={{ whiteSpace: "nowrap" }}>
-                              <button
-                                type="button"
-                                onClick={() => view.onSelect(player.id)}
+                    {view.compareRows.map(
+                      ({ player, valuation, delta, isCurrent, seasonStats, score }) => {
+                        const stats = view.enrichment?.stats.find((s) => s.player_id === player.id);
+                        const expanded = expandedPlayerId === player.id;
+                        const columnCount = showStats ? 14 : 11;
+                        return (
+                          <Fragment key={player.id}>
+                            <tr
+                              style={
+                                isCurrent
+                                  ? {
+                                      background:
+                                        "color-mix(in srgb, var(--color-accent) 12%, transparent)",
+                                    }
+                                  : undefined
+                              }
+                            >
+                              <td style={{ whiteSpace: "nowrap" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => view.onSelect(player.id)}
+                                  style={{
+                                    border: 0,
+                                    background: "transparent",
+                                    padding: 0,
+                                    font: "inherit",
+                                    fontWeight: isCurrent ? 600 : 400,
+                                    color: isCurrent
+                                      ? "var(--color-text)"
+                                      : "var(--color-accent-700)",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {player.name}
+                                </button>
+                              </td>
+                              <td>{player.team}</td>
+                              <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>
+                                {valuation?.tier ?? "—"}
+                              </td>
+                              <td>
+                                <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                                  <span className="bar-track" style={{ flex: 1, height: 7 }}>
+                                    <span
+                                      className="bar-fill"
+                                      style={{
+                                        width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
+                                        background: isCurrent
+                                          ? "var(--color-accent)"
+                                          : "var(--color-neutral-600)",
+                                      }}
+                                    />
+                                  </span>
+                                  <span
+                                    className="num"
+                                    style={{ fontWeight: 600, width: 32, textAlign: "right" }}
+                                  >
+                                    {valuation?.fair_value ?? "—"}
+                                  </span>
+                                </span>
+                              </td>
+                              <td className="num" style={{ textAlign: "right" }}>
+                                {valuation?.target ?? "—"}
+                              </td>
+                              <td className="num" style={{ textAlign: "right" }}>
+                                {valuation?.max_bid ?? "—"}
+                              </td>
+                              <td
+                                className="num"
+                                style={{ textAlign: "right", color: "var(--color-neutral-700)" }}
+                              >
+                                {valuation?.panic_price ?? "—"}
+                              </td>
+                              <td
+                                className="num"
+                                style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                              >
+                                {seasonStats?.fm ?? "—"}
+                              </td>
+                              <td
+                                className="num"
+                                style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
+                              >
+                                {score === null ? "—" : score.toFixed(1)}
+                              </td>
+                              <td
+                                className="num"
                                 style={{
-                                  border: 0,
-                                  background: "transparent",
-                                  padding: 0,
-                                  font: "inherit",
-                                  fontWeight: isCurrent ? 600 : 400,
-                                  color: isCurrent
-                                    ? "var(--color-text)"
-                                    : "var(--color-accent-700)",
-                                  cursor: "pointer",
+                                  textAlign: "right",
+                                  fontWeight: 600,
+                                  color:
+                                    delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
                                 }}
                               >
-                                {player.name}
-                              </button>
-                            </td>
-                            <td>{player.team}</td>
-                            <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>
-                              {valuation?.tier ?? "—"}
-                            </td>
-                            <td>
-                              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                <span className="bar-track" style={{ flex: 1, height: 7 }}>
-                                  <span
-                                    className="bar-fill"
+                                {isCurrent ? "—" : delta === null ? "—" : formatDelta(delta)}
+                              </td>
+                              {showStats && (
+                                <>
+                                  <td
+                                    className="num"
                                     style={{
-                                      width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
-                                      background: isCurrent
-                                        ? "var(--color-accent)"
-                                        : "var(--color-neutral-600)",
+                                      textAlign: "right",
+                                      color: "var(--color-neutral-800)",
                                     }}
-                                  />
-                                </span>
-                                <span
-                                  className="num"
-                                  style={{ fontWeight: 600, width: 32, textAlign: "right" }}
+                                  >
+                                    {stats?.minutes ?? "—"}
+                                  </td>
+                                  <td
+                                    className="num"
+                                    style={{
+                                      textAlign: "right",
+                                      color: "var(--color-neutral-800)",
+                                    }}
+                                  >
+                                    {stats?.goals ?? "—"}
+                                  </td>
+                                  <td
+                                    className="num"
+                                    style={{
+                                      textAlign: "right",
+                                      color: "var(--color-neutral-800)",
+                                    }}
+                                  >
+                                    {stats?.assists ?? "—"}
+                                  </td>
+                                </>
+                              )}
+                              <td style={{ textAlign: "right" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  style={{ padding: "3px 10px", fontSize: 12 }}
+                                  onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
                                 >
-                                  {valuation?.fair_value ?? "—"}
-                                </span>
-                              </span>
-                            </td>
-                            <td className="num" style={{ textAlign: "right" }}>
-                              {valuation?.target ?? "—"}
-                            </td>
-                            <td className="num" style={{ textAlign: "right" }}>
-                              {valuation?.max_bid ?? "—"}
-                            </td>
-                            <td
-                              className="num"
-                              style={{ textAlign: "right", color: "var(--color-neutral-700)" }}
-                            >
-                              {valuation?.panic_price ?? "—"}
-                            </td>
-                            <td
-                              className="num"
-                              style={{
-                                textAlign: "right",
-                                fontWeight: 600,
-                                color:
-                                  delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
-                              }}
-                            >
-                              {isCurrent ? "—" : delta === null ? "—" : formatDelta(delta)}
-                            </td>
-                            {showStats && (
-                              <>
-                                <td
-                                  className="num"
-                                  style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                >
-                                  {stats?.minutes ?? "—"}
-                                </td>
-                                <td
-                                  className="num"
-                                  style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                >
-                                  {stats?.goals ?? "—"}
-                                </td>
-                                <td
-                                  className="num"
-                                  style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                >
-                                  {stats?.assists ?? "—"}
-                                </td>
-                              </>
-                            )}
-                            <td style={{ textAlign: "right" }}>
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                style={{ padding: "3px 10px", fontSize: 12 }}
-                                onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
-                              >
-                                {expanded ? "Chiudi" : "Dettagli"}
-                              </button>
-                            </td>
-                          </tr>
-                          {expanded && (
-                            <tr>
-                              <td colSpan={columnCount} style={{ padding: 0 }}>
-                                <PlayerDetailPanel
-                                  player={player}
-                                  quotation={view.quotationFor(player.id)}
-                                  seasonStats={view.seasonStatsById.get(player.id)}
-                                  lineupStatus={lineupStatusFor(player, view.probableLineup)}
-                                  setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
-                                />
+                                  {expanded ? "Chiudi" : "Dettagli"}
+                                </button>
                               </td>
                             </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
+                            {expanded && (
+                              <tr>
+                                <td colSpan={columnCount} style={{ padding: 0 }}>
+                                  <PlayerDetailPanel
+                                    player={player}
+                                    quotation={view.quotationFor(player.id)}
+                                    seasonStats={view.seasonStatsById.get(player.id)}
+                                    lineupStatus={lineupStatusFor(player, view.probableLineup)}
+                                    setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                                  />
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      },
+                    )}
                   </tbody>
                 </table>
               </div>
