@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2026-08-20
+
+### Fixed
+
+- **Modello di accesso SoFIFA corretto**: `api.sofifa.net` **non** è un'API
+  pubblica come indicato in 2.12.0 — è **whitelist-only**, quindi ogni chiamata
+  risponde 403 (→ nessun dato, nessuna regressione: il provider degrada come da
+  design) finché SoFIFA non autorizza il caller. Il provider resta OFF di
+  default; documentazione (`.env.example`, `render.yaml`, commenti) allineata.
+  `SOFIFA_API_TOKEN` è conservato per un eventuale schema token di whitelist ma
+  non è ancora inviato (SoFIFA non ne ha specificato il passaggio).
+
+### Added
+
+- **Sorgente squadre offline per `db:seed:sofifa`**: nuova env `SOFIFA_SQUADS_FILE`
+  che fa leggere al seed le rose da un JSON locale
+  (`[{ sofifaId, name, team }, ...]`) invece di interrogare l'API, utile quando
+  l'API non è raggiungibile/whitelisted. La logica di match resta identica.
+
 ## [2.12.0] - 2026-08-20
 
 ### Added

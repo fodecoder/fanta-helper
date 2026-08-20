@@ -1,4 +1,5 @@
 import type { SofifaConfig } from "./config";
+import { SOFIFA_REQUEST_HEADERS } from "./http";
 
 export interface RemotePlayerAttributes {
   overall: number | null;
@@ -35,7 +36,7 @@ export async function fetchPlayerAttributes(
 ): Promise<RemotePlayerAttributes | null> {
   try {
     const url = new URL(`/player/${sofifaId}`, config.baseUrl);
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const res = await fetch(url, { headers: SOFIFA_REQUEST_HEADERS });
     if (!res.ok) return null;
 
     const body = (await res.json()) as SofifaPlayerResponse;

@@ -1,18 +1,25 @@
+import { readFileSync } from "node:fs";
 import { pool } from "../db/client";
 import { listPlayers, backfillPlayerSofifaId } from "../db/players";
 import { normalizeForMatch } from "../stats/matchPlayer";
+import { SOFIFA_REQUEST_HEADERS } from "../stats/sofifa/http";
 
-// Populates player.sofifa_id by crawling Serie A squads on SoFIFA and matching
-// by name (disambiguated by team). SoFIFA has no name-search endpoint, so the
-// only way to resolve our players to a /player/{id} is to pull the squads via
-// /league/{id}/{roster} + /team/{id}/{roster} and match locally.
+// Populates player.sofifa_id by matching Serie A squads from SoFIFA against our
+// players by name (disambiguated by team). SoFIFA has no name-search endpoint,
+// so players are resolved to a /player/{id} only through the squad lists.
+//
+// Two sources for those squads:
+//   1. SOFIFA_SQUADS_FILE — a local JSON file, an array of
+//      { sofifaId, name, team }. Use this when api.sofifa.net is behind a
+//      Cloudflare challenge that a Node client can't pass: collect the squads
+//      once from a real browser and drop the file here.
+//   2. Otherwise the API crawl: /league/{id}/{roster} + /team/{id}/{roster}.
 //
 // Config via env:
-//   SOFIFA_BASE_URL   default https://api.sofifa.net
-//   SOFIFA_LEAGUE_ID  default 31 (Serie A on SoFIFA)
-//   SOFIFA_ROSTER     required — the dataset version id (e.g. "260046" for the
-//                     latest FC26 update). It changes with each SoFIFA update;
-//                     read the current one from the roster picker on sofifa.com.
+//   SOFIFA_SQUADS_FILE  optional path to the pre-collected squads JSON (source 1)
+//   SOFIFA_BASE_URL     default https://api.sofifa.net (source 2)
+//   SOFIFA_LEAGUE_ID    default 31 (Serie A on SoFIFA) (source 2)
+//   SOFIFA_ROSTER       required for source 2 — dataset version id (e.g. 260046)
 //
 // Matching never guesses: a unique normalized-name match wins; a name collision
 // is resolved only if exactly one candidate also matches team, otherwise the
@@ -25,12 +32,27 @@ interface SofifaCandidate {
   team: string;
 }
 
+function candidatesFromFile(file: string): SofifaCandidate[] {
+  const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
+  if (!Array.isArray(parsed)) throw new Error(`${file}: attesa una array di squad`);
+  const out: SofifaCandidate[] = [];
+  for (const raw of parsed) {
+    const entry = asRecord(raw);
+    if (!entry || typeof entry.sofifaId !== "number") continue;
+    const name = typeof entry.name === "string" ? entry.name : "";
+    const team = typeof entry.team === "string" ? entry.team : "";
+    if (name === "") continue;
+    out.push({ sofifaId: entry.sofifaId, name, team });
+  }
+  return out;
+}
+
 function baseUrl(): string {
   return process.env.SOFIFA_BASE_URL ?? "https://api.sofifa.net";
 }
 
 async function fetchJson(path: string): Promise<unknown> {
-  const res = await fetch(new URL(path, baseUrl()), { headers: { Accept: "application/json" } });
+  const res = await fetch(new URL(path, baseUrl()), { headers: SOFIFA_REQUEST_HEADERS });
   if (!res.ok) throw new Error(`GET ${path} -> ${res.status}`);
   return res.json();
 }
@@ -105,7 +127,7 @@ async function collectCandidates(leagueId: string, roster: string): Promise<Sofi
   return all;
 }
 
-async function seedSofifaIds(): Promise<void> {
+async function collectFromApi(): Promise<SofifaCandidate[]> {
   const leagueId = process.env.SOFIFA_LEAGUE_ID ?? "31";
   const roster = process.env.SOFIFA_ROSTER;
   if (!roster) {
@@ -114,8 +136,17 @@ async function seedSofifaIds(): Promise<void> {
         "Leggilo dal selettore roster su sofifa.com.",
     );
   }
+  return collectCandidates(leagueId, roster);
+}
 
-  const candidates = await collectCandidates(leagueId, roster);
+async function seedSofifaIds(): Promise<void> {
+  const squadsFile = process.env.SOFIFA_SQUADS_FILE;
+  const candidates = squadsFile
+    ? candidatesFromFile(squadsFile)
+    : await collectFromApi();
+  if (squadsFile) {
+    console.log(`[sofifa] ${candidates.length} candidati letti da ${squadsFile}`);
+  }
   const byName = new Map<string, SofifaCandidate[]>();
   for (const c of candidates) {
     const key = normalizeForMatch(c.name);
