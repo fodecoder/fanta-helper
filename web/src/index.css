@@ -457,14 +457,26 @@ select.input {
 .shell {
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
+  align-items: start;
   min-height: 100vh;
 }
 .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
   padding: 26px 20px 26px 30px;
   display: flex;
   flex-direction: column;
-  gap: 26px;
   border-right: 1px solid var(--color-divider);
+}
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
 }
 .sidebar-brand {
   display: flex;
