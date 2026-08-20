@@ -12,17 +12,20 @@ const SOURCE = "SoFIFA";
 
 async function resolveOne(
   player: PlayerRef,
-  season: number,
   config: ReturnType<typeof getSofifaConfig>,
 ): Promise<PlayerAttributes | null> {
-  const cacheKey = `sofifa:${player.id}:${season}`;
+  // No SoFIFA id mapping → no attributes. Never a guessed match: the API has no
+  // name search, so an unmapped player simply stays empty.
+  if (player.sofifaId == null) return null;
+
+  const cacheKey = `sofifa:${player.sofifaId}`;
   const cached = getCached<RemotePlayerAttributes | null>(cacheKey);
 
   let remote: RemotePlayerAttributes | null;
   if (cached !== undefined) {
     remote = cached;
   } else if (tryConsume()) {
-    remote = await fetchPlayerAttributes(config, { name: player.name, team: player.team, season });
+    remote = await fetchPlayerAttributes(config, player.sofifaId);
     setCached(cacheKey, remote, CACHE_TTL_MS);
   } else {
     // Quota exhausted for today: skip without caching, so it's retried once
@@ -45,10 +48,10 @@ export const sofifaProvider: StatsProvider<PlayerAttributes> = {
   isEnabled() {
     return getSofifaConfig().enabled;
   },
-  async enrich(players, season) {
+  async enrich(players) {
     const config = getSofifaConfig();
     if (!config.enabled) return [];
-    const results = await Promise.all(players.map((p) => resolveOne(p, season, config)));
+    const results = await Promise.all(players.map((p) => resolveOne(p, config)));
     return results.filter((r): r is PlayerAttributes => r !== null);
   },
 };

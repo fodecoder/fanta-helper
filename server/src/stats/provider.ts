@@ -2,6 +2,9 @@ export interface PlayerRef {
   id: number;
   name: string;
   team: string;
+  // SoFIFA numeric id, null when the player has no mapping. Providers keyed by
+  // name/team ignore it; the SoFIFA provider needs it to resolve /player/{id}.
+  sofifaId: number | null;
 }
 
 // Single backend interface every stats provider plugs into. Providers expose

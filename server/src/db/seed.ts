@@ -23,6 +23,7 @@ async function seed(): Promise<void> {
     ruolo: "P",
     image_url: null,
     fanta_id: null,
+    sofifa_id: null,
   });
   const defender = await insertPlayer({
     name: "Luca Bianchi",
@@ -30,6 +31,7 @@ async function seed(): Promise<void> {
     ruolo: "D",
     image_url: null,
     fanta_id: null,
+    sofifa_id: null,
   });
   const striker = await insertPlayer({
     name: "Paolo Verdi",
@@ -37,6 +39,7 @@ async function seed(): Promise<void> {
     ruolo: "A",
     image_url: null,
     fanta_id: null,
+    sofifa_id: null,
   });
 
   await insertValuation({

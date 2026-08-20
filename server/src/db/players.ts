@@ -62,7 +62,7 @@ export async function upsertPlayer(
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (name, team) DO UPDATE
        SET ruolo = EXCLUDED.ruolo, fanta_id = COALESCE(player.fanta_id, EXCLUDED.fanta_id)
-     RETURNING id, fanta_id, name, team, ruolo, image_url, (xmax = 0) AS inserted`,
+     RETURNING id, fanta_id, sofifa_id, name, team, ruolo, image_url, (xmax = 0) AS inserted`,
     [input.name, input.team, input.ruolo, input.fanta_id ?? null],
   );
   const row = result.rows[0];
@@ -86,4 +86,20 @@ export async function backfillPlayerFantaId(
     fantaId,
     playerId,
   ]);
+}
+
+// Fills in the SoFIFA player id for a player matched by the seed. Guarded by
+// `sofifa_id IS NULL` so it never overwrites a mapping already trusted,
+// mirroring backfillPlayerFantaId. Returns the number of rows updated so the
+// seed can report unique-vs-skipped matches.
+export async function backfillPlayerSofifaId(
+  playerId: number,
+  sofifaId: number,
+  executor: Queryable = pool,
+): Promise<number> {
+  const result = await executor.query(
+    "UPDATE player SET sofifa_id = $1 WHERE id = $2 AND sofifa_id IS NULL",
+    [sofifaId, playerId],
+  );
+  return result.rowCount ?? 0;
 }

@@ -13,6 +13,7 @@
     "db:migrate:down": "node-pg-migrate down",
     "db:migrate:create": "node-pg-migrate -j sql create",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:sofifa": "tsx src/scripts/seedSofifaIds.ts",
     "db:seed:historical:quotations": "tsx src/scripts/seedHistoricalQuotations.ts",
     "db:seed:historical:stats": "tsx src/scripts/seedHistoricalStats.ts",
     "db:seed:historical:rigoristi": "tsx src/scripts/seedHistoricalSetPieceTakers.ts",
