@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
 import { CmykNum } from "../../components/CmykNum";
+import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import {
@@ -634,6 +635,13 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
         <aside className="io-col">
           <div>
             <h6 style={{ margin: "0 0 18px", color: "var(--color-neutral-700)" }}>Io</h6>
+            <GkPairingHint
+              suggestion={view.gkPairingSuggestion}
+              onFilterTeam={(team) => {
+                view.onRoleFilter("P");
+                view.onQuery(team);
+              }}
+            />
             <div className="io-maxbid">
               <CmykNum value={me?.adjustedMaxBid ?? 0} />
               <div className="l">Max bid rettificato</div>

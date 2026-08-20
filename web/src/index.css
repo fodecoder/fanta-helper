@@ -750,6 +750,30 @@ select.input {
   margin: 8px 0 0;
 }
 
+/* — suggerimento coppia portieri — */
+.gk-pairing-hint {
+  margin: 0 0 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-700);
+  background: var(--color-accent-100);
+  border-left: 3px solid var(--color-accent-500);
+}
+.gk-pairing-hint--tight {
+  margin: 8px 0 0;
+}
+.gk-pairing-hint-team {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* — avatar giocatore — */
 .player-avatar {
   display: inline-flex;

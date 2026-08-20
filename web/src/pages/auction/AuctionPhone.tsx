@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import {
@@ -84,6 +85,14 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
         <ModifierWarning
           modificatori={view.league.modificatori}
           className="modifier-warning--tight"
+        />
+        <GkPairingHint
+          suggestion={view.gkPairingSuggestion}
+          onFilterTeam={(team) => {
+            view.onRoleFilter("P");
+            view.onQuery(team);
+          }}
+          className="gk-pairing-hint--tight"
         />
         <div className="phone-figures">
           <div>
