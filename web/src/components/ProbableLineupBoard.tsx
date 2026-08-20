@@ -17,6 +17,18 @@ interface TeamGroup {
   ballottaggio: ProbableLineupEntry[];
 }
 
+const ROLE_ORDER = ["P", "D", "C", "A"];
+
+function roleRank(ruolo: string | null): number {
+  if (!ruolo) return ROLE_ORDER.length;
+  const idx = ROLE_ORDER.indexOf(ruolo.toUpperCase());
+  return idx === -1 ? ROLE_ORDER.length : idx;
+}
+
+function byRole(a: ProbableLineupEntry, b: ProbableLineupEntry): number {
+  return roleRank(a.ruolo) - roleRank(b.ruolo);
+}
+
 // `extraTeams` copre le squadre che hanno solo calci piazzati confermati e
 // ancora nessuna formazione: i due ingest sono indipendenti.
 function groupByTeam(entries: ProbableLineupEntry[], extraTeams: Iterable<string>): TeamGroup[] {
@@ -36,6 +48,11 @@ function groupByTeam(entries: ProbableLineupEntry[], extraTeams: Iterable<string
     else group.ballottaggio.push(entry);
   }
   for (const team of extraTeams) ensure(team);
+  for (const group of byTeam.values()) {
+    group.titolari.sort(byRole);
+    group.panchina.sort(byRole);
+    group.ballottaggio.sort(byRole);
+  }
   return [...byTeam.values()].sort((a, b) => a.team.localeCompare(b.team));
 }
 
