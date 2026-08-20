@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-// Name of the manager representing the league owner (the app's current user).
+// Default name for the auto-created owner manager at league setup. Editable
+// afterwards — it is NOT an identity key, see `Manager.is_owner`.
 export const OWNER_MANAGER_NAME = "Io";
 
 export const createManagerSchema = z.object({
@@ -14,5 +15,6 @@ export type UpdateManagerInput = z.infer<typeof updateManagerSchema>;
 export const managerSchema = createManagerSchema.extend({
   id: z.number().int().positive(),
   league_id: z.number().int().positive(),
+  is_owner: z.boolean(),
 });
 export type Manager = z.infer<typeof managerSchema>;

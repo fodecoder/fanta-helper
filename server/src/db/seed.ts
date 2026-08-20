@@ -65,8 +65,8 @@ async function seed(): Promise<void> {
     note: "Titolare confermato",
   });
 
-  const managerA = await insertManager({ league_id: league.id, name: "Manager A" });
-  const managerB = await insertManager({ league_id: league.id, name: "Manager B" });
+  const managerA = await insertManager({ league_id: league.id, name: "Manager A", is_owner: true });
+  const managerB = await insertManager({ league_id: league.id, name: "Manager B", is_owner: false });
 
   await insertPurchase({ league_id: league.id, player_id: goalkeeper.id, manager_id: managerA.id, prezzo: 7 });
   await insertPurchase({ league_id: league.id, player_id: striker.id, manager_id: managerB.id, prezzo: 48 });

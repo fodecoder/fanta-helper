@@ -1,6 +1,5 @@
 import {
   computePlayerRecommendations,
-  OWNER_MANAGER_NAME,
   type LeagueRulesConfig,
   type PlayerRecommendation,
 } from "@fanta-helper/shared";
@@ -30,9 +29,9 @@ export async function getPlayerRecommendations(league: LeagueRow): Promise<Playe
     statsSeason !== null ? listPlayerSeasonStatsBySeason(statsSeason) : Promise.resolve([]),
   ]);
 
-  const ioStatus = managerStatuses.find((s) => s.managerName === OWNER_MANAGER_NAME);
+  const ioStatus = managerStatuses.find((s) => s.isOwner);
   if (!ioStatus) {
-    throw ApiError.notFound(`manager "${OWNER_MANAGER_NAME}" not found for league ${league.id}`);
+    throw ApiError.notFound(`owner manager not found for league ${league.id}`);
   }
 
   const rules: LeagueRulesConfig = {

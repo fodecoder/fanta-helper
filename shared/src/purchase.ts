@@ -35,6 +35,7 @@ export type RoleSlotStatus = z.infer<typeof roleSlotStatusSchema>;
 export const managerAuctionStatusSchema = z.object({
   managerId: z.number().int().positive(),
   managerName: z.string(),
+  isOwner: z.boolean(),
   budget: z.number().int(),
   spent: z.number().int().nonnegative(),
   residuo: z.number().int(),
