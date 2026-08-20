@@ -1,7 +1,7 @@
 import type { Role } from "@fanta-helper/shared";
 import { CmykNum } from "../../components/CmykNum";
 import { deltaColor, formatDelta, roleColor } from "../../lib/auctionDerivations";
-import type { AuctionView, RoleFilter } from "./AuctionMode";
+import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
 const ROLE_LABEL: Record<Role, string> = {
   P: "Portiere",
@@ -10,6 +10,13 @@ const ROLE_LABEL: Record<Role, string> = {
   A: "Attaccante",
 };
 const ROLE_FILTERS: RoleFilter[] = ["tutti", "P", "D", "C", "A"];
+const SORT_LABEL: Record<PlayerSortKey, string> = {
+  valore: "Valore",
+  fvm: "FVM",
+  qt_a: "Qt.A",
+  qt_i: "Qt.I",
+};
+const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
 
 export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
@@ -62,6 +69,20 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               </button>
             ))}
           </div>
+          <div className="seg" role="group" aria-label="Ordina per">
+            {SORT_KEYS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                className="seg-opt"
+                style={{ flex: 1 }}
+                aria-pressed={view.sortKey === k}
+                onClick={() => view.onSortKey(k)}
+              >
+                {SORT_LABEL[k]}
+              </button>
+            ))}
+          </div>
           <ul className="call-list">
             {view.visiblePlayers.map((p) => {
               const on = p.id === sel?.id;
@@ -85,7 +106,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
                       {p.team}
                     </span>
-                    <span className="call-fv">{pv?.fair_value ?? "—"}</span>
+                    <span className="call-fv">{view.sortValueFor(p.id) ?? "—"}</span>
                   </button>
                   <button
                     type="button"

@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { deltaColor, formatDelta, roleColor } from "../../lib/auctionDerivations";
-import type { AuctionView, RoleFilter } from "./AuctionMode";
+import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
 const ROLE_FILTERS: RoleFilter[] = ["tutti", "P", "D", "C", "A"];
+const SORT_LABEL: Record<PlayerSortKey, string> = {
+  valore: "Valore",
+  fvm: "FVM",
+  qt_a: "Qt.A",
+  qt_i: "Qt.I",
+};
+const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
 const SHORT_LABEL: Record<string, string> = {
   Target: "TGT",
   "Fair value": "FV",
@@ -271,6 +278,20 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                   </button>
                 ))}
               </div>
+              <div className="seg" role="group" aria-label="Ordina per">
+                {SORT_KEYS.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className="seg-opt"
+                    style={{ flex: 1 }}
+                    aria-pressed={view.sortKey === k}
+                    onClick={() => view.onSortKey(k)}
+                  >
+                    {SORT_LABEL[k]}
+                  </button>
+                ))}
+              </div>
             </div>
             {view.visiblePlayers.map((p) => {
               const on = p.id === sel?.id;
@@ -299,7 +320,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                       {p.team}
                     </span>
                     <span className="call-fv" style={{ width: 36 }}>
-                      {pv?.fair_value ?? "—"}
+                      {view.sortValueFor(p.id) ?? "—"}
                     </span>
                   </button>
                   <button

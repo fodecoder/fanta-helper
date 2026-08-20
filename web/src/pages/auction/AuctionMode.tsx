@@ -5,6 +5,7 @@ import type {
   ManagerAuctionStatus,
   Player,
   PurchaseWithDetails,
+  QuotationRow,
   StatsEnrichmentResponse,
   ValuationWithPlayer,
   WishlistEntryWithPlayer,
@@ -16,6 +17,7 @@ import { PurchasesApiError } from "../../api/purchases";
 import * as wishlistApi from "../../api/wishlist";
 import * as playersApi from "../../api/players";
 import * as valuationsApi from "../../api/valuations";
+import * as quotationApi from "../../api/quotation";
 import * as managersApi from "../../api/managers";
 import * as statsEnrichmentApi from "../../api/statsEnrichment";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -35,6 +37,7 @@ interface AuctionModeProps {
 }
 
 export type RoleFilter = "tutti" | Role;
+export type PlayerSortKey = "valore" | "fvm" | "qt_a" | "qt_i";
 
 export interface CompareRow extends RankRow {
   delta: number | null;
@@ -62,11 +65,14 @@ export interface AuctionView {
   onQuery: (q: string) => void;
   roleFilter: RoleFilter;
   onRoleFilter: (r: RoleFilter) => void;
+  sortKey: PlayerSortKey;
+  onSortKey: (k: PlayerSortKey) => void;
 
   selectedPlayer: Player | undefined;
   selectedValuation: ValuationWithPlayer | undefined;
   wishlistPlayerIds: Set<number>;
   valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
+  sortValueFor: (playerId: number) => number | null;
 
   price: string;
   priceNum: number | null;
@@ -110,6 +116,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [wishlist, setWishlist] = useState<WishlistEntryWithPlayer[] | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
+  const [quotations, setQuotations] = useState<QuotationRow[] | null>(null);
   const [managers, setManagers] = useState<Manager[]>([]);
   const [enrichment, setEnrichment] = useState<StatsEnrichmentResponse | null>(null);
 
@@ -118,6 +125,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
+  const [sortKey, setSortKey] = useState<PlayerSortKey>("valore");
   const [assignError, setAssignError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -154,6 +162,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       .listManagers(league.id, controller.signal)
       .then(setManagers)
       .catch(() => {});
+    void quotationApi
+      .listCurrentQuotations(controller.signal)
+      .then(setQuotations)
+      .catch(() => {});
     return () => controller.abort();
   }, [league.id]);
 
@@ -171,6 +183,19 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     return map;
   }, [valuations]);
   const valuationFor = useCallback((id: number) => valuationById.get(id), [valuationById]);
+  const quotationById = useMemo(() => {
+    const map = new Map<number, QuotationRow>();
+    for (const q of quotations ?? []) map.set(q.player_id, q);
+    return map;
+  }, [quotations]);
+  // Chiave attiva = criterio di ordinamento e stesso valore mostrato in lista.
+  const sortValueFor = useCallback(
+    (playerId: number): number | null => {
+      if (sortKey === "valore") return valuationById.get(playerId)?.fair_value ?? null;
+      return quotationById.get(playerId)?.[sortKey] ?? null;
+    },
+    [sortKey, valuationById, quotationById],
+  );
 
   const ownerManagerId = useMemo(
     () => managers.find((m) => m.name === OWNER_MANAGER_NAME)?.id ?? managers[0]?.id ?? null,
@@ -187,11 +212,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       .filter(
         (p) => q === "" || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q),
       )
-      .sort(
-        (a, b) =>
-          (valuationById.get(b.id)?.fair_value ?? -1) - (valuationById.get(a.id)?.fair_value ?? -1),
-      );
-  }, [players, purchasedPlayerIds, roleFilter, query, valuationById]);
+      .sort((a, b) => (sortValueFor(b.id) ?? -1) - (sortValueFor(a.id) ?? -1));
+  }, [players, purchasedPlayerIds, roleFilter, query, sortValueFor]);
 
   const selectedPlayer = players?.find((p) => p.id === selectedPlayerId);
   const selectedValuation =
@@ -375,10 +397,13 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     onQuery: setQuery,
     roleFilter,
     onRoleFilter: setRoleFilter,
+    sortKey,
+    onSortKey: setSortKey,
     selectedPlayer,
     selectedValuation,
     wishlistPlayerIds,
     valuationFor,
+    sortValueFor,
     price,
     priceNum,
     onPrice: (v) => {

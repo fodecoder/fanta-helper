@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-08-20
+
+### Added
+
+- **Ordinamento della lista "da chiamare" in modalità asta**: la colonna
+  dei giocatori non ancora presenti nel log `purchase` è ora ordinabile
+  tramite un selettore (`Valore`, `FVM`, `Qt.A`, `Qt.I`), con `FVM`/`Qt.A`/
+  `Qt.I` letti dalla tabella `quotation` per la stagione corrente (nuovo
+  endpoint `GET /players/quotations/current`). Il numero mostrato accanto
+  a ogni giocatore riflette il criterio attivo. Ordinamento e derivazione
+  sono puramente client-side: nessuna scrittura sullo stato d'asta.
+
 ## [2.7.0] - 2026-08-20
 
 ### Added
