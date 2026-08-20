@@ -10,6 +10,7 @@ import { ROLES } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
+import { ModifierWarning } from "../components/ModifierWarning";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatFigure } from "../components/StatFigure";
 import { StatusMessage } from "../components/StatusMessage";
@@ -97,6 +98,8 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
         }
         calls={calls}
       />
+
+      <ModifierWarning modificatori={league.modificatori} />
 
       {loadError && <StatusMessage kind="error">{loadError}</StatusMessage>}
 

@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.0] - 2026-08-20
+
+### Added
+
+- **Avviso modificatori lega**: se il modificatore portiere e/o difesa sono
+  attivi per la lega, un banner lo segnala in Panoramica e nella modalità
+  asta (desktop e telefono), dato che incidono su valutazioni e prezzi.
+
+### Fixed
+
+- **Alternative libere includevano il giocatore in asta**: la lista
+  "Alternative nello stesso ruolo — ancora libere" poteva mostrare, tra le
+  alternative, lo stesso giocatore correntemente sotto battuta (non ancora
+  "acquistato", quindi non escluso dal filtro esistente). Ora viene escluso
+  esplicitamente prima di selezionare le alternative da mostrare, cosicché
+  il conteggio e l'elenco riflettano solo giocatori realmente liberi.
+
 ## [2.14.0] - 2026-08-20
 
 ### Added

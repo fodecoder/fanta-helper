@@ -323,7 +323,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       purchasedPlayerIds,
       selectedPlayer.ruolo,
       compareSortValueFor,
-    ).slice(0, COMPARE_ROWS);
+    )
+      .filter((row) => row.player.id !== selectedPlayer.id)
+      .slice(0, COMPARE_ROWS);
   }, [selectedPlayer, players, valuations, purchasedPlayerIds, compareSortValueFor]);
 
   const compareRows: CompareRow[] = compareBase.map((row) => ({

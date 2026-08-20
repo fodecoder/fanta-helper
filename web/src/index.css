@@ -736,6 +736,20 @@ select.input {
   font-style: italic;
 }
 
+/* — avviso modificatori lega — */
+.modifier-warning {
+  margin: 0 0 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-2-700);
+  background: var(--color-accent-2-100);
+  border-left: 3px solid var(--color-accent-2-500);
+}
+.modifier-warning--tight {
+  margin: 8px 0 0;
+}
+
 /* — avatar giocatore — */
 .player-avatar {
   display: inline-flex;
