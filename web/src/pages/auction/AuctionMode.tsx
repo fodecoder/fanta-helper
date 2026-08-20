@@ -4,6 +4,7 @@ import type {
   Manager,
   ManagerAuctionStatus,
   Player,
+  PlayerAttributes,
   PlayerLatestSeasonStats,
   PlayerRecommendation,
   ProbableLineupEntry,
@@ -105,6 +106,7 @@ export interface AuctionView {
   onCompareSortKey: (k: CompareSortKey) => void;
   compareSortValueFor: (playerId: number) => number | null;
   enrichment: StatsEnrichmentResponse | null;
+  attributesFor: (playerId: number) => PlayerAttributes | undefined;
   seasonStatsById: Map<number, PlayerLatestSeasonStats>;
   probableLineup: ProbableLineupEntry[] | null;
   setPieceTakers: SetPieceTakerEntry[] | null;
@@ -281,6 +283,16 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     for (const s of seasonStats ?? []) map.set(s.player_id, s);
     return map;
   }, [seasonStats]);
+
+  const attributesById = useMemo(() => {
+    const map = new Map<number, PlayerAttributes>();
+    for (const a of enrichment?.attributes.stats ?? []) map.set(a.player_id, a);
+    return map;
+  }, [enrichment]);
+  const attributesFor = useCallback(
+    (playerId: number) => attributesById.get(playerId),
+    [attributesById],
+  );
 
   const compareSortValueFor = useCallback(
     (playerId: number): number | null => {
@@ -524,6 +536,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     onCompareSortKey: setCompareSortKey,
     compareSortValueFor,
     enrichment,
+    attributesFor,
     seasonStatsById,
     probableLineup,
     setPieceTakers,

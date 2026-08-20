@@ -1,6 +1,6 @@
 // Explicit, conservative name matching: no fuzzy/probabilistic matching. If
 // normalized name+team don't match exactly, the player stays unmatched
-// (empty), never a guessed/estimated stat.
+// (empty), never a guessed/estimated stat. Shared by every provider.
 const COMBINING_MARKS = /[̀-ͯ]/g;
 
 export function normalizeForMatch(value: string): string {

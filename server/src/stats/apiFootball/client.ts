@@ -1,5 +1,5 @@
-import type { StatsApiConfig } from "./config";
-import { isSamePlayer } from "./matchPlayer";
+import type { ApiFootballConfig } from "./config";
+import { isSamePlayer } from "../matchPlayer";
 
 export interface RemotePlayerStats {
   minutes: number | null;
@@ -22,7 +22,7 @@ interface ApiFootballPlayersResponse {
 // ("no data for this player"), never thrown — the base comparison must
 // never degrade because of this optional call.
 export async function fetchPlayerStats(
-  config: StatsApiConfig,
+  config: ApiFootballConfig,
   target: { name: string; team: string; season: number },
 ): Promise<RemotePlayerStats | null> {
   try {

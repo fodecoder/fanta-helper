@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type {
   Player,
+  PlayerAttributes,
   PlayerLatestSeasonStats,
   ProbableLineupStato,
   QuotationRow,
@@ -14,6 +15,9 @@ interface PlayerDetailPanelProps {
   seasonStats: PlayerLatestSeasonStats | undefined;
   lineupStatus: ProbableLineupStato | null;
   setPieceRanks: SetPieceTakerEntry[];
+  // Optional EA FC attribute enrichment (SoFIFA). Absent when the provider is
+  // off or the player is unmatched — the panel then simply omits the block.
+  attributes?: PlayerAttributes | undefined;
 }
 
 const LINEUP_LABEL: Record<ProbableLineupStato, string> = {
@@ -62,6 +66,7 @@ export function PlayerDetailPanel({
   seasonStats,
   lineupStatus,
   setPieceRanks,
+  attributes,
 }: PlayerDetailPanelProps) {
   const statValue = (v: number | null | undefined) => v ?? "—";
 
@@ -106,6 +111,25 @@ export function PlayerDetailPanel({
         />
       )}
       <Stat label="Probabili formazioni" value={lineupStatus ? LINEUP_LABEL[lineupStatus] : "—"} />
+      {attributes && (
+        <>
+          <Stat label="Overall" value={statValue(attributes.overall)} />
+          <Stat label="Potential" value={statValue(attributes.potential)} />
+          <Stat label="Età (EA FC)" value={statValue(attributes.age)} />
+          <Stat label="Valore FIFA" value={statValue(attributes.value)} />
+          <div style={{ flexBasis: "100%", fontSize: 10, color: "var(--color-neutral-700)" }}>
+            Attributi EA FC —{" "}
+            <a
+              href="https://sofifa.com/"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "inherit" }}
+            >
+              SoFIFA
+            </a>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -5,7 +5,9 @@ export interface CacheEntry<T> {
 
 // In-memory, per-process cache for the optional stats enrichment. Resetting
 // on restart/redeploy is acceptable: this is non-domain, non-critical data,
-// not something that needs a migration or to survive across instances.
+// not something that needs a migration or to survive across instances. Keys are
+// namespaced by provider (e.g. `apiFootball:`, `sofifa:`) so providers share
+// this store without colliding.
 const store = new Map<string, CacheEntry<unknown>>();
 
 export function getCached<T>(key: string): T | undefined {

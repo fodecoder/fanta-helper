@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getStatsEnrichment } from "../statsApi/service";
+import { getStatsEnrichment } from "../stats/service";
 import { ApiError } from "../http/errors";
 
 export const statsEnrichmentRouter = Router();
