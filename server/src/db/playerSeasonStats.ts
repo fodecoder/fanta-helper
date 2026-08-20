@@ -1,6 +1,7 @@
 import { pool } from "./client";
 import type { Queryable } from "./client";
 import type { PlayerSeasonStatsRow } from "./types";
+import type { PlayerLatestSeasonStats } from "@fanta-helper/shared";
 
 export async function replacePlayerSeasonStatsForSeasonTx(
   client: Queryable,
@@ -72,4 +73,24 @@ export async function getLatestStatsSeason(): Promise<string | null> {
     "SELECT MAX(season) AS season FROM player_season_stats",
   );
   return result.rows[0]?.season ?? null;
+}
+
+// Per ogni player_id, la riga della stagione più recente tra quelle con
+// presenze > 0 (stesso trucco di ordinamento stringa di getLatestStatsSeason).
+// Un player senza nessuna stagione con presenze non compare nel risultato:
+// mai una riga stimata/a zero.
+export async function listLatestPlayerSeasonStatsWithPresenze(
+  playerIds: number[],
+): Promise<PlayerLatestSeasonStats[]> {
+  const result = await pool.query<PlayerLatestSeasonStats>(
+    `SELECT DISTINCT ON (player_id)
+       player_id, season, presenze, mv, fm, gf, assist
+     FROM player_season_stats
+     WHERE player_id = ANY($1::int[])
+       AND presenze IS NOT NULL
+       AND presenze > 0
+     ORDER BY player_id, season DESC`,
+    [playerIds],
+  );
+  return result.rows;
 }

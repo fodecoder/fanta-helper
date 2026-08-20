@@ -29,3 +29,23 @@ export const playerSeasonStatsImportReportSchema = z.object({
   discarded: z.array(discardedReferenceRowSchema),
 });
 export type PlayerSeasonStatsImportReport = z.infer<typeof playerSeasonStatsImportReportSchema>;
+
+// Ultima stagione con presenze per un elenco di player_id (una riga per
+// player, quella con la season più recente tra cui presenze > 0). Un player
+// senza nessuna stagione con presenze è semplicemente assente dall'array,
+// mai una riga stimata/a zero.
+export const playerLatestSeasonStatsSchema = z.object({
+  player_id: z.number().int().positive(),
+  season: z.string(),
+  presenze: z.number().int().nullable(),
+  mv: z.number().nullable(),
+  fm: z.number().nullable(),
+  gf: z.number().int().nullable(),
+  assist: z.number().int().nullable(),
+});
+export type PlayerLatestSeasonStats = z.infer<typeof playerLatestSeasonStatsSchema>;
+
+export const playerLatestSeasonStatsResponseSchema = z.array(playerLatestSeasonStatsSchema);
+export type PlayerLatestSeasonStatsResponse = z.infer<
+  typeof playerLatestSeasonStatsResponseSchema
+>;

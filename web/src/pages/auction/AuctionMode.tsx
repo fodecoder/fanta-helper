@@ -4,8 +4,11 @@ import type {
   Manager,
   ManagerAuctionStatus,
   Player,
+  PlayerLatestSeasonStats,
+  ProbableLineupEntry,
   PurchaseWithDetails,
   QuotationRow,
+  SetPieceTakerEntry,
   StatsEnrichmentResponse,
   ValuationWithPlayer,
   WishlistEntryWithPlayer,
@@ -20,6 +23,9 @@ import * as valuationsApi from "../../api/valuations";
 import * as quotationApi from "../../api/quotation";
 import * as managersApi from "../../api/managers";
 import * as statsEnrichmentApi from "../../api/statsEnrichment";
+import * as playerSeasonStatsApi from "../../api/playerSeasonStats";
+import * as probableLineupApi from "../../api/probableLineup";
+import * as setPieceTakerApi from "../../api/setPieceTaker";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import {
   impact as computeImpact,
@@ -72,6 +78,7 @@ export interface AuctionView {
   selectedValuation: ValuationWithPlayer | undefined;
   wishlistPlayerIds: Set<number>;
   valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
+  quotationFor: (playerId: number) => QuotationRow | undefined;
   sortValueFor: (playerId: number) => number | null;
 
   price: string;
@@ -85,6 +92,9 @@ export interface AuctionView {
   compareRows: CompareRow[];
   compareMaxFv: number;
   enrichment: StatsEnrichmentResponse | null;
+  seasonStatsById: Map<number, PlayerLatestSeasonStats>;
+  probableLineup: ProbableLineupEntry[] | null;
+  setPieceTakers: SetPieceTakerEntry[] | null;
 
   logRows: {
     key: string;
@@ -119,6 +129,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [quotations, setQuotations] = useState<QuotationRow[] | null>(null);
   const [managers, setManagers] = useState<Manager[]>([]);
   const [enrichment, setEnrichment] = useState<StatsEnrichmentResponse | null>(null);
+  const [seasonStats, setSeasonStats] = useState<PlayerLatestSeasonStats[] | null>(null);
+  const [probableLineup, setProbableLineup] = useState<ProbableLineupEntry[] | null>(null);
+  const [setPieceTakers, setSetPieceTakers] = useState<SetPieceTakerEntry[] | null>(null);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [price, setPrice] = useState("");
@@ -166,6 +179,14 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       .listCurrentQuotations(controller.signal)
       .then(setQuotations)
       .catch(() => {});
+    void probableLineupApi
+      .listProbableLineup(controller.signal)
+      .then(setProbableLineup)
+      .catch(() => {});
+    void setPieceTakerApi
+      .listSetPieceTakers(controller.signal)
+      .then(setSetPieceTakers)
+      .catch(() => {});
     return () => controller.abort();
   }, [league.id]);
 
@@ -188,6 +209,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     for (const q of quotations ?? []) map.set(q.player_id, q);
     return map;
   }, [quotations]);
+  const quotationFor = useCallback((id: number) => quotationById.get(id), [quotationById]);
   // Chiave attiva = criterio di ordinamento e stesso valore mostrato in lista.
   const sortValueFor = useCallback(
     (playerId: number): number | null => {
@@ -259,6 +281,28 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds]);
+
+  // Ultima stagione con presenze per il giocatore in asta + le alternative
+  // (compareBase): una sola chiamata copre sia il pannello sempre visibile
+  // sia tutti i pannelli "Dettagli" espandibili, senza una fetch per riga.
+  useEffect(() => {
+    const ids = new Set(compareBase.map((r) => r.player.id));
+    if (selectedPlayer) ids.add(selectedPlayer.id);
+    if (ids.size === 0) return;
+    const controller = new AbortController();
+    playerSeasonStatsApi
+      .getLatestPlayerSeasonStats(Array.from(ids), controller.signal)
+      .then(setSeasonStats)
+      .catch(() => setSeasonStats(null));
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlayer?.id, players, valuations, purchasedPlayerIds]);
+
+  const seasonStatsById = useMemo(() => {
+    const map = new Map<number, PlayerLatestSeasonStats>();
+    for (const s of seasonStats ?? []) map.set(s.player_id, s);
+    return map;
+  }, [seasonStats]);
 
   const logRows = (purchases ?? [])
     .slice()
@@ -403,6 +447,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     selectedValuation,
     wishlistPlayerIds,
     valuationFor,
+    quotationFor,
     sortValueFor,
     price,
     priceNum,
@@ -417,6 +462,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     compareRows,
     compareMaxFv,
     enrichment,
+    seasonStatsById,
+    probableLineup,
+    setPieceTakers,
     logRows,
     wishRows,
     assignError,

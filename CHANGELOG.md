@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-08-20
+
+### Added
+
+- **Info estese per il giocatore in asta e per le alternative**: la vista
+  asta mostra ora, oltre a Tier/Fair value/Target/Max/Panic/Δ, la media
+  fantavoto `Fm` e la media voto `Mv` dell'ultima stagione con presenze
+  (`player_season_stats`, nuovo endpoint `GET /players/season-stats`),
+  quotazione attuale `Qt.A` e `FVM` (`quotation`), un "prezzo medio pagato"
+  esplicitamente etichettato come proxy su `FVM` (non una media di
+  aggiudicazioni reali), oltre a squadra, ruolo, presenze, gol/assist,
+  eventuale ruolo nei calci piazzati e stato nelle probabili formazioni
+  (match esplicito nome+squadra, nuovo `shared/src/matchPlayer.ts`, mai una
+  stima). Le stesse info sono disponibili per ogni alternativa dello stesso
+  ruolo dietro un bottone "Dettagli" espandibile, senza affollare la
+  tabella comparativa esistente.
+
 ## [2.8.0] - 2026-08-20
 
 ### Added
