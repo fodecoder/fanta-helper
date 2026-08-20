@@ -8,6 +8,7 @@ export type SetupPage =
   | "quotazioni"
   | "portieri"
   | "formazioni"
+  | "rose"
   | "leghe";
 
 export const NAV_ITEMS: { key: SetupPage; label: string }[] = [
@@ -18,6 +19,7 @@ export const NAV_ITEMS: { key: SetupPage; label: string }[] = [
   { key: "quotazioni", label: "Quotazioni · import" },
   { key: "portieri", label: "Coppie portieri" },
   { key: "formazioni", label: "Probabili formazioni" },
+  { key: "rose", label: "Rose · export/import" },
   { key: "leghe", label: "Leghe" },
 ];
 

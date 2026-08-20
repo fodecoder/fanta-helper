@@ -1,6 +1,16 @@
 import { pool } from "./client";
+import type { Queryable } from "./client";
 import type { PurchaseRow } from "./types";
 import type { PurchaseWithDetails } from "@fanta-helper/shared";
+
+export interface RosterExportRow {
+  manager_id: number;
+  manager_name: string;
+  player_id: number;
+  player_name: string;
+  fanta_id: number | null;
+  prezzo: number;
+}
 
 export async function listPurchasesByLeague(leagueId: number): Promise<PurchaseRow[]> {
   const result = await pool.query<PurchaseRow>("SELECT * FROM purchase WHERE league_id = $1 ORDER BY ts", [
@@ -52,6 +62,42 @@ export async function deleteLastPurchase(leagueId: number): Promise<PurchaseRow 
     [leagueId],
   );
   return result.rows[0];
+}
+
+// Proprietario prima, poi id manager stabile, acquisti nell'ordine in cui
+// sono avvenuti: base per l'export CSV rose, che deve produrre blocchi
+// manager in un ordine deterministico.
+export async function listPurchasesForRosterExport(leagueId: number): Promise<RosterExportRow[]> {
+  const result = await pool.query<RosterExportRow>(
+    `SELECT manager.id AS manager_id, manager.name AS manager_name,
+            player.id AS player_id, player.name AS player_name, player.fanta_id AS fanta_id,
+            purchase.prezzo AS prezzo
+     FROM purchase
+     JOIN player ON player.id = purchase.player_id
+     JOIN manager ON manager.id = purchase.manager_id
+     WHERE purchase.league_id = $1
+     ORDER BY manager.is_owner DESC, manager.id ASC, purchase.ts ASC`,
+    [leagueId],
+  );
+  return result.rows;
+}
+
+// Sostituisce l'intero log purchase della lega: svuota e ricostruisce dalle
+// righe risolte di un import CSV rose. Nessun campo di stato mutabile
+// coinvolto — residuo/slot restano derivati dal log ricostruito.
+export async function replacePurchasesForLeagueTx(
+  client: Queryable,
+  leagueId: number,
+  rows: { player_id: number; manager_id: number; prezzo: number }[],
+): Promise<number> {
+  await client.query("DELETE FROM purchase WHERE league_id = $1", [leagueId]);
+  for (const row of rows) {
+    await client.query(
+      `INSERT INTO purchase (league_id, player_id, manager_id, prezzo) VALUES ($1, $2, $3, $4)`,
+      [leagueId, row.player_id, row.manager_id, row.prezzo],
+    );
+  }
+  return rows.length;
 }
 
 export async function managerHasPurchases(managerId: number, leagueId: number): Promise<boolean> {

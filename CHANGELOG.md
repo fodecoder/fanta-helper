@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-08-20
+
+### Added
+
+- **Export/import rose in formato lega Fantacalcio**: nuova pagina "Rose ·
+  export/import". L'export genera un CSV a blocchi (`$,$,$` prima di ogni
+  manager, righe `nome_manager,fanta_id,prezzo`) come proiezione pura del log
+  `purchase`; gli acquisti senza `fanta_id` mappato sono esclusi dal CSV e
+  segnalati esplicitamente, mai emessi con un id vuoto. L'import risolve i
+  giocatori tramite `fanta_id` e i manager per nome: le righe con `fanta_id`
+  non risolvibile o manager sconosciuto finiscono in un report di scarto,
+  mai inventate. L'import sostituisce interamente la rosa della lega
+  (svuota e ricostruisce il log `purchase` in transazione); se nessuna riga
+  del file è valida, l'import viene rifiutato senza toccare il database.
+  Chiude la Fase 6.
+
 ## [2.15.0] - 2026-08-20
 
 ### Added
