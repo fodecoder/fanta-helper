@@ -31,6 +31,7 @@ import * as setPieceTakerApi from "../../api/setPieceTaker";
 import * as gkPairingApi from "../../api/gkPairing";
 import * as recommendationsApi from "../../api/recommendations";
 import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
+import { scaleValuationAmounts, valuationScaleFactor } from "@fanta-helper/shared";
 import {
   gkPairingSuggestionFor,
   impact as computeImpact,
@@ -228,11 +229,19 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     () => new Set((wishlist ?? []).map((e) => e.player_id)),
     [wishlist],
   );
+  // Le valutazioni importate sono su base 1000 crediti (vedi
+  // shared/src/valuationScale.ts): si riscalano qui, una sola volta, per il
+  // budget reale della lega — il dato salvato in `valuation` resta intatto.
+  const valuationScale = valuationScaleFactor(league.budget);
+  const scaledValuations = useMemo(
+    () => (valuations ?? []).map((v) => scaleValuationAmounts(v, valuationScale)),
+    [valuations, valuationScale],
+  );
   const valuationById = useMemo(() => {
     const map = new Map<number, ValuationWithPlayer>();
-    for (const v of valuations ?? []) map.set(v.player_id, v);
+    for (const v of scaledValuations) map.set(v.player_id, v);
     return map;
-  }, [valuations]);
+  }, [scaledValuations]);
   const valuationFor = useCallback((id: number) => valuationById.get(id), [valuationById]);
   const quotationById = useMemo(() => {
     const map = new Map<number, QuotationRow>();
@@ -351,14 +360,14 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     if (!selectedPlayer || !players || !valuations) return [] as RankRow[];
     return rankSameRole(
       players,
-      valuations,
+      scaledValuations,
       purchasedPlayerIds,
       selectedPlayer.ruolo,
       compareSortValueFor,
     )
       .filter((row) => row.player.id !== selectedPlayer.id)
       .slice(0, COMPARE_ROWS);
-  }, [selectedPlayer, players, valuations, purchasedPlayerIds, compareSortValueFor]);
+  }, [selectedPlayer, players, valuations, scaledValuations, purchasedPlayerIds, compareSortValueFor]);
 
   const compareRows: CompareRow[] = compareBase.map((row) => ({
     ...row,

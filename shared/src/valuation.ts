@@ -5,6 +5,10 @@ import { discardedExtractionRowSchema } from "./extraction";
 export const CONFIDENCE_LEVELS = ["low", "medium", "high"] as const;
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 
+// `target`, `fair_value`, `max_bid`, `panic_price` sono sempre su base 1000
+// crediti (indipendentemente dal budget reale della lega): il valore SALVATO
+// resta quello importato/generato, invariato. Le viste che lo mostrano
+// riscalano a lettura per il budget della lega — vedi valuationScale.ts.
 export const valuationEntrySchema = z.object({
   name: z.string().trim().min(1),
   team: z.string().trim().min(1),

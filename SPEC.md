@@ -229,12 +229,21 @@ Oggetto `Valuation`:
 | `team`        | string             | sì           | disambigua il matching                 |
 | `ruolo`       | `"P"\|"D"\|"C"\|"A"` | sì         | enum stretto                           |
 | `tier`        | string             | sì           |                                        |
-| `target`      | integer ≥ 0        | sì           |                                        |
-| `fair_value`  | integer ≥ 0        | sì           |                                        |
-| `max_bid`     | integer ≥ 0        | sì           |                                        |
-| `panic_price` | integer ≥ 0        | sì           |                                        |
+| `target`      | integer ≥ 0        | sì           | base 1000 crediti                     |
+| `fair_value`  | integer ≥ 0        | sì           | base 1000 crediti                     |
+| `max_bid`     | integer ≥ 0        | sì           | base 1000 crediti                     |
+| `panic_price` | integer ≥ 0        | sì           | base 1000 crediti                     |
 | `confidence`  | `"low"\|"medium"\|"high"` | sì     | enum stretto                           |
 | `note`        | string             | no           | può essere assente o `null`            |
+
+> **Base 1000 crediti.** `target`, `fair_value`, `max_bid`, `panic_price` sono
+> sempre su base 1000 crediti, indipendentemente dal budget reale della lega:
+> è il valore **salvato** in `valuation`, invariato dall'import. Le viste che
+> lo mostrano (Asta, Panoramica, Valutazioni) lo riscalano a lettura per
+> `budget_lega / 1000` — vedi `shared/src/valuationScale.ts`. Riscalare solo
+> in lettura (non all'import) mantiene l'invariante "stato derivato": se il
+> budget della lega cambia dopo l'import, i valori mostrati si aggiornano
+> senza bisogno di reimportare.
 
 Regole di validazione all'import:
 

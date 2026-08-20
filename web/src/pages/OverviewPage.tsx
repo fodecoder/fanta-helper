@@ -6,7 +6,7 @@ import type {
   ValuationWithPlayer,
   WishlistEntryWithPlayer,
 } from "@fanta-helper/shared";
-import { ROLES } from "@fanta-helper/shared";
+import { ROLES, scaleValuationAmounts, valuationScaleFactor } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
@@ -45,11 +45,14 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
     () => new Set((purchases ?? []).map((p) => p.player_id)),
     [purchases],
   );
+  // Le valutazioni importate sono su base 1000 crediti: si riscalano qui per
+  // il budget reale della lega (vedi shared/src/valuationScale.ts).
+  const valuationScale = valuationScaleFactor(league.budget);
   const valuationById = useMemo(() => {
     const map = new Map<number, ValuationWithPlayer>();
-    for (const v of valuations ?? []) map.set(v.player_id, v);
+    for (const v of valuations ?? []) map.set(v.player_id, scaleValuationAmounts(v, valuationScale));
     return map;
-  }, [valuations]);
+  }, [valuations, valuationScale]);
 
   const me = statuses?.find((s) => s.isOwner);
   const myFreeSlots = me ? me.slots.reduce((sum, s) => sum + Math.max(s.free, 0), 0) : 0;

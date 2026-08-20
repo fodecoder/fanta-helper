@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { League, ValuationWithPlayer } from "@fanta-helper/shared";
-import { ROLES, type Role } from "@fanta-helper/shared";
+import { ROLES, scaleValuationAmounts, valuationScaleFactor, type Role } from "@fanta-helper/shared";
 import * as valuationsApi from "../api/valuations";
 import * as purchasesApi from "../api/purchases";
 import { ValuationImportForm } from "../components/ValuationImportForm";
@@ -45,14 +45,20 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
 
   const refresh = () => setRefreshToken((t) => t + 1);
 
+  // Le valutazioni importate sono su base 1000 crediti: la tabella qui sotto
+  // mostra i valori riscalati per il budget reale della lega, il dato
+  // salvato resta quello importato (vedi shared/src/valuationScale.ts).
+  const valuationScale = valuationScaleFactor(league.budget);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (valuations ?? [])
       .filter((v) => roleFilter === "tutti" || v.ruolo === roleFilter)
       .filter(
         (v) => q === "" || v.name.toLowerCase().includes(q) || v.team.toLowerCase().includes(q),
-      );
-  }, [valuations, query, roleFilter]);
+      )
+      .map((v) => scaleValuationAmounts(v, valuationScale));
+  }, [valuations, query, roleFilter, valuationScale]);
 
   return (
     <>
@@ -78,6 +84,8 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         <h3 style={{ margin: 0 }}>Valutazioni correnti</h3>
         <span className="text-muted" style={{ fontSize: 12 }}>
           {filtered.length} righe
+          {valuationScale !== 1 &&
+            ` · valori su base 1000 crediti, riscalati ×${valuationScale.toFixed(2)} per il budget di lega (${league.budget})`}
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
           <input
