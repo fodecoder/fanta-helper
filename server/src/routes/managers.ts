@@ -50,7 +50,7 @@ managersRouter.post<LeagueParams>("/", async (req, res, next) => {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
     const input = createManagerSchema.parse(req.body);
-    const manager = await insertManager({ league_id: leagueId, name: input.name });
+    const manager = await insertManager({ league_id: leagueId, name: input.name, is_owner: false });
     res.status(201).json(manager);
   } catch (err) {
     next(err);

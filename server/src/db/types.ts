@@ -62,6 +62,7 @@ export interface ManagerRow {
   id: number;
   league_id: number;
   name: string;
+  is_owner: boolean;
 }
 
 export interface PurchaseRow {

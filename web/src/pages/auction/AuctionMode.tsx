@@ -16,7 +16,6 @@ import type {
   WishlistEntryWithPlayer,
   Role,
 } from "@fanta-helper/shared";
-import { OWNER_MANAGER_NAME } from "@fanta-helper/shared";
 import * as purchasesApi from "../../api/purchases";
 import { PurchasesApiError } from "../../api/purchases";
 import * as wishlistApi from "../../api/wishlist";
@@ -246,7 +245,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   );
 
   const ownerManagerId = useMemo(
-    () => managers.find((m) => m.name === OWNER_MANAGER_NAME)?.id ?? managers[0]?.id ?? null,
+    () => managers.find((m) => m.is_owner)?.id ?? managers[0]?.id ?? null,
     [managers],
   );
   // Manager selezionato = scelta esplicita, altrimenti il proprietario ("Io").
@@ -269,7 +268,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const priceNum = price === "" ? null : Number(price);
   const validPrice = priceNum !== null && Number.isInteger(priceNum) && priceNum >= 0;
 
-  const me = statuses?.find((s) => s.managerName === OWNER_MANAGER_NAME);
+  const me = statuses?.find((s) => s.isOwner);
   const selectedManagerStatus = statuses?.find((s) => s.managerId === effectiveManagerId);
 
   const verdict = computeVerdict(priceNum, selectedValuation);

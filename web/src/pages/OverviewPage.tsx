@@ -6,7 +6,7 @@ import type {
   ValuationWithPlayer,
   WishlistEntryWithPlayer,
 } from "@fanta-helper/shared";
-import { OWNER_MANAGER_NAME, ROLES } from "@fanta-helper/shared";
+import { ROLES } from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
@@ -50,7 +50,7 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
     return map;
   }, [valuations]);
 
-  const me = statuses?.find((s) => s.managerName === OWNER_MANAGER_NAME);
+  const me = statuses?.find((s) => s.isOwner);
   const myFreeSlots = me ? me.slots.reduce((sum, s) => sum + Math.max(s.free, 0), 0) : 0;
   const leagueSpent = (statuses ?? []).reduce((sum, s) => sum + s.spent, 0);
 
@@ -126,7 +126,7 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
           </thead>
           <tbody>
             {statuses.map((s) => {
-              const isMe = s.managerName === OWNER_MANAGER_NAME;
+              const isMe = s.isOwner;
               const pct = s.budget > 0 ? Math.round((s.spent / s.budget) * 100) : 0;
               return (
                 <tr key={s.managerId}>

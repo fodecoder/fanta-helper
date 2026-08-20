@@ -10,10 +10,10 @@ export async function listManagersByLeague(leagueId: number): Promise<ManagerRow
 
 export async function insertManager(input: Omit<ManagerRow, "id">): Promise<ManagerRow> {
   const result = await pool.query<ManagerRow>(
-    `INSERT INTO manager (league_id, name)
-     VALUES ($1, $2)
+    `INSERT INTO manager (league_id, name, is_owner)
+     VALUES ($1, $2, $3)
      RETURNING *`,
-    [input.league_id, input.name],
+    [input.league_id, input.name, input.is_owner],
   );
   const row = result.rows[0];
   if (!row) {
@@ -33,7 +33,7 @@ export async function getManagerById(id: number, leagueId: number): Promise<Mana
 export async function updateManager(
   id: number,
   leagueId: number,
-  input: Omit<ManagerRow, "id" | "league_id">,
+  input: { name: string },
 ): Promise<ManagerRow | undefined> {
   const result = await pool.query<ManagerRow>(
     `UPDATE manager

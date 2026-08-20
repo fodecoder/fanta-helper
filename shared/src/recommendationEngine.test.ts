@@ -40,6 +40,7 @@ function ioStatus(slots: { ruolo: Player["ruolo"]; free: number }[]): ManagerAuc
   return {
     managerId: 1,
     managerName: "Io",
+    isOwner: true,
     budget: 1000,
     spent: 0,
     residuo: 1000,

@@ -110,10 +110,11 @@ Eseguita end-to-end (commit `82100fd` → `9e7c747`, fino a `v2.12.1`).
 Correzioni UX emerse dall'uso reale + import/export rose. Prompt operativi in
 [PROMPTS.md](./PROMPTS.md). Traguardo: taglio `v3.0.0`.
 
-- [ ] **Fix — identità stabile del proprietario**: il manager "Io" oggi è
+- [x] **Fix — identità stabile del proprietario**: il manager "Io" era
       identificato per **nome letterale** (`OWNER_MANAGER_NAME`) in 5 punti;
-      rinominarlo rompe consigli/asta/panoramica (`manager "Io" not found`).
-      Introdurre identità stabile (`is_owner`) disaccoppiata dal nome editabile.
+      rinominarlo rompeva consigli/asta/panoramica (`manager "Io" not found`).
+      Introdotta identità stabile (`is_owner`) disaccoppiata dal nome editabile
+      (`v2.13.0`).
 - [ ] **Fix — asta: escludere il giocatore in asta dalle alternative libere**
       (oggi compare tra le alternative dello stesso ruolo).
 - [ ] **Fix — layout sidebar desktop**: non deve allungarsi con la pagina; il

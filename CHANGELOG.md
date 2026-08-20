@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.0] - 2026-08-20
+
+### Fixed
+
+- **Identità stabile del proprietario**: il manager proprietario era
+  identificato per **nome letterale** (`"Io"`), quindi rinominarlo rompeva
+  Consigli (`manager "Io" not found`) e faceva perdere il riferimento
+  all'utente in Asta/Panoramica. Introdotta la colonna `manager.is_owner`
+  (esattamente un proprietario per lega, vincolo di unicità parziale a
+  livello DB) come identità anagrafica stabile, disaccoppiata dal nome —
+  che resta liberamente editabile. Tutti i lookup per nome sono stati
+  sostituiti da lookup su `is_owner`/`isOwner`.
+
 ## [2.12.1] - 2026-08-20
 
 ### Fixed
