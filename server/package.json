@@ -16,7 +16,8 @@
     "db:seed:historical:quotations": "tsx src/scripts/seedHistoricalQuotations.ts",
     "db:seed:historical:stats": "tsx src/scripts/seedHistoricalStats.ts",
     "db:seed:historical:rigoristi": "tsx src/scripts/seedHistoricalSetPieceTakers.ts",
-    "db:seed:historical": "npm run db:seed:historical:quotations && npm run db:seed:historical:stats && npm run db:seed:historical:rigoristi"
+    "db:seed:historical:formazioni": "tsx src/scripts/seedHistoricalProbableLineups.ts",
+    "db:seed:historical": "npm run db:seed:historical:quotations && npm run db:seed:historical:stats && npm run db:seed:historical:rigoristi && npm run db:seed:historical:formazioni"
   },
   "dependencies": {
     "@fanta-helper/shared": "*",

@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-08-20
+
+### Added
+
+- **Seed probabili formazioni (titolari)**: nuovo script
+  `db:seed:historical:formazioni`
+  (`server/src/scripts/seedHistoricalProbableLineups.ts`) che popola
+  `probable_lineup` da un dataset statico
+  (`server/src/scripts/data/probableLineupsSeed.ts`) trascritto dal riepilogo
+  probabili formazioni di fantacalcio.it. Gli XI titolari di tutte e 20 le
+  squadre vengono scritti con `stato = 'titolare'`; il `ruolo` P/D/C/A è
+  ricavato dal listone (tabella `player`, match nome+squadra) e i nomi non
+  trovati restano con ruolo `null` e vengono elencati a console per la
+  revisione. Nessuna dipendenza dall'API Claude; il nuovo step è incluso
+  nella catena `db:seed:historical`.
+
 ## [2.5.0] - 2026-08-20
 
 ### Changed
