@@ -9,6 +9,7 @@ import {
 } from "../db/leagues";
 import { insertManager } from "../db/managers";
 import { pickFunnyNames } from "../managers/funnyNames";
+import { seedDefaultValuationsForLeague } from "../import/defaultValuations";
 import { ApiError } from "../http/errors";
 
 export const leaguesRouter = Router();
@@ -53,6 +54,9 @@ leaguesRouter.post("/", async (req, res, next) => {
     for (const name of pickFunnyNames(Math.max(0, league.n_squadre - 1))) {
       await insertManager({ league_id: league.id, name, is_owner: false });
     }
+    // Valutazioni di base per lega da 8 o da 10 squadre (le uniche dataset
+    // disponibili); per altre dimensioni la lega nasce vuota come prima.
+    await seedDefaultValuationsForLeague(league.id, league.n_squadre);
     res.status(201).json(league);
   } catch (err) {
     next(err);

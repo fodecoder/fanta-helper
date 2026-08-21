@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-08-21
+
+### Added
+
+- **Valutazioni di base per lega da 8 o da 10 squadre**: alla creazione di
+  una nuova lega, se `n_squadre` è 8 o 10, vengono importate in automatico le
+  valutazioni predefinite (`docs/sample/asta_1000_lega8.json` /
+  `asta_1000_lega10.json`, su base 1000 crediti) invece di lasciare la lega
+  vuota. Per altre dimensioni di lega non si applica nessun default.
+  L'utente può comunque sovrascrivere i valori importando un proprio file
+  JSON dalla pagina Valutazioni, che aggiorna riga per riga sopra ai
+  default.
+
 ## [3.2.0] - 2026-08-20
 
 ### Added

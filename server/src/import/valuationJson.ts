@@ -42,12 +42,19 @@ export async function importValuationsFromJson(
     );
   }
 
+  return importValuationEntries(leagueId, envelope.players);
+}
+
+export async function importValuationEntries(
+  leagueId: number,
+  rawPlayers: unknown[],
+): Promise<ValuationImportReport> {
   let imported = 0;
   let updated = 0;
   const unmatched: UnmatchedValuation[] = [];
   const discarded: DiscardedValuationRow[] = [];
 
-  for (const [index, raw] of envelope.players.entries()) {
+  for (const [index, raw] of rawPlayers.entries()) {
     const parsed = valuationEntrySchema.safeParse(raw);
     if (!parsed.success) {
       discarded.push(toDiscardedRow(index + 1, raw, parsed.error));
