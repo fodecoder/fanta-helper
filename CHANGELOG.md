@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-08-26
+
+### Added
+
+- **Modificatore portiere attivo**: `modificatori.portiere.enabled` era
+  definito nelle regole lega ma non veniva mai letto dal motore
+  raccomandazioni. Ora, se attivo, aggiunge al valore del ruolo P un bonus
+  atteso di clean-sheet stimato dal tasso di gol subiti a partita del
+  portiere stesso (proxy individuale, additivo, mai negativo).
+- **Bonus difesa team-aware**: il bonus di reparto per P/D non usa più il
+  solo `mv` individuale come proxy della solidità difensiva, ma lo fonde
+  (70/30) con il tasso di gol subiti a partita della squadra del giocatore,
+  aggregato sui portieri della rosa. La tabella
+  `modificatori.difesa.tabella` resta invariata; senza dati di squadra
+  disponibili il calcolo degrada al comportamento precedente basato sul solo
+  `mv`.
+
 ## [3.3.0] - 2026-08-21
 
 ### Added

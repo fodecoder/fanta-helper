@@ -7,8 +7,8 @@ import type { QuotationRow } from "./quotation";
 import type { PlayerSeasonStatsRow } from "./playerSeasonStats";
 import type { ManagerAuctionStatus } from "./purchase";
 
-function player(id: number, name: string, ruolo: Player["ruolo"]): Player {
-  return { id, fanta_id: id, sofifa_id: null, name, team: "Team", ruolo, image_url: null };
+function player(id: number, name: string, ruolo: Player["ruolo"], team = "Team"): Player {
+  return { id, fanta_id: id, sofifa_id: null, name, team, ruolo, image_url: null };
 }
 
 function stat(playerId: number, overrides: Partial<PlayerSeasonStatsRow> = {}): PlayerSeasonStatsRow {
@@ -158,6 +158,84 @@ describe("computePlayerRecommendations", () => {
     );
 
     expect(result[0]!.components.leagueAdjustedFm).toBe(7);
+  });
+
+  it("applies an expected clean-sheet bonus to a goalkeeper's fm when the portiere modifier is enabled", () => {
+    const customRules: LeagueRulesConfig = {
+      ...rules,
+      modificatori: {
+        ...defaultModificatori,
+        difesa: { ...defaultModificatori.difesa, enabled: false },
+        portiere: { enabled: true },
+      },
+    };
+    const solidGk = player(1, "Portiere Solido", "P", "Team A");
+    const weakGk = player(2, "Portiere Fragile", "P", "Team B");
+    const stats = [
+      stat(1, { mv: 6, gs: 5, presenze: 30 }),
+      stat(2, { mv: 6, gs: 45, presenze: 30 }),
+    ];
+
+    const result = computePlayerRecommendations(
+      baseInput({ rules: customRules, players: [solidGk, weakGk], stats }),
+    );
+
+    const solidRow = result.find((r) => r.player_id === 1)!;
+    const weakRow = result.find((r) => r.player_id === 2)!;
+    expect(solidRow.components.leagueAdjustedFm).toBeGreaterThan(weakRow.components.leagueAdjustedFm!);
+  });
+
+  it("does not apply the portiere bonus when the modifier is disabled", () => {
+    const customRules: LeagueRulesConfig = {
+      ...rules,
+      modificatori: {
+        ...defaultModificatori,
+        difesa: { ...defaultModificatori.difesa, enabled: false },
+        portiere: { enabled: false },
+      },
+    };
+    const gk = player(1, "Portiere", "P", "Team A");
+    const s = stat(1, { mv: 6, gs: 5, presenze: 30 });
+
+    const result = computePlayerRecommendations(
+      baseInput({ rules: customRules, players: [gk], stats: [s] }),
+    );
+
+    // 6 (mv) + (5 gs / 30 presenze) * -1 (scoring.gol_subito) = 5.8333...
+    expect(result[0]!.components.leagueAdjustedFm).toBeCloseTo(6 - 5 / 30, 5);
+  });
+
+  it("blends the mv with the player's team defense record for the difesa bonus band lookup", () => {
+    const solidGk = player(1, "Portiere Solido", "P", "Squadra Solida");
+    const weakGk = player(2, "Portiere Fragile", "P", "Squadra Fragile");
+    const solidDefender = player(3, "Difensore Solido", "D", "Squadra Solida");
+    const weakDefender = player(4, "Difensore Fragile", "D", "Squadra Fragile");
+    const stats = [
+      stat(1, { mv: 6, gs: 6, presenze: 30 }),
+      stat(2, { mv: 6, gs: 45, presenze: 30 }),
+      stat(3, { mv: 6.5, gs: 0, presenze: 30 }),
+      stat(4, { mv: 6.5, gs: 0, presenze: 30 }),
+    ];
+
+    const result = computePlayerRecommendations(
+      baseInput({ players: [solidGk, weakGk, solidDefender, weakDefender], stats }),
+    );
+
+    const solidRow = result.find((r) => r.player_id === 3)!;
+    const weakRow = result.find((r) => r.player_id === 4)!;
+    expect(solidRow.components.leagueAdjustedFm).toBeGreaterThan(weakRow.components.leagueAdjustedFm!);
+  });
+
+  it("falls back to the plain mv for the difesa bonus when no team defense data is available", () => {
+    const defender = player(1, "Difensore", "D");
+    const result = computePlayerRecommendations(
+      baseInput({ rules, players: [defender], stats: [stat(1, { mv: 7 })] }),
+    );
+
+    // No P-role player/stat in the input, so no team defense rate exists for
+    // "Team": difesaBonus falls back to the raw mv, same as pre-blend
+    // behavior (default difesa tabella: media 7 -> bonus 6).
+    expect(result[0]!.components.leagueAdjustedFm).toBe(7 + 6);
   });
 
   it("weights reliability by presence share of the season's elapsed matchdays, not a fixed 38", () => {

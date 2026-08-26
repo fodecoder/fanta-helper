@@ -12,6 +12,29 @@ import { ROLES, type Role } from "./roles";
 const SCARCITY_MIN = 0.85;
 const SCARCITY_MAX = 1.35;
 
+// Baseline di gol subiti/partita di una difesa "nella media", condivisa tra
+// il bonus portiere (individuale) e il blend difesa (di squadra): stesso
+// segnale letto a due livelli diversi. Costante documentata, non derivata
+// dalle regole lega (non esiste un concetto di "difesa nella media" nel
+// regolamento da cui ricavarla).
+const GK_BASELINE_GS_PER_MATCH = 1.3;
+// Punti di bonus atteso per ogni gol/partita risparmiato sotto la baseline.
+// Solo additivo: il malus per gol subiti è già scontato da
+// scoring.gol_subito dentro perMatchBonus, qui si premia solo l'upside da
+// clean-sheet quando il portiere è sopra la media.
+const GK_BONUS_PER_SAVED_GOAL = 2;
+const GK_BONUS_MAX = 3;
+
+// Conversione tasso gol-subiti di squadra -> "mv equivalente", per fondersi
+// con l'mv individuale nel lookup di difesaBonus. Ancorata a costanti fisse
+// (non a min/max del pool importato) così il bonus di un giocatore non
+// dipende da chi altro è nel dataset in quel momento.
+const TEAM_DEFENSE_BASELINE_GS_PER_MATCH = GK_BASELINE_GS_PER_MATCH;
+const TEAM_DEFENSE_BASELINE_MV = 6;
+const TEAM_DEFENSE_MV_PER_GOAL = 1;
+const DIFESA_PLAYER_MV_WEIGHT = 0.7;
+const DIFESA_TEAM_MV_WEIGHT = 0.3;
+
 // Soglie di percentile per il bucket di fascia, entro ruolo. Costanti
 // documentate, non derivate dalla lega (non esiste un concetto di "fascia"
 // nelle regole lega da cui ricavarle).
@@ -92,9 +115,60 @@ function perMatchBonus(
   return total / presenze;
 }
 
-// Bonus difesa: usa `mv` del giocatore come proxy della media voto di
-// squadra (non disponibile a livello di dettaglio per giornata). Applica il
-// bonus della banda più alta il cui `media` è raggiunta o superata dal `mv`.
+// Bonus atteso portiere: stima la propensione al clean-sheet dal proprio
+// gs/presenze. È un proxy individuale (il dato di dettaglio per giornata a
+// livello di reparto non è disponibile), non una media di reparto — la
+// confidenza è quella di un singolo portiere, non del gruppo difensivo.
+function portiereBonus(stat: PlayerSeasonStatsRow, modificatori: LeagueRulesConfig["modificatori"]): number {
+  if (!modificatori.portiere.enabled) return 0;
+  const presenze = stat.presenze ?? 0;
+  if (presenze <= 0 || stat.gs === null) return 0;
+
+  const gsPerMatch = stat.gs / presenze;
+  return clamp((GK_BASELINE_GS_PER_MATCH - gsPerMatch) * GK_BONUS_PER_SAVED_GOAL, 0, GK_BONUS_MAX);
+}
+
+// Tasso di gol subiti a partita per squadra, aggregato sui portieri (unica
+// fonte con `gs` significativo, vedi perMatchBonus). Squadre senza portieri
+// con dati validi restano fuori dalla mappa: nessun dato viene inventato, i
+// chiamanti degradano al comportamento basato sul solo mv individuale.
+function teamDefenseRateByTeam(
+  players: Player[],
+  statsByPlayer: Map<number, PlayerSeasonStatsRow>,
+): Map<string, number> {
+  const agg = new Map<string, { gs: number; presenze: number }>();
+  for (const p of players) {
+    if (p.ruolo !== "P") continue;
+    const stat = statsByPlayer.get(p.id);
+    if (!stat || stat.presenze === null || stat.presenze <= 0 || stat.gs === null) continue;
+
+    const entry = agg.get(p.team) ?? { gs: 0, presenze: 0 };
+    entry.gs += stat.gs;
+    entry.presenze += stat.presenze;
+    agg.set(p.team, entry);
+  }
+
+  const rateByTeam = new Map<string, number>();
+  for (const [team, { gs, presenze }] of agg) {
+    rateByTeam.set(team, gs / presenze);
+  }
+  return rateByTeam;
+}
+
+// Fonde l'mv individuale con la solidità difensiva di squadra, per il
+// lookup in difesaBonus. Senza un tasso di squadra disponibile degrada al
+// comportamento attuale (solo mv), senza stimare nulla.
+function blendDifesaMv(mv: number, teamGsPerMatch: number | null): number {
+  if (teamGsPerMatch === null) return mv;
+
+  const teamEquivalentMv =
+    TEAM_DEFENSE_BASELINE_MV + (TEAM_DEFENSE_BASELINE_GS_PER_MATCH - teamGsPerMatch) * TEAM_DEFENSE_MV_PER_GOAL;
+  return DIFESA_PLAYER_MV_WEIGHT * mv + DIFESA_TEAM_MV_WEIGHT * teamEquivalentMv;
+}
+
+// Bonus difesa: applica il bonus della banda più alta il cui `media` è
+// raggiunta o superata dal valore mv passato (già fuso con la solidità
+// difensiva di squadra da blendDifesaMv, vedi il chiamante).
 function difesaBonus(mv: number, ruolo: Role, modificatori: LeagueRulesConfig["modificatori"]): number {
   if (!modificatori.difesa.enabled) return 0;
   if (ruolo !== "P" && ruolo !== "D") return 0;
@@ -152,6 +226,10 @@ export function computePlayerRecommendations(
   const quotationByPlayer = new Map(quotations.map((q) => [q.player_id, q]));
   const available = players.filter((p) => !purchasedPlayerIds.has(p.id));
 
+  // Calcolato sull'intero roster (non solo `available`): è un fatto sulla
+  // squadra nella stagione, indipendente da chi è già stato acquistato.
+  const teamDefenseRate = teamDefenseRateByTeam(players, statsByPlayer);
+
   // Massimo di presenze osservato nella stagione tra tutti i giocatori con
   // dati: proxy delle giornate finora disputate, si adatta sia a stagioni
   // storiche complete sia alla stagione corrente a metà campionato.
@@ -202,8 +280,10 @@ export function computePlayerRecommendations(
 
     const reliability = clamp(stat.presenze / seasonMatchdaysElapsed, 0, 1);
     const bonus = perMatchBonus(stat, rules.scoring, player.ruolo);
-    const dBonus = difesaBonus(stat.mv, player.ruolo, rules.modificatori);
-    const leagueAdjustedFm = stat.mv + bonus + dBonus;
+    const blendedMv = blendDifesaMv(stat.mv, teamDefenseRate.get(player.team) ?? null);
+    const dBonus = difesaBonus(blendedMv, player.ruolo, rules.modificatori);
+    const pBonus = player.ruolo === "P" ? portiereBonus(stat, rules.modificatori) : 0;
+    const leagueAdjustedFm = stat.mv + bonus + dBonus + pBonus;
     const rawValue = leagueAdjustedFm * reliability;
 
     return {
