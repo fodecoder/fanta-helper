@@ -9,6 +9,7 @@ import { listPurchasesByLeague } from "./purchases";
 import { listQuotationsBySeason, getLatestQuotationSeason } from "./quotation";
 import { listPlayerSeasonStatsBySeason, getLatestStatsSeason } from "./playerSeasonStats";
 import { getManagerAuctionStatuses } from "./derived";
+import { listProbableLineup } from "./probableLineup";
 import { ApiError } from "../http/errors";
 
 // Assembla gli input grezzi (pool, quotazioni/statistiche dell'ultima
@@ -16,13 +17,15 @@ import { ApiError } from "../http/errors";
 // al motore puro in `shared`. Nessuno stato calcolato viene scritto: tutto è
 // ricalcolato a ogni chiamata, stesso spirito di `getManagerAuctionStatuses`.
 export async function getPlayerRecommendations(league: LeagueRow): Promise<PlayerRecommendation[]> {
-  const [players, purchases, quotationSeason, statsSeason, managerStatuses] = await Promise.all([
-    listPlayers(),
-    listPurchasesByLeague(league.id),
-    getLatestQuotationSeason(),
-    getLatestStatsSeason(),
-    getManagerAuctionStatuses(league.id),
-  ]);
+  const [players, purchases, quotationSeason, statsSeason, managerStatuses, probableLineup] =
+    await Promise.all([
+      listPlayers(),
+      listPurchasesByLeague(league.id),
+      getLatestQuotationSeason(),
+      getLatestStatsSeason(),
+      getManagerAuctionStatuses(league.id),
+      listProbableLineup(),
+    ]);
 
   const [quotations, stats] = await Promise.all([
     quotationSeason !== null ? listQuotationsBySeason(quotationSeason) : Promise.resolve([]),
@@ -48,5 +51,6 @@ export async function getPlayerRecommendations(league: LeagueRow): Promise<Playe
     stats,
     purchasedPlayerIds: new Set(purchases.map((p) => p.player_id)),
     ioStatus,
+    probableLineup,
   });
 }

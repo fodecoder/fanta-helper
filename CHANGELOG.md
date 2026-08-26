@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-08-26
+
+### Added
+
+- **Reliability da formazione probabile**: `probable_lineup.stato` viene ora
+  letto dal motore raccomandazioni e combinato con lo storico presenze
+  (`reliability = max(presenzeRatio, statoWeight)`, pesi
+  `titolare=0.9, ballottaggio=0.6, panchina=0.3`). Un titolare odierno senza
+  storico in Serie A (neopromosso, nuovo acquisto) non è più penalizzato
+  dalle sole presenze passate. Matching giocatore↔lineup per nome+squadra
+  normalizzati, stesso criterio già usato altrove. Senza un match, la
+  reliability resta il solo `presenzeRatio`.
+- **Baseline mv nello score**: introdotta la costante `MV_BASELINE` (6.0);
+  il contributo di `mv` allo score è ora il margine sopra la sufficienza
+  (`mv - MV_BASELINE`) invece del voto assoluto, così i bonus (bomber,
+  rigoristi) pesano a pieno invece di essere appiattiti dalla componente mv
+  che prima dominava in valore assoluto. Il valore grezzo può restare
+  negativo sotto la sufficienza (informativo), ma il contributo allo score
+  finale è floorato a zero per evitare che una bassa affidabilità renda un
+  giocatore scarso artificialmente meno penalizzato.
+
 ## [3.4.0] - 2026-08-26
 
 ### Added
