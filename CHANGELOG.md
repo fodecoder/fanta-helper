@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-08-26
+
+### Added
+
+- **Tag giocatore derivati**: nuovo modulo puro `playerTags` in `shared` che
+  deriva, a lettura, un elenco di tag per ciascun giocatore disponibile —
+  Rigorista (rank ≤2 su calci di rigore), Titolare da 6 (titolare, alta
+  affidabilità, fascia di score mediana), Porta bonus (tasso gol+assist a
+  partita nel top del ruolo), Difensore da bonus (D/P con alto tasso bonus
+  proprio o squadra a difesa solida), Scommessa (FVM basso con segnale di
+  upside) e Da prendere a 1 (FVM minimo, valore al livello del rimpiazzo, "Io"
+  ha ancora lo slot). Nessun campo persistito: ricalcolato ad ogni chiamata a
+  partire da pool, statistiche, quotazioni, rigoristi/tiratori e formazioni
+  probabili, riusando l'output già calcolato del motore raccomandazioni.
+- L'endpoint consigli ora espone i tag insieme al resto della raccomandazione;
+  i badge compaiono sia nella pagina Consigli sia nel pannello asta (giocatore
+  in asta e alternative dello stesso ruolo).
+- L'ultima fascia del motore raccomandazioni è stata rinominata da
+  "Scommessa" a "Basso" per non collidere con il nuovo tag omonimo — le due
+  nozioni restano su assi distinti (fascia di valore vs. tag di scenario).
+
 ## [3.5.0] - 2026-08-26
 
 ### Added

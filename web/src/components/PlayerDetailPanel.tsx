@@ -3,6 +3,7 @@ import type {
   Player,
   PlayerAttributes,
   PlayerLatestSeasonStats,
+  PlayerTag,
   ProbableLineupStato,
   QuotationRow,
   SetPieceTakerEntry,
@@ -15,6 +16,7 @@ interface PlayerDetailPanelProps {
   seasonStats: PlayerLatestSeasonStats | undefined;
   lineupStatus: ProbableLineupStato | null;
   setPieceRanks: SetPieceTakerEntry[];
+  tags: PlayerTag[];
   // Optional EA FC attribute enrichment (SoFIFA). Absent when the provider is
   // off or the player is unmatched — the panel then simply omits the block.
   attributes?: PlayerAttributes | undefined;
@@ -66,6 +68,7 @@ export function PlayerDetailPanel({
   seasonStats,
   lineupStatus,
   setPieceRanks,
+  tags,
   attributes,
 }: PlayerDetailPanelProps) {
   const statValue = (v: number | null | undefined) => v ?? "—";
@@ -80,6 +83,15 @@ export function PlayerDetailPanel({
         borderTop: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)",
       }}
     >
+      {tags.length > 0 && (
+        <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {tags.map((t) => (
+            <span key={t.id} className="tag tag-neutral">
+              {t.label}
+            </span>
+          ))}
+        </div>
+      )}
       <Stat label="Squadra" value={player.team} />
       <Stat
         label="Ruolo"

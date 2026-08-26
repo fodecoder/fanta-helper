@@ -1,7 +1,8 @@
 import {
   computePlayerRecommendations,
+  computePlayerTags,
   type LeagueRulesConfig,
-  type PlayerRecommendation,
+  type PlayerRecommendationWithTags,
 } from "@fanta-helper/shared";
 import type { LeagueRow } from "./types";
 import { listPlayers } from "./players";
@@ -10,14 +11,17 @@ import { listQuotationsBySeason, getLatestQuotationSeason } from "./quotation";
 import { listPlayerSeasonStatsBySeason, getLatestStatsSeason } from "./playerSeasonStats";
 import { getManagerAuctionStatuses } from "./derived";
 import { listProbableLineup } from "./probableLineup";
+import { listSetPieceTakers } from "./setPieceTaker";
 import { ApiError } from "../http/errors";
 
 // Assembla gli input grezzi (pool, quotazioni/statistiche dell'ultima
 // stagione disponibile, log `purchase`, stato derivato di "Io") e li passa
 // al motore puro in `shared`. Nessuno stato calcolato viene scritto: tutto è
 // ricalcolato a ogni chiamata, stesso spirito di `getManagerAuctionStatuses`.
-export async function getPlayerRecommendations(league: LeagueRow): Promise<PlayerRecommendation[]> {
-  const [players, purchases, quotationSeason, statsSeason, managerStatuses, probableLineup] =
+export async function getPlayerRecommendations(
+  league: LeagueRow,
+): Promise<PlayerRecommendationWithTags[]> {
+  const [players, purchases, quotationSeason, statsSeason, managerStatuses, probableLineup, setPieceTaker] =
     await Promise.all([
       listPlayers(),
       listPurchasesByLeague(league.id),
@@ -25,6 +29,7 @@ export async function getPlayerRecommendations(league: LeagueRow): Promise<Playe
       getLatestStatsSeason(),
       getManagerAuctionStatuses(league.id),
       listProbableLineup(),
+      listSetPieceTakers(),
     ]);
 
   const [quotations, stats] = await Promise.all([
@@ -43,7 +48,7 @@ export async function getPlayerRecommendations(league: LeagueRow): Promise<Playe
     modificatori: league.modificatori,
   };
 
-  return computePlayerRecommendations({
+  const recommendations = computePlayerRecommendations({
     rules,
     nSquadre: league.n_squadre,
     players,
@@ -53,4 +58,16 @@ export async function getPlayerRecommendations(league: LeagueRow): Promise<Playe
     ioStatus,
     probableLineup,
   });
+
+  const tagsByPlayerId = computePlayerTags({
+    players,
+    stats,
+    quotations,
+    setPieceTaker,
+    probableLineup,
+    rules,
+    recommendations,
+  });
+
+  return recommendations.map((r) => ({ ...r, tags: tagsByPlayerId.get(r.player_id) ?? [] }));
 }

@@ -179,6 +179,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     seasonStats={view.seasonStatsById.get(sel.id)}
                     lineupStatus={lineupStatusFor(sel, view.probableLineup)}
                     setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+                    tags={view.tagsFor(sel.id)}
                     attributes={view.attributesFor(sel.id)}
                   />
                 </div>
@@ -438,7 +439,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   </thead>
                   <tbody>
                     {view.compareRows.map(
-                      ({ player, valuation, delta, isCurrent, seasonStats, score }) => {
+                      ({ player, valuation, delta, isCurrent, seasonStats, score, tags }) => {
                         const stats = view.enrichment?.performance.stats.find(
                           (s) => s.player_id === player.id,
                         );
@@ -479,6 +480,15 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                               <td>{player.team}</td>
                               <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>
                                 {valuation?.tier ?? "—"}
+                                {tags.length > 0 && (
+                                  <span style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                                    {tags.map((t) => (
+                                      <span key={t.id} className="tag tag-neutral" style={{ fontWeight: 400 }}>
+                                        {t.label}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )}
                               </td>
                               <td>
                                 <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -615,6 +625,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                     seasonStats={view.seasonStatsById.get(player.id)}
                                     lineupStatus={lineupStatusFor(player, view.probableLineup)}
                                     setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                                    tags={tags}
                                     attributes={view.attributesFor(player.id)}
                                   />
                                 </td>
