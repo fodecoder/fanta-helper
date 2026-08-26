@@ -402,7 +402,7 @@ describe("computePlayerRecommendations", () => {
     const worst = result.find((r) => r.player_id === 1)!;
 
     expect(best.tier).toBe("Top");
-    expect(worst.tier).toBe("Scommessa");
+    expect(worst.tier).toBe("Basso");
   });
 
   it("signals a positive price gap when the engine value ranks higher than the market price", () => {

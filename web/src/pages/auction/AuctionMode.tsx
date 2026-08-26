@@ -7,7 +7,8 @@ import type {
   Player,
   PlayerAttributes,
   PlayerLatestSeasonStats,
-  PlayerRecommendation,
+  PlayerRecommendationWithTags,
+  PlayerTag,
   ProbableLineupEntry,
   PurchaseWithDetails,
   QuotationRow,
@@ -63,6 +64,7 @@ export interface CompareRow extends RankRow {
   quotation: QuotationRow | undefined;
   seasonStats: PlayerLatestSeasonStats | undefined;
   score: number | null;
+  tags: PlayerTag[];
 }
 
 // Modello di vista condiviso tra desktop e telefono: tutto derivato, nulla di
@@ -95,6 +97,7 @@ export interface AuctionView {
   valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
   quotationFor: (playerId: number) => QuotationRow | undefined;
   sortValueFor: (playerId: number) => number | null;
+  tagsFor: (playerId: number) => PlayerTag[];
 
   price: string;
   priceNum: number | null;
@@ -153,7 +156,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [probableLineup, setProbableLineup] = useState<ProbableLineupEntry[] | null>(null);
   const [setPieceTakers, setSetPieceTakers] = useState<SetPieceTakerEntry[] | null>(null);
   const [gkPairing, setGkPairing] = useState<GkPairingEntry[] | null>(null);
-  const [recommendations, setRecommendations] = useState<PlayerRecommendation[] | null>(null);
+  const [recommendations, setRecommendations] = useState<PlayerRecommendationWithTags[] | null>(null);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [price, setPrice] = useState("");
@@ -250,10 +253,14 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   }, [quotations]);
   const quotationFor = useCallback((id: number) => quotationById.get(id), [quotationById]);
   const recommendationById = useMemo(() => {
-    const map = new Map<number, PlayerRecommendation>();
+    const map = new Map<number, PlayerRecommendationWithTags>();
     for (const r of recommendations ?? []) map.set(r.player_id, r);
     return map;
   }, [recommendations]);
+  const tagsFor = useCallback(
+    (playerId: number): PlayerTag[] => recommendationById.get(playerId)?.tags ?? [],
+    [recommendationById],
+  );
   // Chiave attiva = criterio di ordinamento e stesso valore mostrato in lista.
   const sortValueFor = useCallback(
     (playerId: number): number | null => {
@@ -379,6 +386,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     quotation: quotationById.get(row.player.id),
     seasonStats: seasonStatsById.get(row.player.id),
     score: recommendationById.get(row.player.id)?.score ?? null,
+    tags: recommendationById.get(row.player.id)?.tags ?? [],
   }));
   const compareMaxFv = Math.max(1, ...compareBase.map((r) => r.valuation?.fair_value ?? 0));
 
@@ -562,6 +570,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     valuationFor,
     quotationFor,
     sortValueFor,
+    tagsFor,
     price,
     priceNum,
     onPrice: (v) => {

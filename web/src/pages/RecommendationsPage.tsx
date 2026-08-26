@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import type { League, PlayerRecommendation } from "@fanta-helper/shared";
+import type { League, PlayerRecommendationWithTags } from "@fanta-helper/shared";
 import { ROLES, type Role } from "@fanta-helper/shared";
 import * as recommendationsApi from "../api/recommendations";
 import { PageMasthead } from "../components/shell/PageMasthead";
@@ -18,7 +18,7 @@ function pct(value: number): string {
 }
 
 export function RecommendationsPage({ league, calls }: RecommendationsPageProps) {
-  const [recommendations, setRecommendations] = useState<PlayerRecommendation[] | null>(null);
+  const [recommendations, setRecommendations] = useState<PlayerRecommendationWithTags[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
@@ -149,6 +149,11 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                             Occasione
                           </span>
                         )}
+                        {r.tags.map((t) => (
+                          <span key={t.id} className="tag tag-neutral" style={{ marginLeft: 6 }}>
+                            {t.label}
+                          </span>
+                        ))}
                       </td>
                       <td className="num" style={{ textAlign: "right" }}>
                         {r.components.leagueAdjustedFm !== null

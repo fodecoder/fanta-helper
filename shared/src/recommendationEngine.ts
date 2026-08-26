@@ -64,7 +64,7 @@ const TIER_THRESHOLDS: { min: number; label: string }[] = [
   { min: 0.9, label: "Top" },
   { min: 0.65, label: "Solido" },
   { min: 0.35, label: "Utile" },
-  { min: 0, label: "Scommessa" },
+  { min: 0, label: "Basso" },
 ];
 
 export interface PlayerRecommendationComponents {
@@ -155,7 +155,7 @@ function portiereBonus(stat: PlayerSeasonStatsRow, modificatori: LeagueRulesConf
 // fonte con `gs` significativo, vedi perMatchBonus). Squadre senza portieri
 // con dati validi restano fuori dalla mappa: nessun dato viene inventato, i
 // chiamanti degradano al comportamento basato sul solo mv individuale.
-function teamDefenseRateByTeam(
+export function teamDefenseRateByTeam(
   players: Player[],
   statsByPlayer: Map<number, PlayerSeasonStatsRow>,
 ): Map<string, number> {
@@ -223,7 +223,7 @@ function lineupStatoByKey(rows: ProbableLineupEntry[]): Map<string, ProbableLine
 // Percentile all'interno di un gruppo: 1 = valore più alto del gruppo, 0 =
 // più basso. Un solo elemento -> percentile 1 (nessuna base di confronto,
 // non va penalizzato).
-function percentileByGroup(entries: { id: number; value: number }[]): Map<number, number> {
+export function percentileByGroup(entries: { id: number; value: number }[]): Map<number, number> {
   const sorted = [...entries].sort((a, b) => a.value - b.value);
   const ranks = new Map<number, number>();
   const n = sorted.length;

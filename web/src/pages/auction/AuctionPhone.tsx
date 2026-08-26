@@ -168,6 +168,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               seasonStats={view.seasonStatsById.get(sel.id)}
               lineupStatus={lineupStatusFor(sel, view.probableLineup)}
               setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+              tags={view.tagsFor(sel.id)}
               attributes={view.attributesFor(sel.id)}
             />
 
@@ -426,7 +427,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 ))}
               </div>
             )}
-            {view.compareRows.map(({ player, valuation, delta }) => {
+            {view.compareRows.map(({ player, valuation, delta, tags }) => {
               const expanded = expandedPlayerId === player.id;
               return (
                 <div
@@ -517,6 +518,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                         seasonStats={view.seasonStatsById.get(player.id)}
                         lineupStatus={lineupStatusFor(player, view.probableLineup)}
                         setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
+                        tags={tags}
                         attributes={view.attributesFor(player.id)}
                       />
                     </div>
