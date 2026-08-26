@@ -6,6 +6,7 @@ import type { Player } from "./player";
 import type { QuotationRow } from "./quotation";
 import type { PlayerSeasonStatsRow } from "./playerSeasonStats";
 import type { ManagerAuctionStatus } from "./purchase";
+import type { ProbableLineupEntry } from "./probableLineup";
 
 function player(id: number, name: string, ruolo: Player["ruolo"], team = "Team"): Player {
   return { id, fanta_id: id, sofifa_id: null, name, team, ruolo, image_url: null };
@@ -36,6 +37,14 @@ function quotation(playerId: number, overrides: Partial<QuotationRow> = {}): Quo
   return { player_id: playerId, season: "2026-27", qt_i: 10, qt_a: 10, fvm: 10, ...overrides };
 }
 
+function lineup(
+  playerName: string,
+  team: string,
+  stato: ProbableLineupEntry["stato"],
+): ProbableLineupEntry {
+  return { player_name: playerName, team, ruolo: null, stato };
+}
+
 function ioStatus(slots: { ruolo: Player["ruolo"]; free: number }[]): ManagerAuctionStatus {
   return {
     managerId: 1,
@@ -62,6 +71,7 @@ function baseInput(overrides: Partial<RecommendationEngineInput> = {}): Recommen
     players: [],
     quotations: [],
     stats: [],
+    probableLineup: [],
     purchasedPlayerIds: new Set(),
     ioStatus: ioStatus([
       { ruolo: "P", free: 3 },
@@ -140,8 +150,9 @@ describe("computePlayerRecommendations", () => {
 
     const defenderRow = result.find((r) => r.player_id === 1)!;
     const attackerRow = result.find((r) => r.player_id === 2)!;
-    expect(defenderRow.components.leagueAdjustedFm).toBe(7 + 6);
-    expect(attackerRow.components.leagueAdjustedFm).toBe(7);
+    // mv - MV_BASELINE (7 - 6) + difesa bonus.
+    expect(defenderRow.components.leagueAdjustedFm).toBe(7 - 6 + 6);
+    expect(attackerRow.components.leagueAdjustedFm).toBe(7 - 6);
   });
 
   it("does not apply the difesa bonus when the modifier is disabled", () => {
@@ -157,7 +168,7 @@ describe("computePlayerRecommendations", () => {
       baseInput({ rules: customRules, players: [defender], stats: [stat(1, { mv: 7 })] }),
     );
 
-    expect(result[0]!.components.leagueAdjustedFm).toBe(7);
+    expect(result[0]!.components.leagueAdjustedFm).toBe(7 - 6);
   });
 
   it("applies an expected clean-sheet bonus to a goalkeeper's fm when the portiere modifier is enabled", () => {
@@ -201,8 +212,8 @@ describe("computePlayerRecommendations", () => {
       baseInput({ rules: customRules, players: [gk], stats: [s] }),
     );
 
-    // 6 (mv) + (5 gs / 30 presenze) * -1 (scoring.gol_subito) = 5.8333...
-    expect(result[0]!.components.leagueAdjustedFm).toBeCloseTo(6 - 5 / 30, 5);
+    // (6 - MV_BASELINE) + (5 gs / 30 presenze) * -1 (scoring.gol_subito) = -0.1666...
+    expect(result[0]!.components.leagueAdjustedFm).toBeCloseTo(0 - 5 / 30, 5);
   });
 
   it("blends the mv with the player's team defense record for the difesa bonus band lookup", () => {
@@ -235,7 +246,52 @@ describe("computePlayerRecommendations", () => {
     // No P-role player/stat in the input, so no team defense rate exists for
     // "Team": difesaBonus falls back to the raw mv, same as pre-blend
     // behavior (default difesa tabella: media 7 -> bonus 6).
-    expect(result[0]!.components.leagueAdjustedFm).toBe(7 + 6);
+    expect(result[0]!.components.leagueAdjustedFm).toBe(7 - 6 + 6);
+  });
+
+  it("widens the gap between a bomber and a defender of equal mv once MV_BASELINE isolates the bonus", () => {
+    // Same mv, but different reliability: without a baseline, mv (a large
+    // common term) multiplied by different reliability values injects a
+    // delta unrelated to the bonus, diluting/inflating the bonus-driven gap.
+    // With MV_BASELINE subtracted, that common term shrinks to ~0 and the
+    // gap becomes purely bonus-driven.
+    const bomber = player(1, "Bomber", "A");
+    const defender = player(2, "Fermo", "A");
+    const stats = [
+      stat(1, { mv: 6, gf: 10, presenze: 6 }),
+      stat(2, { mv: 6, gf: 0, presenze: 30 }),
+    ];
+
+    const result = computePlayerRecommendations(baseInput({ players: [bomber, defender], stats }));
+
+    const bomberRow = result.find((r) => r.player_id === 1)!;
+    const defenderRow = result.find((r) => r.player_id === 2)!;
+    // bonus_bomber = 10 gf * scoring.gol(3) / 6 presenze = 5; reliability
+    // bomber = 6/30 = 0.2. rawValue = max((6-6)+5, 0) * 0.2 = 1.
+    // rawValue defender = max((6-6)+0, 0) * 1 = 0. The gap is exactly the
+    // bonus contribution, not muddied by an mv*reliability delta.
+    expect(bomberRow.components.rawValue - defenderRow.components.rawValue).toBeCloseTo(1, 5);
+  });
+
+  it("floors rawValue at 0 for a below-baseline mv instead of letting low reliability make it less negative", () => {
+    const reliablePoor = player(1, "Scarso Affidabile", "C");
+    const unreliablePoor = player(2, "Scarso Inaffidabile", "C");
+    const stats = [
+      stat(1, { mv: 5, presenze: 20 }),
+      stat(2, { mv: 5, presenze: 2 }),
+    ];
+
+    const result = computePlayerRecommendations(baseInput({ players: [reliablePoor, unreliablePoor], stats }));
+
+    const reliableRow = result.find((r) => r.player_id === 1)!;
+    const unreliableRow = result.find((r) => r.player_id === 2)!;
+    // leagueAdjustedFm = 5 - 6 = -1 for both (below baseline): floored to 0
+    // in rawValue regardless of reliability, so the unreliable player never
+    // comes out ahead of the reliable one just because reliability is lower.
+    expect(reliableRow.components.leagueAdjustedFm).toBe(-1);
+    expect(unreliableRow.components.leagueAdjustedFm).toBe(-1);
+    expect(reliableRow.components.rawValue).toBe(0);
+    expect(unreliableRow.components.rawValue).toBe(0);
   });
 
   it("weights reliability by presence share of the season's elapsed matchdays, not a fixed 38", () => {
@@ -250,6 +306,57 @@ describe("computePlayerRecommendations", () => {
     const halfRow = result.find((r) => r.player_id === 2)!;
     expect(fullRow.components.reliability).toBe(1);
     expect(halfRow.components.reliability).toBe(0.5);
+  });
+
+  it("lifts reliability for a today's starter with little historical data, from probable_lineup.stato", () => {
+    const rookie = player(1, "Neopromosso", "C", "Team A");
+    // Max presenze observed this season is 20: the rookie only has 2, a
+    // presenzeRatio of 0.1 that alone would bury a current starter.
+    const stats = [stat(1, { presenze: 2, mv: 6 }), stat(2, { presenze: 20, mv: 6 })];
+    const veteran = player(2, "Veterano", "C", "Team A");
+
+    const result = computePlayerRecommendations(
+      baseInput({
+        players: [rookie, veteran],
+        stats,
+        probableLineup: [lineup("Neopromosso", "Team A", "titolare")],
+      }),
+    );
+
+    const rookieRow = result.find((r) => r.player_id === 1)!;
+    expect(rookieRow.components.reliability).toBe(0.9);
+  });
+
+  it("never lowers reliability below presenzeRatio when the lineup stato weight is smaller", () => {
+    const veteran = player(1, "Titolare Storico", "C", "Team A");
+    const stats = [stat(1, { presenze: 20, mv: 6 }), stat(2, { presenze: 20, mv: 6 })];
+    const other = player(2, "Altro", "C", "Team A");
+
+    const result = computePlayerRecommendations(
+      baseInput({
+        players: [veteran, other],
+        stats,
+        probableLineup: [lineup("Titolare Storico", "Team A", "panchina")],
+      }),
+    );
+
+    const veteranRow = result.find((r) => r.player_id === 1)!;
+    // presenzeRatio (1) beats the panchina weight (0.3): max(1, 0.3) = 1.
+    expect(veteranRow.components.reliability).toBe(1);
+  });
+
+  it("falls back to presenzeRatio alone when no probable_lineup row matches the player", () => {
+    const p1 = player(1, "Senza Lineup", "C", "Team A");
+    const result = computePlayerRecommendations(
+      baseInput({
+        players: [p1],
+        stats: [stat(1, { presenze: 10, mv: 6 })],
+        probableLineup: [lineup("Qualcun Altro", "Team B", "titolare")],
+      }),
+    );
+
+    // Max presenze observed is 10 (only player in the pool): presenzeRatio = 1.
+    expect(result[0]!.components.reliability).toBe(1);
   });
 
   it("clamps the scarcity multiplier within its stability bounds", () => {

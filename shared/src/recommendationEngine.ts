@@ -4,6 +4,8 @@ import type { QuotationRow } from "./quotation";
 import type { PlayerSeasonStatsRow } from "./playerSeasonStats";
 import type { ManagerAuctionStatus } from "./purchase";
 import { ROLES, type Role } from "./roles";
+import { normalizeForMatch } from "./matchPlayer";
+import type { ProbableLineupEntry, ProbableLineupStato } from "./probableLineup";
 
 // Bound sulla scarcity multiplier per evitare valori estremi quando
 // domanda/offerta sono agli antipodi (es. un ruolo quasi esaurito con un
@@ -11,6 +13,26 @@ import { ROLES, type Role } from "./roles";
 // stesso spirito di MIN_SLOT_RESERVE in maxBid.ts.
 const SCARCITY_MIN = 0.85;
 const SCARCITY_MAX = 1.35;
+
+// Voto di sufficienza: il contributo di mv allo score è il margine sopra
+// questa soglia, non il voto assoluto — così i bonus (bomber, rigorista,
+// ecc.) pesano a pieno invece di essere appiattiti dalla componente mv, che
+// altrimenti domina in valore assoluto (mv~6 vs bonus~0.1-0.9). Concetto
+// distinto da TEAM_DEFENSE_BASELINE_MV più sotto, pur condividendo lo stesso
+// valore numerico: quella è una baseline di gol subiti di squadra convertita
+// in mv equivalente, questa è la soglia di sufficienza del voto individuale.
+const MV_BASELINE = 6.0;
+
+// Pesi di reliability da probable_lineup.stato: un titolare odierno non va
+// penalizzato dalle sole presenze storiche (neopromossi, nuovi acquisti
+// senza storico nella stagione importata). reliability prende il massimo
+// tra presenzeRatio e questo peso, mai il minimo: uno storico solido non
+// viene mai declassato da uno stato di formazione probabile.
+const LINEUP_STATO_RELIABILITY: Record<ProbableLineupStato, number> = {
+  titolare: 0.9,
+  ballottaggio: 0.6,
+  panchina: 0.3,
+};
 
 // Baseline di gol subiti/partita di una difesa "nella media", condivisa tra
 // il bonus portiere (individuale) e il blend difesa (di squadra): stesso
@@ -84,6 +106,7 @@ export interface RecommendationEngineInput {
   stats: PlayerSeasonStatsRow[];
   purchasedPlayerIds: ReadonlySet<number>;
   ioStatus: ManagerAuctionStatus;
+  probableLineup: ProbableLineupEntry[];
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -180,6 +203,23 @@ function difesaBonus(mv: number, ruolo: Role, modificatori: LeagueRulesConfig["m
   return bonus;
 }
 
+// Chiave di join giocatore<->probable_lineup: stesso criterio di
+// isSamePlayer/normalizeForMatch (nome+team normalizzati, match esplicito e
+// conservativo, niente fuzzy), ma precalcolata in una mappa invece che con
+// un .find per giocatore — qui gira su ogni giocatore disponibile, non su
+// una singola selezione come lineupStatusFor in auctionDerivations.ts.
+function matchKey(name: string, team: string): string {
+  return `${normalizeForMatch(name)}|${normalizeForMatch(team)}`;
+}
+
+function lineupStatoByKey(rows: ProbableLineupEntry[]): Map<string, ProbableLineupStato> {
+  const map = new Map<string, ProbableLineupStato>();
+  for (const row of rows) {
+    map.set(matchKey(row.player_name, row.team), row.stato);
+  }
+  return map;
+}
+
 // Percentile all'interno di un gruppo: 1 = valore più alto del gruppo, 0 =
 // più basso. Un solo elemento -> percentile 1 (nessuna base di confronto,
 // non va penalizzato).
@@ -220,10 +260,12 @@ interface ScoredEntry {
 export function computePlayerRecommendations(
   input: RecommendationEngineInput,
 ): PlayerRecommendation[] {
-  const { rules, nSquadre, players, quotations, stats, purchasedPlayerIds, ioStatus } = input;
+  const { rules, nSquadre, players, quotations, stats, purchasedPlayerIds, ioStatus, probableLineup } =
+    input;
 
   const statsByPlayer = new Map(stats.map((s) => [s.player_id, s]));
   const quotationByPlayer = new Map(quotations.map((q) => [q.player_id, q]));
+  const lineupStatoByPlayer = lineupStatoByKey(probableLineup);
   const available = players.filter((p) => !purchasedPlayerIds.has(p.id));
 
   // Calcolato sull'intero roster (non solo `available`): è un fatto sulla
@@ -278,13 +320,21 @@ export function computePlayerRecommendations(
       };
     }
 
-    const reliability = clamp(stat.presenze / seasonMatchdaysElapsed, 0, 1);
+    const presenzeRatio = clamp(stat.presenze / seasonMatchdaysElapsed, 0, 1);
+    const stato = lineupStatoByPlayer.get(matchKey(player.name, player.team));
+    const reliability =
+      stato !== undefined ? Math.max(presenzeRatio, LINEUP_STATO_RELIABILITY[stato]) : presenzeRatio;
     const bonus = perMatchBonus(stat, rules.scoring, player.ruolo);
     const blendedMv = blendDifesaMv(stat.mv, teamDefenseRate.get(player.team) ?? null);
     const dBonus = difesaBonus(blendedMv, player.ruolo, rules.modificatori);
     const pBonus = player.ruolo === "P" ? portiereBonus(stat, rules.modificatori) : 0;
-    const leagueAdjustedFm = stat.mv + bonus + dBonus + pBonus;
-    const rawValue = leagueAdjustedFm * reliability;
+    const leagueAdjustedFm = stat.mv - MV_BASELINE + bonus + dBonus + pBonus;
+    // Floor solo qui, non sul componente esposto: se leagueAdjustedFm è
+    // negativo (mv sotto sufficienza), moltiplicarlo per reliability<1 lo
+    // renderebbe meno negativo, premiando un giocatore inaffidabile rispetto
+    // a uno affidabile con lo stesso mv scarso. leagueAdjustedFm resta
+    // trasparente (può restare negativo) per diagnosi/UI.
+    const rawValue = Math.max(leagueAdjustedFm, 0) * reliability;
 
     return {
       player,
