@@ -137,9 +137,9 @@ eseguiti; la traccia vive nel `CHANGELOG.md`.
 ## Fase 7 — Multiutente v4.0  *(backlog attivo — in progettazione)*
 
 Passaggio da app monoutente a app condivisa dai 4 partecipanti della lega, con
-consigli personalizzabili per utente. Le decisioni architetturali e i tradeoff
-sono in [docs/design-fase7.md](./docs/design-fase7.md); da approvare prima di
-implementare. **Vincolo invariante**: lo stato dell'asta resta derivato dal log
+consigli personalizzabili per utente. Decisioni e tradeoff in
+[docs/design-fase7.md](./docs/design-fase7.md); prompt operativi ordinati
+(P1–P8) in [PROMPTS.md](./PROMPTS.md). **Vincolo invariante**: lo stato dell'asta resta derivato dal log
 `purchase`; le personalizzazioni sono un layer di override, non mutano il valore
 di base.
 
