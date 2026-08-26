@@ -2,14 +2,19 @@
 
 Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
 
-> Stato al 2026-08-20 — `v2.12.1`. Fasi 0–5 complete. Completate anche la
+> Stato al 2026-08-26 — `v3.3.0`. Fasi 0–6 complete. Completate anche la
 > **correzione griglia portieri** (matrice coppie `gk_pairing`), le **valutazioni
 > generate via LLM in-app** e il **redesign UI** (design system Broadsheet).
 > **Hosting in produzione**: Neon + Render + Cloudflare Pages attivi, app
 > funzionante end-to-end. La **Fase 5 — Dati storici + Engine** è chiusa (ingest
 > storico + corrente, engine di consiglio, UX asta, provider SoFIFA opzionale).
-> Il lavoro attivo è la **Fase 6 — Rifiniture v3.0** (correzioni UX emerse dall'uso
-> reale + import/export rose) — prompt in [PROMPTS.md](./PROMPTS.md).
+> La **Fase 6 — Rifiniture v3.0** è chiusa (correzioni UX dall'uso reale,
+> import/export rose, valutazioni di default per leghe da 8/10 squadre,
+> riscalatura al budget di lega, suggerimento coppia portieri in asta).
+> Il vecchio `PROMPTS.md` (Fasi ≤6) è stato eseguito per intero: la sua traccia
+> vive nel `CHANGELOG.md` e nella git history. `PROMPTS.md` è ora ripopolato con i
+> prompt operativi della **Fase 7 — Multiutente v4.0** (login, avatar, chat,
+> preferenze per-utente, tag giocatore, audit engine), il lavoro attivo.
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -105,33 +110,64 @@ Eseguita end-to-end (commit `82100fd` → `9e7c747`, fino a `v2.12.1`).
       affiancato ad API-Football (rendimento reale). NB: `api.sofifa.net` è
       whitelist-only → provider OFF di default, degrada senza dati (`v2.12.1`).
 
-## Fase 6 — Rifiniture v3.0  *(backlog attivo)*
+## Fase 6 — Rifiniture v3.0  *(completa)*
 
-Correzioni UX emerse dall'uso reale + import/export rose. Prompt operativi in
-[PROMPTS.md](./PROMPTS.md). Traguardo: taglio `v3.0.0`.
+Correzioni UX emerse dall'uso reale + import/export rose. Chiusa a `v3.3.0`
+(commit `ea47843` → `d9670c7`). I prompt operativi (ex `PROMPTS.md`) sono tutti
+eseguiti; la traccia vive nel `CHANGELOG.md`.
 
-- [x] **Fix — identità stabile del proprietario**: il manager "Io" era
-      identificato per **nome letterale** (`OWNER_MANAGER_NAME`) in 5 punti;
-      rinominarlo rompeva consigli/asta/panoramica (`manager "Io" not found`).
-      Introdotta identità stabile (`is_owner`) disaccoppiata dal nome editabile
-      (`v2.13.0`).
-- [ ] **Fix — asta: escludere il giocatore in asta dalle alternative libere**
-      (oggi compare tra le alternative dello stesso ruolo).
-- [ ] **Fix — layout sidebar desktop**: non deve allungarsi con la pagina; il
-      bottone "entra in asta" deve restare sempre raggiungibile (sticky).
-- [ ] **Feat — responsive mobile**: su cellulare in verticale la sidebar sparisce
-      (nav sticky in fondo), home usabile, font ridimensionato, bottone di uscita
-      dall'asta visibile.
-- [ ] **Feat — warning modificatori**: banner quando la lega ha `modificatori.portiere`
-      o `modificatori.difesa` attivi.
-- [ ] **Feat — export/import rose d'asta** in formato leghe Fantacalcio (CSV
-      `manager,fanta_id,prezzo` con separatore `$,$,$`, confermato dal campione).
+- [x] **Fix — identità stabile del proprietario**: `is_owner` disaccoppiato dal
+      nome editabile (`v2.13.0`, commit `ea47843`).
+- [x] **Fix — asta: escludere il giocatore in asta dalle alternative libere**
+      (commit `95117af`).
+- [x] **Fix — layout sidebar desktop** sticky, bottone "entra in asta" sempre
+      raggiungibile (commit `6921efd`).
+- [x] **Feat — responsive mobile**: sidebar → nav sticky in fondo, home usabile
+      (commit `bbb6582`).
+- [x] **Feat — warning modificatori** portiere/difesa attivi (commit `95117af`,
+      `ModifierWarning.tsx`).
+- [x] **Feat — export/import rose d'asta** in formato leghe Fantacalcio
+      (commit `aaf06c1`).
+- [x] **Feat — riscalatura valutazioni al budget di lega** (commit `fc82bd3`).
+- [x] **Feat — valutazioni di default per leghe da 8/10 squadre** (commit
+      `d9670c7`).
+- [x] **Feat — suggerimento coppia portieri favorevole dopo un acquisto**
+      (commit `a4bcd76`).
 
-## Traguardo v3.0.0
+## Fase 7 — Multiutente v4.0  *(backlog attivo — in progettazione)*
 
-Rilascio `3.0.0` = Fase 6 completa (correzioni UX + import/export rose). Il salto di
-MAJOR è motivato dall'import/export rose come formato di interscambio pubblico e
-dal cambio del modello di identità del proprietario (migrazione schema).
+Passaggio da app monoutente a app condivisa dai 4 partecipanti della lega, con
+consigli personalizzabili per utente. Le decisioni architetturali e i tradeoff
+sono in [docs/design-fase7.md](./docs/design-fase7.md); da approvare prima di
+implementare. **Vincolo invariante**: lo stato dell'asta resta derivato dal log
+`purchase`; le personalizzazioni sono un layer di override, non mutano il valore
+di base.
+
+- [ ] **Feat — audit engine**: verifica dell'algoritmo di valutazione
+      (replacement level, scarsità, modificatore difesa via proxy `mv`,
+      reliability). Correzioni prioritarie prima di costruirci sopra i tag.
+- [ ] **Feat — tag giocatore derivati** (Scommessa, Da prendere a 1, Titolare da
+      6, Porta bonus, Rigorista, Difensore da bonus, …), calcolati puri dal log +
+      dati, subito visibili in consigli e asta.
+- [ ] **Feat — login** dei 4 utenti (Andre, Davide, Fra, Paul), sessione separata
+      per utente. NB: rompe l'assunzione storica "nessun login" — motivata dal
+      passaggio a multiutente.
+- [ ] **Feat — avatar e colore avatar** per utente.
+- [ ] **Feat — chat 1-a-1** ancorabile e ridimensionabile, minimale.
+- [ ] **Feat — preferenze per-utente**: override di valutazioni/consigli che
+      lasciano invariato il valore di base per gli altri.
+- [ ] **Feat — preferenze di squadra** (squadre preferite / da evitare): i
+      consigli si adattano coerentemente.
+- [ ] **Feat — modificatori portiere/difesa nell'engine**: i consigli si
+      aggiornano tenendone conto (oggi solo `difesa` via proxy, `portiere` no).
+- [ ] **Feat — SoFIFA in landing/asta**: logo (normale in landing, piccolo in
+      asta) + link a `https://sofifa.com/`, prerequisito per l'accesso alle loro API.
+
+## Traguardo v4.0.0
+
+Rilascio `4.0.0` = Fase 7 completa. Il salto di MAJOR è motivato
+dall'introduzione del modello multiutente (login, identità per-utente,
+personalizzazione dei consigli) e dalle migrazioni schema associate.
 
 ## Traguardo v1.0.0
 
