@@ -1,4 +1,5 @@
 import type { StatsEnrichmentResponse } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(): string {
   return `${import.meta.env.VITE_API_URL}/players/stats-enrichment`;
@@ -30,5 +31,5 @@ export function getStatsEnrichment(
 ): Promise<StatsEnrichmentResponse> {
   const url = new URL(baseUrl());
   url.searchParams.set("ids", playerIds.join(","));
-  return fetch(url, { signal }).then((res) => handle<StatsEnrichmentResponse>(res));
+  return apiFetch(url, { signal }).then((res) => handle<StatsEnrichmentResponse>(res));
 }

@@ -1,4 +1,5 @@
 import type { QuotationRow } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/players/quotations`;
 
@@ -23,5 +24,5 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listCurrentQuotations(signal?: AbortSignal): Promise<QuotationRow[]> {
-  return fetch(`${BASE_URL}/current`, { signal }).then((res) => handle<QuotationRow[]>(res));
+  return apiFetch(`${BASE_URL}/current`, { signal }).then((res) => handle<QuotationRow[]>(res));
 }

@@ -27,17 +27,19 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const message =
       constraint === "manager_league_name_uk"
         ? "a manager with this name already exists in this league"
-        : constraint === "purchase_pkey"
-          ? "this player has already been purchased in this league"
-          : constraint === "wishlist_pkey"
-            ? "this player is already in the wishlist for this league"
-            : constraint === "probable_lineup_team_player_uk"
-              ? "this player appears more than once in the confirmed lineup for this team"
-              : constraint === "set_piece_taker_team_tipo_rank_uk"
-                ? "this rank is already assigned to another player for this team and set piece type"
-                : constraint === "gk_pairing_team_pair_uk"
-                  ? "this team pair is already recorded in the pairing matrix"
-                  : "a league with this name already exists";
+        : constraint === "app_user_username_uk"
+          ? "a user with this username already exists"
+          : constraint === "purchase_pkey"
+            ? "this player has already been purchased in this league"
+            : constraint === "wishlist_pkey"
+              ? "this player is already in the wishlist for this league"
+              : constraint === "probable_lineup_team_player_uk"
+                ? "this player appears more than once in the confirmed lineup for this team"
+                : constraint === "set_piece_taker_team_tipo_rank_uk"
+                  ? "this rank is already assigned to another player for this team and set piece type"
+                  : constraint === "gk_pairing_team_pair_uk"
+                    ? "this team pair is already recorded in the pairing matrix"
+                    : "a league with this name already exists";
     res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }

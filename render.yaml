@@ -25,6 +25,12 @@ services:
       # URL del sito Cloudflare Pages, da compilare dopo il deploy del frontend.
       - key: CORS_ORIGIN
         sync: false
+      # Segreto di firma dei cookie di sessione (stateless, nessuna tabella
+      # sessioni): impostare nel dashboard.
+      - key: COOKIE_SECRET
+        sync: false
+      - key: COOKIE_SECURE
+        value: true
       # Probabili formazioni: estrazione da screenshot via Claude (vision).
       # Chiave da generare su console.anthropic.com, da impostare nel dashboard.
       - key: ANTHROPIC_API_KEY

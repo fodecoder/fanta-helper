@@ -1,6 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { ROLES } from "@fanta-helper/shared";
+import { authRouter } from "./routes/auth";
 import { leaguesRouter } from "./routes/leagues";
 import { playersRouter } from "./routes/players";
 import { managersRouter } from "./routes/managers";
@@ -16,17 +18,24 @@ import { statsEnrichmentRouter } from "./routes/statsEnrichment";
 import { playerSeasonStatsRouter } from "./routes/playerSeasonStats";
 import { quotationRouter } from "./routes/quotation";
 import { errorHandler } from "./http/errorHandler";
+import { requireAuth } from "./http/requireAuth";
 
 export function createApp(): Express {
   const app = express();
 
-  const corsOrigin = process.env.CORS_ORIGIN;
-  app.use(cors(corsOrigin ? { origin: corsOrigin } : undefined));
+  // credentials: true richiede un'origine sempre esplicita (mai `*`), coerente
+  // con l'uso di cookie di sessione cross-origin tra frontend e backend.
+  app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+  app.use(cookieParser(process.env.COOKIE_SECRET));
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", roles: ROLES });
   });
+
+  app.use("/auth", authRouter);
+
+  app.use(requireAuth);
 
   app.use("/leagues", leaguesRouter);
   app.use("/leagues/:leagueId/managers", managersRouter);

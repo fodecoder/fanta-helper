@@ -1,4 +1,5 @@
 import type { WishlistEntryWithPlayer } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/wishlist`;
@@ -28,14 +29,14 @@ export function listWishlist(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<WishlistEntryWithPlayer[]> {
-  return fetch(baseUrl(leagueId), { signal }).then((res) => handle<WishlistEntryWithPlayer[]>(res));
+  return apiFetch(baseUrl(leagueId), { signal }).then((res) => handle<WishlistEntryWithPlayer[]>(res));
 }
 
 export function addToWishlist(
   leagueId: number,
   playerId: number,
 ): Promise<WishlistEntryWithPlayer> {
-  return fetch(baseUrl(leagueId), {
+  return apiFetch(baseUrl(leagueId), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ player_id: playerId }),
@@ -43,7 +44,7 @@ export function addToWishlist(
 }
 
 export async function removeFromWishlist(leagueId: number, playerId: number): Promise<void> {
-  const res = await fetch(`${baseUrl(leagueId)}/${playerId}`, { method: "DELETE" });
+  const res = await apiFetch(`${baseUrl(leagueId)}/${playerId}`, { method: "DELETE" });
   if (!res.ok) {
     throw new WishlistApiError(res.status, (await res.json()) as ApiErrorPayload);
   }
@@ -53,7 +54,7 @@ export function reorderWishlist(
   leagueId: number,
   playerIds: number[],
 ): Promise<WishlistEntryWithPlayer[]> {
-  return fetch(`${baseUrl(leagueId)}/reorder`, {
+  return apiFetch(`${baseUrl(leagueId)}/reorder`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ player_ids: playerIds }),

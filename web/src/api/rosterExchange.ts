@@ -1,4 +1,5 @@
 import type { RosterExportResult, RosterImportReport } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/roster-exchange`;
@@ -25,11 +26,13 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function exportRoster(leagueId: number, signal?: AbortSignal): Promise<RosterExportResult> {
-  return fetch(`${baseUrl(leagueId)}/export`, { signal }).then((res) => handle<RosterExportResult>(res));
+  return apiFetch(`${baseUrl(leagueId)}/export`, { signal }).then((res) =>
+    handle<RosterExportResult>(res),
+  );
 }
 
 export function importRosterCsv(leagueId: number, csvText: string): Promise<RosterImportReport> {
-  return fetch(`${baseUrl(leagueId)}/import`, {
+  return apiFetch(`${baseUrl(leagueId)}/import`, {
     method: "POST",
     headers: { "Content-Type": "text/csv" },
     body: csvText,

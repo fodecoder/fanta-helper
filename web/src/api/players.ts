@@ -1,4 +1,5 @@
 import type { Player, PlayerImportReport } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/players`;
 
@@ -23,11 +24,11 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listPlayers(signal?: AbortSignal): Promise<Player[]> {
-  return fetch(BASE_URL, { signal }).then((res) => handle<Player[]>(res));
+  return apiFetch(BASE_URL, { signal }).then((res) => handle<Player[]>(res));
 }
 
 export function importPlayersCsv(csvText: string): Promise<PlayerImportReport> {
-  return fetch(`${BASE_URL}/import`, {
+  return apiFetch(`${BASE_URL}/import`, {
     method: "POST",
     headers: { "Content-Type": "text/csv" },
     body: csvText,
@@ -42,7 +43,7 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 // ricavare la stagione (es. Quotazioni_Fantacalcio_Stagione_2025_26.xlsx).
 export async function importPlayersFile(file: File): Promise<PlayerImportReport> {
   const isXlsx = /\.xlsx?$/i.test(file.name);
-  const res = await fetch(`${BASE_URL}/import`, {
+  const res = await apiFetch(`${BASE_URL}/import`, {
     method: "POST",
     headers: { "Content-Type": isXlsx ? XLSX_MIME : "text/csv", "X-Filename": file.name },
     body: isXlsx ? await file.arrayBuffer() : await file.text(),

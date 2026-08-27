@@ -1,4 +1,5 @@
 import type { GkPairingEntry, GkPairingImportReport } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/gk-pairing`;
 
@@ -23,14 +24,14 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listGkPairing(signal?: AbortSignal): Promise<GkPairingEntry[]> {
-  return fetch(BASE_URL, { signal }).then((res) => handle<GkPairingEntry[]>(res));
+  return apiFetch(BASE_URL, { signal }).then((res) => handle<GkPairingEntry[]>(res));
 }
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export async function importGkPairingFile(file: File): Promise<GkPairingImportReport> {
   const isXlsx = /\.xlsx?$/i.test(file.name);
-  const res = await fetch(`${BASE_URL}/import`, {
+  const res = await apiFetch(`${BASE_URL}/import`, {
     method: "POST",
     headers: { "Content-Type": isXlsx ? XLSX_MIME : "text/csv" },
     body: isXlsx ? await file.arrayBuffer() : await file.text(),

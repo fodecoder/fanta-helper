@@ -1,4 +1,5 @@
-import type { League } from "@fanta-helper/shared";
+import type { League, User } from "@fanta-helper/shared";
+import { UserMenu } from "./UserMenu";
 
 export type SetupPage =
   | "panoramica"
@@ -32,6 +33,8 @@ interface SidebarProps {
   onEnterAuction: () => void;
   backendStatus: string;
   version: string;
+  currentUser: User;
+  onLogout: () => void;
 }
 
 export function Sidebar({
@@ -43,6 +46,8 @@ export function Sidebar({
   onEnterAuction,
   backendStatus,
   version,
+  currentUser,
+  onLogout,
 }: SidebarProps) {
   const roster = activeLeague?.roster_config;
   const meta = activeLeague
@@ -89,6 +94,7 @@ export function Sidebar({
       </div>
 
       <div className="sidebar-foot">
+        <UserMenu user={currentUser} onLogout={onLogout} />
         <button
           type="button"
           className="btn btn-primary btn-block"

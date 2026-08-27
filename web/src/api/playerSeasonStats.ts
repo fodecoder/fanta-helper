@@ -1,4 +1,5 @@
 import type { PlayerLatestSeasonStatsResponse } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(): string {
   return `${import.meta.env.VITE_API_URL}/players/season-stats`;
@@ -30,5 +31,5 @@ export function getLatestPlayerSeasonStats(
 ): Promise<PlayerLatestSeasonStatsResponse> {
   const url = new URL(baseUrl());
   url.searchParams.set("ids", playerIds.join(","));
-  return fetch(url, { signal }).then((res) => handle<PlayerLatestSeasonStatsResponse>(res));
+  return apiFetch(url, { signal }).then((res) => handle<PlayerLatestSeasonStatsResponse>(res));
 }

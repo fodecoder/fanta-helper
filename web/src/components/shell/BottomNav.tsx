@@ -8,6 +8,7 @@ interface BottomNavProps {
   page: SetupPage;
   onNavigate: (page: SetupPage) => void;
   onEnterAuction: () => void;
+  onLogout: () => void;
 }
 
 export function BottomNav({
@@ -17,6 +18,7 @@ export function BottomNav({
   page,
   onNavigate,
   onEnterAuction,
+  onLogout,
 }: BottomNavProps) {
   return (
     <nav className="bottom-nav" aria-label="Navigazione">
@@ -41,6 +43,9 @@ export function BottomNav({
           disabled={activeLeague === null}
         >
           Entra in asta
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={onLogout}>
+          Esci
         </button>
       </div>
       <div className="bottom-nav-tabs">

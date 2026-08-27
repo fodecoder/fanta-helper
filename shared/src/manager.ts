@@ -16,5 +16,6 @@ export const managerSchema = createManagerSchema.extend({
   id: z.number().int().positive(),
   league_id: z.number().int().positive(),
   is_owner: z.boolean(),
+  user_id: z.number().int().positive().nullable(),
 });
 export type Manager = z.infer<typeof managerSchema>;

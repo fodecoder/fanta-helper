@@ -1,4 +1,5 @@
 import type { League, CreateLeagueInput, UpdateLeagueInput } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/leagues`;
 
@@ -26,15 +27,15 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listLeagues(signal?: AbortSignal): Promise<League[]> {
-  return fetch(BASE_URL, { signal }).then((res) => handle<League[]>(res));
+  return apiFetch(BASE_URL, { signal }).then((res) => handle<League[]>(res));
 }
 
 export function getLeague(id: number, signal?: AbortSignal): Promise<League> {
-  return fetch(`${BASE_URL}/${id}`, { signal }).then((res) => handle<League>(res));
+  return apiFetch(`${BASE_URL}/${id}`, { signal }).then((res) => handle<League>(res));
 }
 
 export function createLeague(input: CreateLeagueInput): Promise<League> {
-  return fetch(BASE_URL, {
+  return apiFetch(BASE_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -42,7 +43,7 @@ export function createLeague(input: CreateLeagueInput): Promise<League> {
 }
 
 export function updateLeague(id: number, input: UpdateLeagueInput): Promise<League> {
-  return fetch(`${BASE_URL}/${id}`, {
+  return apiFetch(`${BASE_URL}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -50,5 +51,5 @@ export function updateLeague(id: number, input: UpdateLeagueInput): Promise<Leag
 }
 
 export function deleteLeague(id: number): Promise<void> {
-  return fetch(`${BASE_URL}/${id}`, { method: "DELETE" }).then((res) => handle<void>(res));
+  return apiFetch(`${BASE_URL}/${id}`, { method: "DELETE" }).then((res) => handle<void>(res));
 }

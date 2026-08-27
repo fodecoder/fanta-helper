@@ -1,4 +1,5 @@
 import type { Manager, CreateManagerInput, UpdateManagerInput } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/managers`;
@@ -28,11 +29,11 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listManagers(leagueId: number, signal?: AbortSignal): Promise<Manager[]> {
-  return fetch(baseUrl(leagueId), { signal }).then((res) => handle<Manager[]>(res));
+  return apiFetch(baseUrl(leagueId), { signal }).then((res) => handle<Manager[]>(res));
 }
 
 export function createManager(leagueId: number, input: CreateManagerInput): Promise<Manager> {
-  return fetch(baseUrl(leagueId), {
+  return apiFetch(baseUrl(leagueId), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -44,7 +45,7 @@ export function updateManager(
   id: number,
   input: UpdateManagerInput,
 ): Promise<Manager> {
-  return fetch(`${baseUrl(leagueId)}/${id}`, {
+  return apiFetch(`${baseUrl(leagueId)}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -52,5 +53,5 @@ export function updateManager(
 }
 
 export function deleteManager(leagueId: number, id: number): Promise<void> {
-  return fetch(`${baseUrl(leagueId)}/${id}`, { method: "DELETE" }).then((res) => handle<void>(res));
+  return apiFetch(`${baseUrl(leagueId)}/${id}`, { method: "DELETE" }).then((res) => handle<void>(res));
 }
