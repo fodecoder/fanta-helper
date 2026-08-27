@@ -21,12 +21,17 @@ import { errorHandler } from "./http/errorHandler";
 import { requireAuth } from "./http/requireAuth";
 
 export function createApp(): Express {
+  const cookieSecret = process.env.COOKIE_SECRET;
+  if (!cookieSecret) {
+    throw new Error("COOKIE_SECRET is not set");
+  }
+
   const app = express();
 
   // credentials: true richiede un'origine sempre esplicita (mai `*`), coerente
   // con l'uso di cookie di sessione cross-origin tra frontend e backend.
   app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
-  app.use(cookieParser(process.env.COOKIE_SECRET));
+  app.use(cookieParser(cookieSecret));
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
