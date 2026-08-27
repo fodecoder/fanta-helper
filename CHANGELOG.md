@@ -5,6 +5,40 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-08-27
+
+### Added
+
+- **Autenticazione minimale**: nuova tabella `app_user` (username, password
+  hash bcrypt, avatar/colore avatar predisposti per la Fase 7 successiva),
+  seed idempotente dei 4 utenti (Andre, Davide, Fra, Paul) da password in
+  chiaro lette solo da un file locale non versionato. `POST /auth/login`
+  verifica con bcryptjs e imposta un cookie di sessione firmato `httpOnly`
+  (nessuna tabella sessioni: il cookie contiene solo l'id utente ed è
+  stateless per design); `POST /auth/logout` lo cancella; `GET /auth/me`
+  restituisce l'utente loggato (mai l'hash della password al client). Tutte
+  le rotte API esistenti sono ora protette da un middleware `requireAuth`;
+  restano pubbliche solo `/health` e `/auth/login`. La schermata di login è
+  ora la landing dell'app: nessun dato di lega viene caricato prima
+  dell'accesso.
+- Aggiunto `manager.user_id` (FK opzionale a `app_user`, `ON DELETE SET
+  NULL`): quando presente avrà priorità su `is_owner` per determinare il
+  «tu» in una lega (il collegamento effettivo in UI e nel motore consigli
+  resta fuori scope per questo cambiamento, solo lo schema e l'esposizione
+  via API manager sono inclusi).
+- CORS ora richiede `credentials: true` con origine sempre esplicita (mai
+  `*`), coerente con l'uso di cookie cross-origin tra frontend (Cloudflare
+  Pages) e backend (Render). Cookie di sessione `secure`/`sameSite`
+  configurabili via `COOKIE_SECURE` (default `true`, valido sia in sviluppo
+  su `localhost` sia in produzione su https).
+
+### Changed
+
+- **BREAKING**: tutte le rotte API (leghe, manager, valutazioni, consigli,
+  acquisti, scambio rose, wishlist, giocatori, coppie portieri, probabili
+  formazioni, calci piazzati, arricchimento statistiche, statistiche
+  stagionali, quotazioni) richiedono ora una sessione autenticata.
+
 ## [3.6.0] - 2026-08-26
 
 ### Added

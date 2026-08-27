@@ -8,7 +8,7 @@ export async function listManagersByLeague(leagueId: number): Promise<ManagerRow
   return result.rows;
 }
 
-export async function insertManager(input: Omit<ManagerRow, "id">): Promise<ManagerRow> {
+export async function insertManager(input: Omit<ManagerRow, "id" | "user_id">): Promise<ManagerRow> {
   const result = await pool.query<ManagerRow>(
     `INSERT INTO manager (league_id, name, is_owner)
      VALUES ($1, $2, $3)

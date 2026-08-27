@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type { League } from "@fanta-helper/shared";
+import type { League, User } from "@fanta-helper/shared";
 import * as leaguesApi from "./api/leagues";
 import * as purchasesApi from "./api/purchases";
+import * as authApi from "./api/auth";
 import { Sidebar, type SetupPage } from "./components/shell/Sidebar";
 import { BottomNav } from "./components/shell/BottomNav";
 import { StatusMessage } from "./components/StatusMessage";
+import { LoginPage } from "./pages/LoginPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ManagersPage } from "./pages/ManagersPage";
 import { ValuationsPage } from "./pages/ValuationsPage";
@@ -18,6 +20,7 @@ import { AuctionMode } from "./pages/auction/AuctionMode";
 
 type ConnectionStatus = "checking" | "ok" | "error";
 type Mode = "setup" | "auction";
+type AuthStatus = "checking" | "authenticated" | "anonymous";
 
 function readLeagueIdFromUrl(): number | null {
   const raw = new URLSearchParams(window.location.search).get("league");
@@ -36,6 +39,8 @@ function writeLeagueIdToUrl(id: number | null) {
 }
 
 function App() {
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>("checking");
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -53,6 +58,21 @@ function App() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    authApi
+      .me(controller.signal)
+      .then((user) => {
+        setCurrentUser(user);
+        setAuthStatus("authenticated");
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setAuthStatus("anonymous");
+      });
+    return () => controller.abort();
+  }, []);
+
   const reloadLeagues = useCallback((signal?: AbortSignal) => {
     return leaguesApi
       .listLeagues(signal)
@@ -67,10 +87,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Un return anticipato nel render (gate di login) non ferma questo effetto:
+    // gli hook restano legati all'istanza del componente, non al ramo JSX
+    // restituito. Il guard va quindi qui, non solo nel render.
+    if (authStatus !== "authenticated") return;
     const controller = new AbortController();
     void reloadLeagues(controller.signal);
     return () => controller.abort();
-  }, [reloadLeagues]);
+  }, [authStatus, reloadLeagues]);
 
   // Lega attiva risolta in render: la scelta esplicita (anche da URL) se valida,
   // altrimenti la prima disponibile. Nessuno stato normalizzato via effetto.
@@ -108,6 +132,31 @@ function App() {
     setShellRefresh((t) => t + 1);
   }
 
+  function handleLogout() {
+    void authApi.logout().finally(() => {
+      setCurrentUser(null);
+      setAuthStatus("anonymous");
+      setLeagues(null);
+      setActiveLeagueId(null);
+      writeLeagueIdToUrl(null);
+    });
+  }
+
+  if (authStatus === "checking") {
+    return <StatusMessage kind="loading">Verifica sessione…</StatusMessage>;
+  }
+
+  if (authStatus === "anonymous") {
+    return (
+      <LoginPage
+        onLoggedIn={(user) => {
+          setCurrentUser(user);
+          setAuthStatus("authenticated");
+        }}
+      />
+    );
+  }
+
   if (mode === "auction" && activeLeague) {
     return <AuctionMode league={activeLeague} onExit={handleExitAuction} />;
   }
@@ -123,6 +172,8 @@ function App() {
         onEnterAuction={() => setMode("auction")}
         backendStatus={status}
         version={__APP_VERSION__}
+        currentUser={currentUser!}
+        onLogout={handleLogout}
       />
       <main className="main">
         {loadError ? (
@@ -163,6 +214,7 @@ function App() {
         page={effectivePage}
         onNavigate={setPage}
         onEnterAuction={() => setMode("auction")}
+        onLogout={handleLogout}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "name": "fanta-helper",
-  "version": "3.6.0",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "db:migrate": "npm run db:migrate --workspace server",
     "db:seed": "npm run db:seed --workspace server",
+    "db:seed:users": "npm run db:seed:users --workspace server",
     "db:seed:sofifa": "npm run db:seed:sofifa --workspace server",
     "db:seed:historical": "npm run db:seed:historical --workspace server",
     "db:seed:historical:quotations": "npm run db:seed:historical:quotations --workspace server",

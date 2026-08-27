@@ -1,4 +1,5 @@
 import type { PlayerRecommendationWithTags } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/recommendations`;
@@ -28,7 +29,7 @@ export function listRecommendations(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<PlayerRecommendationWithTags[]> {
-  return fetch(baseUrl(leagueId), { signal }).then((res) =>
+  return apiFetch(baseUrl(leagueId), { signal }).then((res) =>
     handle<PlayerRecommendationWithTags[]>(res),
   );
 }

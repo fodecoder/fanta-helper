@@ -4,6 +4,7 @@ import type {
   ProbableLineupImportReport,
   ProbableLineupConfirmEntry,
 } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/probable-lineup`;
 
@@ -28,7 +29,7 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listProbableLineup(signal?: AbortSignal): Promise<ProbableLineupEntry[]> {
-  return fetch(BASE_URL, { signal }).then((res) => handle<ProbableLineupEntry[]>(res));
+  return apiFetch(BASE_URL, { signal }).then((res) => handle<ProbableLineupEntry[]>(res));
 }
 
 export async function extractProbableLineup(
@@ -36,7 +37,7 @@ export async function extractProbableLineup(
   file: File,
 ): Promise<ProbableLineupExtractionResponse> {
   const contentType = file.type === "image/jpeg" ? "image/jpeg" : "image/png";
-  const res = await fetch(`${BASE_URL}/${encodeURIComponent(team)}/extract`, {
+  const res = await apiFetch(`${BASE_URL}/${encodeURIComponent(team)}/extract`, {
     method: "POST",
     headers: { "Content-Type": contentType },
     body: await file.arrayBuffer(),
@@ -48,7 +49,7 @@ export function confirmProbableLineup(
   team: string,
   rows: ProbableLineupConfirmEntry[],
 ): Promise<ProbableLineupImportReport> {
-  return fetch(`${BASE_URL}/${encodeURIComponent(team)}/confirm`, {
+  return apiFetch(`${BASE_URL}/${encodeURIComponent(team)}/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(rows),

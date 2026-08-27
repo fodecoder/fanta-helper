@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "db:migrate:down": "node-pg-migrate down",
     "db:migrate:create": "node-pg-migrate -j sql create",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:users": "tsx src/db/seedUsers.ts",
     "db:seed:sofifa": "tsx src/scripts/seedSofifaIds.ts",
     "db:seed:historical:quotations": "tsx src/scripts/seedHistoricalQuotations.ts",
     "db:seed:historical:stats": "tsx src/scripts/seedHistoricalStats.ts",
@@ -23,6 +24,8 @@
   "dependencies": {
     "@fanta-helper/shared": "*",
     "@types/cors": "^2.8.19",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.2",
     "dotenv": "^17.4.2",
@@ -32,6 +35,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.25",
     "@types/node": "^20.19.43",
     "@types/pg": "^8.21.0",

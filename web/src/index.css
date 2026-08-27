@@ -464,6 +464,23 @@ select.input {
    Classi applicative (shell lega-centrica + modalità asta)
    ══════════════════════════════════════════════════════════════════════ */
 
+/* — login — */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+.login-card {
+  width: 100%;
+  max-width: 340px;
+}
+.login-card .sidebar-brand {
+  justify-content: center;
+  margin-bottom: var(--space-1);
+}
+
 /* — shell — */
 .shell {
   display: grid;
@@ -565,6 +582,13 @@ select.input {
   font-size: 11px;
   color: var(--color-neutral-600);
   margin-top: 6px;
+}
+.user-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
 }
 
 .main {

@@ -4,6 +4,7 @@ import type {
   SetPieceTakerImportReport,
   SetPieceTakerConfirmEntry,
 } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/set-piece-taker`;
 
@@ -28,7 +29,7 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function listSetPieceTakers(signal?: AbortSignal): Promise<SetPieceTakerEntry[]> {
-  return fetch(BASE_URL, { signal }).then((res) => handle<SetPieceTakerEntry[]>(res));
+  return apiFetch(BASE_URL, { signal }).then((res) => handle<SetPieceTakerEntry[]>(res));
 }
 
 export async function extractSetPieceTakers(
@@ -36,7 +37,7 @@ export async function extractSetPieceTakers(
   file: File,
 ): Promise<SetPieceTakerExtractionResponse> {
   const contentType = file.type === "image/jpeg" ? "image/jpeg" : "image/png";
-  const res = await fetch(`${BASE_URL}/${encodeURIComponent(team)}/extract`, {
+  const res = await apiFetch(`${BASE_URL}/${encodeURIComponent(team)}/extract`, {
     method: "POST",
     headers: { "Content-Type": contentType },
     body: await file.arrayBuffer(),
@@ -48,7 +49,7 @@ export function confirmSetPieceTakers(
   team: string,
   rows: SetPieceTakerConfirmEntry[],
 ): Promise<SetPieceTakerImportReport> {
-  return fetch(`${BASE_URL}/${encodeURIComponent(team)}/confirm`, {
+  return apiFetch(`${BASE_URL}/${encodeURIComponent(team)}/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(rows),

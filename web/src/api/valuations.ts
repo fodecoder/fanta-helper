@@ -5,6 +5,7 @@ import type {
   ValuationUpsertInput,
   ValuationWithPlayer,
 } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/valuations`;
@@ -34,14 +35,14 @@ export function listValuations(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<ValuationWithPlayer[]> {
-  return fetch(baseUrl(leagueId), { signal }).then((res) => handle<ValuationWithPlayer[]>(res));
+  return apiFetch(baseUrl(leagueId), { signal }).then((res) => handle<ValuationWithPlayer[]>(res));
 }
 
 export function importValuationsJson(
   leagueId: number,
   doc: unknown,
 ): Promise<ValuationImportReport> {
-  return fetch(`${baseUrl(leagueId)}/import`, {
+  return apiFetch(`${baseUrl(leagueId)}/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(doc),
@@ -52,7 +53,7 @@ export function generateValuations(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<ValuationGenerationResponse> {
-  return fetch(`${baseUrl(leagueId)}/generate`, { method: "POST", signal }).then((res) =>
+  return apiFetch(`${baseUrl(leagueId)}/generate`, { method: "POST", signal }).then((res) =>
     handle<ValuationGenerationResponse>(res),
   );
 }
@@ -62,7 +63,7 @@ export function upsertValuation(
   playerId: number,
   input: ValuationUpsertInput,
 ): Promise<ValuationRecord> {
-  return fetch(`${baseUrl(leagueId)}/${playerId}`, {
+  return apiFetch(`${baseUrl(leagueId)}/${playerId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

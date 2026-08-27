@@ -4,6 +4,7 @@ import type {
   Purchase,
   PurchaseWithDetails,
 } from "@fanta-helper/shared";
+import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
   return `${import.meta.env.VITE_API_URL}/leagues/${leagueId}/purchases`;
@@ -33,20 +34,20 @@ export function listPurchases(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<PurchaseWithDetails[]> {
-  return fetch(baseUrl(leagueId), { signal }).then((res) => handle<PurchaseWithDetails[]>(res));
+  return apiFetch(baseUrl(leagueId), { signal }).then((res) => handle<PurchaseWithDetails[]>(res));
 }
 
 export function getAuctionState(
   leagueId: number,
   signal?: AbortSignal,
 ): Promise<ManagerAuctionStatus[]> {
-  return fetch(`${baseUrl(leagueId)}/state`, { signal }).then((res) =>
+  return apiFetch(`${baseUrl(leagueId)}/state`, { signal }).then((res) =>
     handle<ManagerAuctionStatus[]>(res),
   );
 }
 
 export function createPurchase(leagueId: number, input: CreatePurchaseInput): Promise<Purchase> {
-  return fetch(baseUrl(leagueId), {
+  return apiFetch(baseUrl(leagueId), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -54,7 +55,7 @@ export function createPurchase(leagueId: number, input: CreatePurchaseInput): Pr
 }
 
 export function deleteLastPurchase(leagueId: number): Promise<Purchase> {
-  return fetch(`${baseUrl(leagueId)}/last`, { method: "DELETE" }).then((res) =>
+  return apiFetch(`${baseUrl(leagueId)}/last`, { method: "DELETE" }).then((res) =>
     handle<Purchase>(res),
   );
 }

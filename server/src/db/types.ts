@@ -63,6 +63,15 @@ export interface ManagerRow {
   league_id: number;
   name: string;
   is_owner: boolean;
+  user_id: number | null;
+}
+
+export interface AppUserRow {
+  id: number;
+  username: string;
+  password_hash: string;
+  avatar: string | null;
+  avatar_color: string | null;
 }
 
 export interface PurchaseRow {
