@@ -256,6 +256,12 @@ describe("computePlayerTags", () => {
       expect(idsOf(result.get(5))).toContain("difensore-da-bonus");
     });
 
+    it("does not tag a goalkeeper even on a team with a solid defensive record", () => {
+      const result = tagsFor({ players, stats });
+
+      expect(idsOf(result.get(1))).not.toContain("difensore-da-bonus");
+    });
+
     it("does not use team defense as a signal when the difesa modifier is disabled", () => {
       const rules: LeagueRulesConfig = {
         ...defaultRules,

@@ -145,7 +145,7 @@ export function computePlayerTags(input: PlayerTagsInput): Map<number, PlayerTag
       tags.push(tag("porta-bonus"));
     }
 
-    if (recommendation.ruolo === "D" || recommendation.ruolo === "P") {
+    if (recommendation.ruolo === "D") {
       // Il tasso difensivo di squadra vale come segnale di bonus solo se la
       // lega premia la difesa solida (modificatori.difesa.enabled) — senza
       // quel modificatore il bonus non esiste nello scoring di questa lega.
