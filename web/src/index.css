@@ -393,13 +393,15 @@ select.input {
   position: fixed;
   inset: 0;
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: var(--space-4);
+  overflow-y: auto;
   background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
   z-index: 50;
 }
 .dialog {
   width: min(440px, 100%);
+  max-height: calc(100dvh - 2 * var(--space-4));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -409,19 +411,78 @@ select.input {
   box-shadow: var(--shadow-lg);
 }
 .dialog-title {
+  flex: 0 0 auto;
   font-family: var(--font-heading);
   font-weight: var(--font-heading-weight);
   font-size: 20px;
 }
 .dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   font-size: 14px;
   opacity: 0.85;
 }
 .dialog-actions {
+  flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-2);
+}
+
+/* — info label (tooltip sigle + dettagli colonne calcolate) — */
+.info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.info-label abbr {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+.info-label__more {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--color-accent-700, currentColor);
+  cursor: pointer;
+}
+
+/* — flag preferenze di squadra (P6) in asta — */
+.team-pref-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.team-pref-dot--avoid {
+  background: var(--color-accent-2-700, #e11d48);
+}
+.team-pref-dot--prefer {
+  background: var(--color-accent-700, #2563eb);
+}
+.team-pref-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 6px);
+  font: 600 12px/1.2 var(--font-heading, inherit);
+  letter-spacing: 0.02em;
+}
+.team-pref-banner--avoid {
+  background: color-mix(in srgb, var(--color-accent-2-700, #e11d48) 14%, transparent);
+  color: var(--color-accent-2-700, #e11d48);
+}
+.team-pref-banner--prefer {
+  background: color-mix(in srgb, var(--color-accent-700, #2563eb) 14%, transparent);
+  color: var(--color-accent-700, #2563eb);
 }
 
 /* — numerali a lastre CMYK (puro CSS; --press-nx/ny default 0 = statico) — */

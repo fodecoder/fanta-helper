@@ -20,9 +20,32 @@ export const MIN_SLOT_RESERVE = 1;
 export function computeAdjustedMaxBid(
   status: Pick<ManagerAuctionStatus, "residuo" | "slots">,
 ): number {
-  const freeSlotsTotal = status.slots.reduce((sum, slot) => sum + Math.max(slot.free, 0), 0);
-  if (freeSlotsTotal <= 0) return 0;
+  return explainAdjustedMaxBid(status).result;
+}
 
-  const reserve = (freeSlotsTotal - 1) * MIN_SLOT_RESERVE;
-  return Math.max(0, status.residuo - reserve);
+export interface AdjustedMaxBidBreakdown {
+  residuo: number;
+  freeSlotsTotal: number;
+  minSlotReserve: number;
+  reserve: number;
+  result: number;
+}
+
+/**
+ * Stessa formula di `computeAdjustedMaxBid`, con i termini intermedi esposti
+ * per la scomposizione in UI. Nessun cambio di comportamento.
+ */
+export function explainAdjustedMaxBid(
+  status: Pick<ManagerAuctionStatus, "residuo" | "slots">,
+): AdjustedMaxBidBreakdown {
+  const freeSlotsTotal = status.slots.reduce((sum, slot) => sum + Math.max(slot.free, 0), 0);
+  const reserve = freeSlotsTotal <= 0 ? 0 : (freeSlotsTotal - 1) * MIN_SLOT_RESERVE;
+  const result = freeSlotsTotal <= 0 ? 0 : Math.max(0, status.residuo - reserve);
+  return {
+    residuo: status.residuo,
+    freeSlotsTotal,
+    minSlotReserve: MIN_SLOT_RESERVE,
+    reserve,
+    result,
+  };
 }

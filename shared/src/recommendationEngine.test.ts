@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computePlayerRecommendations, type RecommendationEngineInput } from "./recommendationEngine";
+import {
+  computePlayerRecommendations,
+  normalizeScoresByRole,
+  type RecommendationEngineInput,
+} from "./recommendationEngine";
 import { defaultRosterConfig, defaultScoring, defaultModificatori } from "./league";
 import type { LeagueRulesConfig } from "./league";
 import type { Player } from "./player";
@@ -428,5 +432,57 @@ describe("computePlayerRecommendations", () => {
 
     const scores = result.map((r) => r.score);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
+  });
+
+  it("exposes a step-by-step score breakdown consistent with the final score", () => {
+    const players = [player(1, "Bomber", "A"), player(2, "Gregario", "A")];
+    const stats = [stat(1, { gf: 20, presenze: 30, mv: 6 }), stat(2, { presenze: 30, mv: 6 })];
+
+    const result = computePlayerRecommendations(baseInput({ players, stats }));
+    const b = result.find((r) => r.player_id === 1)!.components.breakdown!;
+
+    expect(b).not.toBeNull();
+    expect(b.leagueAdjustedFm).toBeCloseTo(b.mv - b.mvBaseline + b.perMatchBonus + b.difesaBonus + b.portiereBonus, 5);
+    expect(b.rawValue).toBeCloseTo(Math.max(b.leagueAdjustedFm, 0) * b.reliability, 5);
+    expect(b.scarcityAdjustedValue).toBeCloseTo(b.rawValue * b.scarcityMultiplier, 5);
+    expect(b.score).toBeCloseTo(b.scarcityAdjustedValue - b.replacementValue, 5);
+    expect(b.score).toBeCloseTo(result.find((r) => r.player_id === 1)!.score, 5);
+  });
+
+  it("leaves the breakdown null when season data is missing", () => {
+    const players = [player(1, "Ignoto", "C")];
+    const result = computePlayerRecommendations(baseInput({ players, stats: [] }));
+    expect(result[0]!.components.breakdown).toBeNull();
+  });
+});
+
+describe("normalizeScoresByRole", () => {
+  it("rescales per-role scores onto 0–10, top of the role pool at 10 and bottom at 0", () => {
+    const recs = [
+      { player_id: 1, ruolo: "A" as const, score: 5 },
+      { player_id: 2, ruolo: "A" as const, score: 1 },
+      { player_id: 3, ruolo: "A" as const, score: 3 },
+      { player_id: 4, ruolo: "D" as const, score: 100 },
+    ];
+
+    const norm = normalizeScoresByRole(recs);
+
+    expect(norm.get(1)).toBe(10);
+    expect(norm.get(2)).toBe(0);
+    expect(norm.get(3)).toBe(5);
+    // Single-element role pool: no comparison base, normalized to the top.
+    expect(norm.get(4)).toBe(10);
+  });
+
+  it("is monotonic with the raw score within a role", () => {
+    const recs = Array.from({ length: 6 }, (_, i) => ({
+      player_id: i + 1,
+      ruolo: "C" as const,
+      score: i * 1.7,
+    }));
+
+    const norm = normalizeScoresByRole(recs);
+    const values = recs.map((r) => norm.get(r.player_id)!);
+    expect(values).toEqual([...values].sort((a, b) => a - b));
   });
 });

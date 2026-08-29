@@ -32,7 +32,11 @@ import * as setPieceTakerApi from "../../api/setPieceTaker";
 import * as gkPairingApi from "../../api/gkPairing";
 import * as recommendationsApi from "../../api/recommendations";
 import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
-import { scaleValuationAmounts, valuationScaleFactor } from "@fanta-helper/shared";
+import {
+  normalizeScoresByRole,
+  scaleValuationAmounts,
+  valuationScaleFactor,
+} from "@fanta-helper/shared";
 import {
   gkPairingSuggestionFor,
   impact as computeImpact,
@@ -63,8 +67,12 @@ export interface CompareRow extends RankRow {
   isCurrent: boolean;
   quotation: QuotationRow | undefined;
   seasonStats: PlayerLatestSeasonStats | undefined;
+  // `score` = score grezzo VORP (usato per l'ordinamento «per score»);
+  // `displayScore` = stesso score in scala 0–10 per ruolo (solo lettura).
   score: number | null;
+  displayScore: number | null;
   tags: PlayerTag[];
+  teamPref: "prefer" | "avoid" | null;
 }
 
 // Modello di vista condiviso tra desktop e telefono: tutto derivato, nulla di
@@ -98,6 +106,9 @@ export interface AuctionView {
   quotationFor: (playerId: number) => QuotationRow | undefined;
   sortValueFor: (playerId: number) => number | null;
   tagsFor: (playerId: number) => PlayerTag[];
+  teamPrefFor: (playerId: number) => "prefer" | "avoid" | null;
+  normalizedScoreFor: (playerId: number) => number | null;
+  recommendationFor: (playerId: number) => PlayerRecommendationWithTags | undefined;
 
   price: string;
   priceNum: number | null;
@@ -261,6 +272,25 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     (playerId: number): PlayerTag[] => recommendationById.get(playerId)?.tags ?? [],
     [recommendationById],
   );
+  const teamPrefFor = useCallback(
+    (playerId: number): "prefer" | "avoid" | null =>
+      recommendationById.get(playerId)?.teamPref ?? null,
+    [recommendationById],
+  );
+  const recommendationFor = useCallback(
+    (playerId: number) => recommendationById.get(playerId),
+    [recommendationById],
+  );
+  // Scala 0–10 per ruolo, calcolata sull'intero pool di raccomandazioni (prima
+  // di qualsiasi slice per ruolo/filtri). Solo presentazione.
+  const normalizedScoreById = useMemo(
+    () => normalizeScoresByRole(recommendations ?? []),
+    [recommendations],
+  );
+  const normalizedScoreFor = useCallback(
+    (playerId: number): number | null => normalizedScoreById.get(playerId) ?? null,
+    [normalizedScoreById],
+  );
   // Chiave attiva = criterio di ordinamento e stesso valore mostrato in lista.
   const sortValueFor = useCallback(
     (playerId: number): number | null => {
@@ -386,7 +416,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     quotation: quotationById.get(row.player.id),
     seasonStats: seasonStatsById.get(row.player.id),
     score: recommendationById.get(row.player.id)?.score ?? null,
+    displayScore: normalizedScoreById.get(row.player.id) ?? null,
     tags: recommendationById.get(row.player.id)?.tags ?? [],
+    teamPref: recommendationById.get(row.player.id)?.teamPref ?? null,
   }));
   const compareMaxFv = Math.max(1, ...compareBase.map((r) => r.valuation?.fair_value ?? 0));
 
@@ -571,6 +603,9 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     quotationFor,
     sortValueFor,
     tagsFor,
+    teamPrefFor,
+    normalizedScoreFor,
+    recommendationFor,
     price,
     priceNum,
     onPrice: (v) => {

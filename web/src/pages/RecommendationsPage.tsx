@@ -1,11 +1,14 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { League, PlayerRecommendationWithTags, TeamPref } from "@fanta-helper/shared";
-import { ROLES, type Role } from "@fanta-helper/shared";
+import { ROLES, normalizeScoresByRole, type Role } from "@fanta-helper/shared";
 import * as recommendationsApi from "../api/recommendations";
 import * as teamPrefsApi from "../api/teamPrefs";
 import { TeamPrefPanel } from "../components/TeamPrefPanel";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
+import { ScoreBreakdownDialog } from "../components/ScoreBreakdownDialog";
+import { InfoLabel } from "../components/ui/InfoLabel";
+import { COLUMN_GLOSSARY } from "../lib/columnGlossary";
 import { roleColor } from "../lib/auctionDerivations";
 
 interface RecommendationsPageProps {
@@ -24,7 +27,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [teamPrefs, setTeamPrefs] = useState<TeamPref[]>([]);
   const [prefsToken, setPrefsToken] = useState(0);
 
@@ -57,6 +60,11 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
     [recommendations],
   );
 
+  const normById = useMemo(
+    () => normalizeScoresByRole(recommendations ?? []),
+    [recommendations],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (recommendations ?? [])
@@ -66,14 +74,10 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
       );
   }, [recommendations, query, roleFilter]);
 
-  function toggleDetails(playerId: number) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(playerId)) next.delete(playerId);
-      else next.add(playerId);
-      return next;
-    });
-  }
+  const detailPlayer =
+    detailPlayerId === null
+      ? null
+      : (recommendations ?? []).find((r) => r.player_id === detailPlayerId) ?? null;
 
   return (
     <>
@@ -142,28 +146,39 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                 <th>Nome</th>
                 <th>Squadra</th>
                 <th>Ruolo</th>
-                <th style={{ textAlign: "right" }}>Punteggio</th>
-                <th>Fascia</th>
-                <th style={{ textAlign: "right" }}>Fm regolata</th>
-                <th style={{ textAlign: "right" }}>Affidabilità</th>
-                <th style={{ textAlign: "right" }}>Qt.A</th>
-                <th style={{ textAlign: "right" }}>FVM</th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.score} />
+                </th>
+                <th>
+                  <InfoLabel {...COLUMN_GLOSSARY.tier} />
+                </th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.leagueAdjustedFm} />
+                </th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.reliability} />
+                </th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.qtA} />
+                </th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.fvm} />
+                </th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((r) => {
                 const muted = r.components.dataMissing || !r.components.ioNeedsRole;
-                const isExpanded = expanded.has(r.player_id);
                 const occasione = r.price.gapSignal !== null && r.price.gapSignal > 0.25;
+                const norm = normById.get(r.player_id);
                 return (
-                  <Fragment key={r.player_id}>
-                    <tr style={muted ? { opacity: 0.5 } : undefined}>
+                    <tr key={r.player_id} style={muted ? { opacity: 0.5 } : undefined}>
                       <td style={{ whiteSpace: "nowrap" }}>{r.name}</td>
                       <td>{r.team}</td>
                       <td style={{ color: roleColor(r.ruolo) }}>{r.ruolo}</td>
                       <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
-                        {r.score.toFixed(1)}
+                        {norm !== undefined ? norm.toFixed(1) : "—"}
                       </td>
                       <td>
                         <span className={r.tier === "Top" ? "tag tag-accent" : "tag tag-neutral"}>
@@ -212,48 +227,25 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                           type="button"
                           className="btn btn-ghost"
                           style={{ padding: "2px 10px", fontSize: 12 }}
-                          onClick={() => toggleDetails(r.player_id)}
+                          onClick={() => setDetailPlayerId(r.player_id)}
                         >
-                          {isExpanded ? "Chiudi" : "Dettagli"}
+                          Dettagli
                         </button>
                       </td>
                     </tr>
-                    {isExpanded && (
-                      <tr>
-                        <td colSpan={10} style={{ background: "var(--color-surface)" }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "8px 24px",
-                              fontSize: 12,
-                              padding: "8px 4px",
-                            }}
-                          >
-                            <span>Valore grezzo: {r.components.rawValue.toFixed(2)}</span>
-                            <span>Scarsità: ×{r.components.scarcityMultiplier.toFixed(2)}</span>
-                            <span>Rimpiazzo: {r.components.replacementValue.toFixed(2)}</span>
-                            <span>Bisogno di Io: {r.components.ioNeedsRole ? "sì" : "no"}</span>
-                            <span>Dati stagione: {r.components.dataMissing ? "assenti" : "presenti"}</span>
-                            <span>Qt.I: {r.price.qt_i ?? "—"}</span>
-                            <span>
-                              Percentile valore:{" "}
-                              {r.price.valuePercentile !== null ? pct(r.price.valuePercentile) : "—"}
-                            </span>
-                            <span>
-                              Percentile prezzo:{" "}
-                              {r.price.pricePercentile !== null ? pct(r.price.pricePercentile) : "—"}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
+      )}
+
+      {detailPlayer && (
+        <ScoreBreakdownDialog
+          player={detailPlayer}
+          normalizedScore={normById.get(detailPlayer.player_id) ?? null}
+          onClose={() => setDetailPlayerId(null)}
+        />
       )}
     </>
   );

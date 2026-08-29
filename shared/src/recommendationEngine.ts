@@ -67,6 +67,31 @@ const TIER_THRESHOLDS: { min: number; label: string }[] = [
   { min: 0, label: "Basso" },
 ];
 
+// Scomposizione passo-passo dello score, di sola diagnosi/UI: espone i termini
+// intermedi (oggi locali) che portano da mv grezzo a Punteggio, con i valori
+// realmente usati. `null` quando i dati stagione mancano (score forzato a 0).
+export interface ScoreBreakdown {
+  mv: number;
+  mvBaseline: number;
+  perMatchBonus: number;
+  difesaBonus: number;
+  portiereBonus: number;
+  blendedMv: number;
+  leagueAdjustedFm: number;
+  presenzeRatio: number;
+  lineupStato: ProbableLineupStato | null;
+  reliability: number;
+  seasonMatchdaysElapsed: number;
+  rawValue: number;
+  scarcityMultiplier: number;
+  scarcityRemainingDemand: number;
+  scarcitySupply: number;
+  scarcityAdjustedValue: number;
+  replacementRank: number;
+  replacementValue: number;
+  score: number;
+}
+
 export interface PlayerRecommendationComponents {
   reliability: number;
   leagueAdjustedFm: number | null;
@@ -75,6 +100,7 @@ export interface PlayerRecommendationComponents {
   replacementValue: number;
   ioNeedsRole: boolean;
   dataMissing: boolean;
+  breakdown: ScoreBreakdown | null;
 }
 
 export interface PlayerRecommendationPrice {
@@ -251,6 +277,28 @@ interface ScoredEntry {
   leagueAdjustedFm: number | null;
   reliability: number;
   dataMissing: boolean;
+  // Popolata nella closure per i giocatori con dati; i campi che dipendono dal
+  // rank di ruolo (replacementRank/Value, score) sono riempiti nel loop VORP.
+  breakdown: ScoreBreakdown | null;
+}
+
+// Percentile per ruolo dello score, riscalato su 0–10 (1 decimale): 0 = ultimo
+// del pool di ruolo, 10 = primo. SOLO presentazione — non tocca `score`, che
+// resta la fonte di verità per ordinamento/fasce/VORP. Per-ruolo perché gli
+// score VORP non sono comparabili tra ruoli. Riusa `percentileByGroup`.
+export function normalizeScoresByRole(
+  recs: { player_id: number; ruolo: Role; score: number }[],
+): Map<number, number> {
+  const out = new Map<number, number>();
+  for (const role of ROLES) {
+    const inRole = recs.filter((r) => r.ruolo === role);
+    if (inRole.length === 0) continue;
+    const percentiles = percentileByGroup(inRole.map((r) => ({ id: r.player_id, value: r.score })));
+    for (const [id, p] of percentiles) {
+      out.set(id, Math.round(p * 100) / 10);
+    }
+  }
+  return out;
 }
 
 /**
@@ -296,13 +344,19 @@ export function computePlayerRecommendations(
   for (const player of available) {
     supplyByRole.set(player.ruolo, (supplyByRole.get(player.ruolo) ?? 0) + 1);
   }
-  const scarcityMultiplierByRole = new Map<Role, number>(
-    ROLES.map((r): [Role, number] => {
+  const scarcityDetailByRole = new Map<Role, { remainingDemand: number; supply: number }>(
+    ROLES.map((r): [Role, { remainingDemand: number; supply: number }] => {
       const remainingDemand = Math.max(
         0,
         nSquadre * rules.rosterConfig[r] - (purchasedCountByRole.get(r) ?? 0),
       );
       const supply = Math.max(supplyByRole.get(r) ?? 0, 1);
+      return [r, { remainingDemand, supply }];
+    }),
+  );
+  const scarcityMultiplierByRole = new Map<Role, number>(
+    ROLES.map((r): [Role, number] => {
+      const { remainingDemand, supply } = scarcityDetailByRole.get(r)!;
       return [r, clamp(remainingDemand / supply, SCARCITY_MIN, SCARCITY_MAX)];
     }),
   );
@@ -320,6 +374,7 @@ export function computePlayerRecommendations(
         leagueAdjustedFm: null,
         reliability: 0,
         dataMissing: true,
+        breakdown: null,
       };
     }
 
@@ -338,15 +393,42 @@ export function computePlayerRecommendations(
     // a uno affidabile con lo stesso mv scarso. leagueAdjustedFm resta
     // trasparente (può restare negativo) per diagnosi/UI.
     const rawValue = Math.max(leagueAdjustedFm, 0) * reliability;
+    const scarcityAdjustedValue = rawValue * scarcityMultiplier;
+    const scarcityDetail = scarcityDetailByRole.get(player.ruolo) ?? {
+      remainingDemand: 0,
+      supply: 1,
+    };
 
     return {
       player,
-      scarcityAdjustedValue: rawValue * scarcityMultiplier,
+      scarcityAdjustedValue,
       scarcityMultiplier,
       rawValue,
       leagueAdjustedFm,
       reliability,
       dataMissing: false,
+      breakdown: {
+        mv: stat.mv,
+        mvBaseline: MV_BASELINE,
+        perMatchBonus: bonus,
+        difesaBonus: dBonus,
+        portiereBonus: pBonus,
+        blendedMv,
+        leagueAdjustedFm,
+        presenzeRatio,
+        lineupStato: stato ?? null,
+        reliability,
+        seasonMatchdaysElapsed,
+        rawValue,
+        scarcityMultiplier,
+        scarcityRemainingDemand: scarcityDetail.remainingDemand,
+        scarcitySupply: scarcityDetail.supply,
+        scarcityAdjustedValue,
+        // Riempiti nel loop VORP sotto.
+        replacementRank: 0,
+        replacementValue: 0,
+        score: 0,
+      },
     };
   });
 
@@ -366,8 +448,14 @@ export function computePlayerRecommendations(
     const replacementValue = inRole[replacementRank - 1]!.scarcityAdjustedValue;
 
     for (const entry of inRole) {
-      scoreById.set(entry.player.id, entry.scarcityAdjustedValue - replacementValue);
+      const score = entry.scarcityAdjustedValue - replacementValue;
+      scoreById.set(entry.player.id, score);
       replacementValueById.set(entry.player.id, replacementValue);
+      if (entry.breakdown) {
+        entry.breakdown.replacementRank = replacementRank;
+        entry.breakdown.replacementValue = replacementValue;
+        entry.breakdown.score = score;
+      }
     }
   }
 
@@ -433,6 +521,7 @@ export function computePlayerRecommendations(
         replacementValue: replacementValueById.get(entry.player.id) ?? 0,
         ioNeedsRole: (ioFreeSlots.get(entry.player.ruolo) ?? 0) > 0,
         dataMissing: entry.dataMissing,
+        breakdown: entry.breakdown,
       },
       price: {
         qt_i: quotation?.qt_i ?? null,

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
+import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
 import {
   deltaColor,
   formatDelta,
@@ -162,6 +163,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               {val &&
                 ` · tier ${val.tier} · fv ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
             </div>
+            <TeamPrefBadge pref={view.teamPrefFor(sel.id)} variant="banner" />
             <PlayerDetailPanel
               player={sel}
               quotation={view.quotationFor(sel.id)}
@@ -380,6 +382,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                     <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
                       {p.team}
                     </span>
+                    <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
                     <span className="call-fv" style={{ width: 36 }}>
                       {view.sortValueFor(p.id) ?? "—"}
                     </span>
@@ -427,7 +430,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 ))}
               </div>
             )}
-            {view.compareRows.map(({ player, valuation, delta, tags }) => {
+            {view.compareRows.map(({ player, valuation, delta, tags, teamPref, displayScore }) => {
               const expanded = expandedPlayerId === player.id;
               return (
                 <div
@@ -463,14 +466,25 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                       <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
                         {player.name}
                       </span>
-                      <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--color-neutral-700)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
+                      >
                         {player.team}
+                        <TeamPrefBadge pref={teamPref} variant="dot" />
                       </span>
                       <span
                         className="num"
                         style={{ fontWeight: 600, fontSize: 15, width: 38, textAlign: "right" }}
                       >
-                        {formatCompareValue(view.compareSortValueFor(player.id))}
+                        {view.compareSortKey === "score" && displayScore !== null
+                          ? displayScore.toFixed(1)
+                          : formatCompareValue(view.compareSortValueFor(player.id))}
                       </span>
                       <span
                         className="num"

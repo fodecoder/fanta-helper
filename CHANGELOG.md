@@ -5,6 +5,41 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.5.0] - 2026-08-29
+
+### Added
+
+- **Punteggio in scala 0–10 per ruolo** (solo presentazione): la colonna
+  «Punteggio» in Consigli e lo Score nella tabella confronto asta mostrano il
+  percentile dello score VORP entro il ruolo, riscalato su 0–10 (0 = ultimo del
+  pool di ruolo, 10 = primo), arrotondato a un decimale. Formula:
+  `round(percentileByGroup({player_id, score}) entro ruolo × 10, 1)`. Dominio
+  per-ruolo perché gli score VORP non sono comparabili tra ruoli. Lo score grezzo
+  resta la fonte di verità interna per ordinamento, fasce e VORP, ed è visibile
+  nel modale di scomposizione. Nuova funzione pura `normalizeScoresByRole` in
+  `shared`.
+- **Tooltip sulle sigle di colonna e scomposizione delle colonne calcolate**:
+  glossario unico riusato da Consigli e Panoramica; le colonne derivate da un
+  calcolo (Punteggio, Max bid rettificato) hanno un modale «Dettagli» con lo
+  scomposto passo-passo e i valori realmente usati dal motore. Il motore ora
+  espone `components.breakdown` (mv, sufficienza, bonus per presenza/difesa/
+  portiere, affidabilità, scarsità, rimpiazzo), `maxBid.ts` espone
+  `explainAdjustedMaxBid`. Nuovi componenti condivisi `Dialog`, `InfoLabel`,
+  `ScoreBreakdownDialog`.
+
+### Fixed
+
+- **Modale profilo troncato su viewport basse**: il dialog ora ha un'altezza
+  massima legata al viewport e scrolla internamente nel body, con titolo e
+  bottoni Annulla/Salva sempre visibili.
+- **Preferenze di squadra invisibili in asta**: un giocatore di una squadra
+  segnata come «da evitare» (o «preferita») mostra ora un banner/badge nel
+  pannello asta — giocatore in chiamata, lista di chiamata e alternative — su
+  desktop e mobile. Solo segnale visivo derivato a lettura, nessun impatto sullo
+  score (coerente col vincolo P6).
+- **Tag «Difensore da bonus» applicato ai portieri**: la condizione includeva
+  `ruolo === "P"` accanto a `"D"`; ora è ristretta ai soli difensori.
+
 ## [4.4.0] - 2026-08-29
 
 ### Added

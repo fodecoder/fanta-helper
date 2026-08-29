@@ -6,7 +6,12 @@ import type {
   ValuationWithPlayer,
   WishlistEntryWithPlayer,
 } from "@fanta-helper/shared";
-import { ROLES, scaleValuationAmounts, valuationScaleFactor } from "@fanta-helper/shared";
+import {
+  ROLES,
+  explainAdjustedMaxBid,
+  scaleValuationAmounts,
+  valuationScaleFactor,
+} from "@fanta-helper/shared";
 import * as purchasesApi from "../api/purchases";
 import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
@@ -16,6 +21,9 @@ import { UserAvatar } from "../components/UserAvatar";
 import { StatFigure } from "../components/StatFigure";
 import { StatusMessage } from "../components/StatusMessage";
 import { deltaColor, formatDelta, roleColor } from "../lib/auctionDerivations";
+import { Dialog } from "../components/ui/Dialog";
+import { InfoLabel } from "../components/ui/InfoLabel";
+import { COLUMN_GLOSSARY } from "../lib/columnGlossary";
 
 interface OverviewPageProps {
   league: League;
@@ -28,6 +36,7 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
   const [wishlist, setWishlist] = useState<WishlistEntryWithPlayer[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [maxBidDetailManagerId, setMaxBidDetailManagerId] = useState<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -109,7 +118,10 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
 
       <div className="stat-figures" style={{ marginBottom: 44 }}>
         <StatFigure label="Il mio residuo" value={me?.residuo ?? 0} />
-        <StatFigure label="Max bid rettificato" value={me?.adjustedMaxBid ?? 0} />
+        <StatFigure
+          label={<InfoLabel label="Max bid rettificato" tooltip={COLUMN_GLOSSARY.adjustedMaxBid.tooltip} />}
+          value={me?.adjustedMaxBid ?? 0}
+        />
         <StatFigure label="Slot liberi" value={myFreeSlots} />
         <StatFigure label="Speso in lega" value={leagueSpent} />
       </div>
@@ -129,7 +141,9 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                 {ROLES.map((r) => (
                   <th key={r}>{r}</th>
                 ))}
-                <th style={{ textAlign: "right" }}>Max bid rett.</th>
+                <th style={{ textAlign: "right" }}>
+                  <InfoLabel {...COLUMN_GLOSSARY.adjustedMaxBid} />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -181,7 +195,14 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                       );
                     })}
                     <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
-                      {s.adjustedMaxBid}
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ padding: "2px 8px", fontSize: 12 }}
+                        onClick={() => setMaxBidDetailManagerId(s.managerId)}
+                      >
+                        {s.adjustedMaxBid} ⓘ
+                      </button>
                     </td>
                   </tr>
                 );
@@ -242,7 +263,9 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                     <th>Giocatore</th>
                     <th>A</th>
                     <th style={{ textAlign: "right" }}>Prezzo</th>
-                    <th style={{ textAlign: "right" }}>vs FV</th>
+                    <th style={{ textAlign: "right" }}>
+                      <InfoLabel {...COLUMN_GLOSSARY.vsFv} />
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -270,6 +293,44 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
           )}
         </div>
       </div>
+
+      {(() => {
+        const s = (statuses ?? []).find((x) => x.managerId === maxBidDetailManagerId);
+        if (!s) return null;
+        const b = explainAdjustedMaxBid({ residuo: s.residuo, slots: s.slots });
+        return (
+          <Dialog
+            title={`Max bid rettificato · ${s.managerName}`}
+            onClose={() => setMaxBidDetailManagerId(null)}
+            actions={
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setMaxBidDetailManagerId(null)}
+              >
+                Chiudi
+              </button>
+            }
+          >
+            <p style={{ fontSize: 13, lineHeight: 1.6 }}>
+              {COLUMN_GLOSSARY.adjustedMaxBid.tooltip}
+            </p>
+            <ul style={{ fontSize: 13, lineHeight: 1.6, margin: 0, paddingLeft: 18 }}>
+              <li>Residuo: {b.residuo}</li>
+              <li>Slot ancora da riempire: {b.freeSlotsTotal}</li>
+              <li>
+                Riserva = (slot liberi − 1) × {b.minSlotReserve} = ({b.freeSlotsTotal} − 1) ×{" "}
+                {b.minSlotReserve} = {b.reserve}
+              </li>
+              <li>
+                <strong>
+                  Max bid rett. = max(0, {b.residuo} − {b.reserve}) = {b.result}
+                </strong>
+              </li>
+            </ul>
+          </Dialog>
+        );
+      })()}
     </>
   );
 }

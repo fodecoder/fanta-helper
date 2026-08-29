@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import { CmykNum } from "./CmykNum";
 
 interface StatFigureProps {
-  label: string;
+  label: ReactNode;
   value: number | string;
 }
 

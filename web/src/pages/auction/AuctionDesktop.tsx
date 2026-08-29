@@ -3,6 +3,10 @@ import { CmykNum } from "../../components/CmykNum";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
+import { ScoreBreakdownDialog } from "../../components/ScoreBreakdownDialog";
+import { InfoLabel } from "../../components/ui/InfoLabel";
+import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
+import { COLUMN_GLOSSARY } from "../../lib/columnGlossary";
 import {
   ROLE_LABEL,
   deltaColor,
@@ -48,6 +52,8 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
   const showStats = view.enrichment?.performance.enabled === true;
   const showAttributes = view.enrichment?.attributes.enabled === true;
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
+  const [breakdownPlayerId, setBreakdownPlayerId] = useState<number | null>(null);
+  const breakdownRec = breakdownPlayerId === null ? undefined : view.recommendationFor(breakdownPlayerId);
 
   return (
     <div className="auction">
@@ -136,6 +142,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
                       {p.team}
                     </span>
+                    <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
                     <span className="call-fv">{view.sortValueFor(p.id) ?? "—"}</span>
                   </button>
                   <button
@@ -173,6 +180,9 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     {val &&
                       ` · tier ${val.tier} · fair value ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
                   </span>
+                  <div>
+                    <TeamPrefBadge pref={view.teamPrefFor(sel.id)} variant="banner" />
+                  </div>
                   <PlayerDetailPanel
                     player={sel}
                     quotation={view.quotationFor(sel.id)}
@@ -418,8 +428,12 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                       <th style={{ textAlign: "right" }}>Target</th>
                       <th style={{ textAlign: "right" }}>Max</th>
                       <th style={{ textAlign: "right" }}>Panic</th>
-                      <th style={{ textAlign: "right" }}>Fm</th>
-                      <th style={{ textAlign: "right" }}>Score</th>
+                      <th style={{ textAlign: "right" }}>
+                        <InfoLabel {...COLUMN_GLOSSARY.fm} />
+                      </th>
+                      <th style={{ textAlign: "right" }}>
+                        <InfoLabel {...COLUMN_GLOSSARY.score} />
+                      </th>
                       <th style={{ textAlign: "right" }}>Δ vs in asta</th>
                       {showStats && (
                         <>
@@ -449,7 +463,16 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   </thead>
                   <tbody>
                     {view.compareRows.map(
-                      ({ player, valuation, delta, isCurrent, seasonStats, score, tags }) => {
+                      ({
+                        player,
+                        valuation,
+                        delta,
+                        isCurrent,
+                        seasonStats,
+                        displayScore,
+                        tags,
+                        teamPref,
+                      }) => {
                         const stats = view.enrichment?.performance.stats.find(
                           (s) => s.player_id === player.id,
                         );
@@ -487,7 +510,14 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                   {player.name}
                                 </button>
                               </td>
-                              <td>{player.team}</td>
+                              <td>
+                                <span
+                                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                                >
+                                  {player.team}
+                                  <TeamPrefBadge pref={teamPref} variant="dot" />
+                                </span>
+                              </td>
                               <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>
                                 {valuation?.tier ?? "—"}
                                 {tags.length > 0 && (
@@ -539,11 +569,20 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                               >
                                 {seasonStats?.fm ?? "—"}
                               </td>
-                              <td
-                                className="num"
-                                style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                              >
-                                {score === null ? "—" : score.toFixed(1)}
+                              <td className="num" style={{ textAlign: "right" }}>
+                                {displayScore === null ? (
+                                  <span style={{ color: "var(--color-neutral-800)" }}>—</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="info-label__more"
+                                    style={{ color: "var(--color-neutral-800)", fontWeight: 600 }}
+                                    onClick={() => setBreakdownPlayerId(player.id)}
+                                    title="Scomposizione punteggio"
+                                  >
+                                    {displayScore.toFixed(1)}
+                                  </button>
+                                )}
                               </td>
                               <td
                                 className="num"
@@ -802,6 +841,14 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           </div>
         </aside>
       </div>
+
+      {breakdownRec && (
+        <ScoreBreakdownDialog
+          player={breakdownRec}
+          normalizedScore={view.normalizedScoreFor(breakdownRec.player_id)}
+          onClose={() => setBreakdownPlayerId(null)}
+        />
+      )}
     </div>
   );
 }
