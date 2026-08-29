@@ -23,6 +23,10 @@ export class ApiError extends Error {
   static unauthorized(message: string): ApiError {
     return new ApiError(401, "UNAUTHORIZED", message);
   }
+
+  static forbidden(message: string): ApiError {
+    return new ApiError(403, "FORBIDDEN", message);
+  }
 }
 
 export function isUniqueViolation(err: unknown): boolean {

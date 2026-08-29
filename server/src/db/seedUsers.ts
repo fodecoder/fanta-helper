@@ -8,21 +8,24 @@ import { pool } from "./client";
 loadEnv({ path: ".env.seed-users" });
 
 const USERS = [
-  { username: "Andre", envVar: "SEED_PASSWORD_ANDRE" },
-  { username: "Davide", envVar: "SEED_PASSWORD_DAVIDE" },
-  { username: "Fra", envVar: "SEED_PASSWORD_FRA" },
-  { username: "Paul", envVar: "SEED_PASSWORD_PAUL" },
+  { username: "Andre", envVar: "SEED_PASSWORD_ANDRE", role: "member" },
+  { username: "Davide", envVar: "SEED_PASSWORD_DAVIDE", role: "member" },
+  { username: "Fra", envVar: "SEED_PASSWORD_FRA", role: "member" },
+  { username: "Paul", envVar: "SEED_PASSWORD_PAUL", role: "member" },
+  // Accesso di sola consultazione (es. per il team SoFIFA). Password condivisa,
+  // deliberatamente banale: l'account non può modificare nulla.
+  { username: "guest", envVar: "SEED_PASSWORD_GUEST", role: "guest" },
 ] as const;
 
 async function seedUsers(): Promise<void> {
-  for (const { username, envVar } of USERS) {
+  for (const { username, envVar, role } of USERS) {
     const plain = process.env[envVar];
     if (!plain) {
       throw new Error(`missing ${envVar} in server/.env.seed-users`);
     }
     const password_hash = await hashPassword(plain);
-    await upsertUser({ username, password_hash, avatar: null, avatar_color: null });
-    console.log(`seeded user "${username}"`);
+    await upsertUser({ username, password_hash, avatar: null, avatar_color: null, role });
+    console.log(`seeded user "${username}" (${role})`);
   }
 }
 

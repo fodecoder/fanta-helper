@@ -654,6 +654,15 @@ select.input {
   color: var(--color-neutral-600);
   margin-top: 6px;
 }
+.sidebar-sofifa {
+  display: inline-flex;
+  opacity: 0.75;
+}
+.sidebar-sofifa img {
+  height: 16px;
+  width: auto;
+  display: block;
+}
 .user-menu {
   display: flex;
   align-items: center;

@@ -65,6 +65,15 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
             {view.league.name} · {view.callsLabel}
           </span>
           <span className="auction-keys">↑↓ scegli · Invio assegna · 1-9 prezzo · Esc esci</span>
+          <a
+            href="https://sofifa.com/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="SoFIFA"
+            style={{ display: "inline-flex", alignSelf: "center" }}
+          >
+            <img src="/sofifa-logo.png" alt="SoFIFA" style={{ height: 20, width: "auto" }} />
+          </a>
           <button type="button" className="btn btn-secondary" onClick={view.onExit}>
             Esci
           </button>

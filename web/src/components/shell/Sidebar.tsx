@@ -106,10 +106,22 @@ export function Sidebar({
         >
           Entra in modalità asta
         </button>
+        {currentUser.role === "guest" && (
+          <span className="note">Account di sola consultazione: nessuna modifica è salvata.</span>
+        )}
         <span className="note">Schermo pieno, tastiera, nessuna navigazione. Esci con Esc.</span>
         <span className="version">
           v{version} · backend {backendStatus}
         </span>
+        <a
+          href="https://sofifa.com/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="SoFIFA"
+          className="sidebar-sofifa"
+        >
+          <img src="/sofifa-logo-small.png" alt="SoFIFA" />
+        </a>
       </div>
     </aside>
   );

@@ -44,6 +44,10 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
 authRouter.patch("/me", requireAuth, async (req, res, next) => {
   try {
     const input = updateProfileSchema.parse(req.body);
+    const existing = await getUserById(req.userId!);
+    if (existing?.role === "guest") {
+      throw ApiError.forbidden("account di sola consultazione");
+    }
     const user = await updateUserProfile(req.userId!, input);
     if (!user) {
       throw ApiError.unauthorized("not authenticated");

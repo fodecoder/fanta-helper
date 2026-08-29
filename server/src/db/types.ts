@@ -90,6 +90,7 @@ export interface AppUserRow {
   password_hash: string;
   avatar: string | null;
   avatar_color: string | null;
+  role: "member" | "guest";
 }
 
 export interface ChatMessageRow {

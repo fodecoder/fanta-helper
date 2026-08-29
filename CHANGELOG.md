@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.0] - 2026-08-29
+
+### Added
+
+- **Account `guest` di sola consultazione**: nuovo ruolo `role` su `app_user`
+  (`member` | `guest`, migrazione `1788220800000_app-user-role`). Un `guest` può
+  navigare tutto il portale ma ogni richiesta non-safe è 403 (`requireWritableRole`
+  globale + guardia su `PATCH /auth/me`). Serve a dare un accesso di navigazione
+  a terzi (team SoFIFA). Seed via `SEED_PASSWORD_GUEST`.
+- **Logo SoFIFA con link** nell'header della modalità asta (versione normale) e
+  nel footer della sidebar sotto la versione dell'app (versione piccola), oltre a
+  quello già presente accanto al link «SoFIFA» in asta. Tutti rimandano a
+  `https://sofifa.com/`.
+
 ## [4.6.0] - 2026-08-29
 
 ### Added

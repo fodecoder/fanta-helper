@@ -32,11 +32,13 @@ export async function updateUserProfile(
 
 export async function upsertUser(input: Omit<AppUserRow, "id">): Promise<AppUserRow> {
   const result = await pool.query<AppUserRow>(
-    `INSERT INTO app_user (username, password_hash, avatar, avatar_color)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash
+    `INSERT INTO app_user (username, password_hash, avatar, avatar_color, role)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (username) DO UPDATE SET
+       password_hash = EXCLUDED.password_hash,
+       role = EXCLUDED.role
      RETURNING *`,
-    [input.username, input.password_hash, input.avatar, input.avatar_color],
+    [input.username, input.password_hash, input.avatar, input.avatar_color, input.role],
   );
   const row = result.rows[0];
   if (!row) {

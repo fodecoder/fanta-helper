@@ -22,6 +22,7 @@ import { usersRouter } from "./routes/users";
 import { chatRouter } from "./routes/chat";
 import { errorHandler } from "./http/errorHandler";
 import { requireAuth } from "./http/requireAuth";
+import { requireWritableRole } from "./http/requireWritableRole";
 
 export function createApp(): Express {
   const cookieSecret = process.env.COOKIE_SECRET;
@@ -44,6 +45,7 @@ export function createApp(): Express {
   app.use("/auth", authRouter);
 
   app.use(requireAuth);
+  app.use(requireWritableRole);
 
   app.use("/users", usersRouter);
   app.use("/chat", chatRouter);

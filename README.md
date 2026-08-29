@@ -21,7 +21,9 @@ Funzionalità principali:
 
 - **Autenticazione multiutente**: 4 utenti (Andre, Davide, Fra, Paul), login con
   cookie di sessione firmato; l'identità del «tu» dei consigli è
-  `manager.user_id` (fallback su `is_owner`).
+  `manager.user_id` (fallback su `is_owner`). Un account `guest` di sola
+  consultazione (ruolo `role='guest'` su `app_user`) può navigare il portale ma
+  non modificare nulla — usato per dare un accesso di navigazione a terzi.
 - **Avatar e colore avatar** per utente (set predefinito, niente upload).
 - **Engine di consiglio**: valore relativo alla lega (VORP, affidabilità da
   presenze + titolarità, modificatori portiere/difesa, scarsità di reparto);
@@ -121,6 +123,7 @@ SEED_PASSWORD_ANDRE=...
 SEED_PASSWORD_DAVIDE=...
 SEED_PASSWORD_FRA=...
 SEED_PASSWORD_PAUL=...
+SEED_PASSWORD_GUEST=guest   # account di sola consultazione
 ```
 
 `web/.env`:
