@@ -22,6 +22,7 @@ export function LeaguesPage({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [editing, setEditing] = useState<League | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   // `formKey` rimonta il form quando si passa da crea a modifica (e viceversa)
   // così i campi ripartono dai valori giusti.
   const [formKey, setFormKey] = useState(0);
@@ -44,6 +45,26 @@ export function LeaguesPage({
   function startEdit(league: League | null) {
     setEditing(league);
     setFormKey((k) => k + 1);
+  }
+
+  function handleDelete(league: League) {
+    const ok = window.confirm(
+      `Eliminare la lega "${league.name}"? Verranno cancellati anche i suoi manager, acquisti e valutazioni.`,
+    );
+    if (!ok) return;
+    setDeletingId(league.id);
+    leaguesApi
+      .deleteLeague(league.id)
+      .then(() => {
+        setRefreshToken((t) => t + 1);
+        onLeaguesChanged();
+        if (league.id === activeLeagueId) onSelectLeague(null);
+        if (editing?.id === league.id) startEdit(null);
+      })
+      .catch((err: unknown) => {
+        setLoadError(err instanceof Error ? err.message : "eliminazione fallita");
+      })
+      .finally(() => setDeletingId(null));
   }
 
   function handleSaved(saved: League, wasCreate: boolean) {
@@ -90,7 +111,7 @@ export function LeaguesPage({
                   {l.budget}
                 </td>
                 <td>{`${l.roster_config.P}·${l.roster_config.D}·${l.roster_config.C}·${l.roster_config.A}`}</td>
-                <td style={{ textAlign: "right" }}>
+                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   <button
                     type="button"
                     className="btn btn-ghost"
@@ -98,6 +119,15 @@ export function LeaguesPage({
                     onClick={() => startEdit(l)}
                   >
                     Modifica
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, color: "var(--color-danger, #e11d48)", marginLeft: 4 }}
+                    disabled={deletingId === l.id}
+                    onClick={() => handleDelete(l)}
+                  >
+                    {deletingId === l.id ? "Elimino…" : "Elimina"}
                   </button>
                 </td>
               </tr>
