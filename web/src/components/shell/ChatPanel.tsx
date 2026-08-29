@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChatMessage, User } from "@fanta-helper/shared";
 import { fetchConversation, listUsers, sendMessage } from "../../api/chat";
+import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import { UserAvatar } from "../UserAvatar";
 
 const STORAGE_KEY = "chat-panel:v1";
@@ -50,6 +51,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ currentUser }: ChatPanelProps) {
+  const isMobile = useMediaQuery(MOBILE_QUERY);
   const [prefs, setPrefs] = useState<PanelPrefs>(loadPrefs);
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -186,10 +188,17 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
 
   return (
     <section
-      className="chat-panel"
-      style={{ left: prefs.x, top: prefs.y, width: prefs.w, height: prefs.h }}
+      className={isMobile ? "chat-panel chat-panel--mobile" : "chat-panel"}
+      style={
+        isMobile
+          ? undefined
+          : { left: prefs.x, top: prefs.y, width: prefs.w, height: prefs.h }
+      }
     >
-      <header className="chat-panel__header" onPointerDown={onPointerDown("move")}>
+      <header
+        className="chat-panel__header"
+        onPointerDown={isMobile ? undefined : onPointerDown("move")}
+      >
         <span className="chat-panel__title">Chat</span>
         <button
           type="button"
@@ -259,11 +268,13 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
         </button>
       </form>
 
-      <span
-        className="chat-panel__resize"
-        onPointerDown={onPointerDown("resize")}
-        aria-hidden="true"
-      />
+      {!isMobile && (
+        <span
+          className="chat-panel__resize"
+          onPointerDown={onPointerDown("resize")}
+          aria-hidden="true"
+        />
+      )}
     </section>
   );
 }

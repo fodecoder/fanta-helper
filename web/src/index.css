@@ -1505,6 +1505,11 @@ select.input {
   .bottom-nav {
     display: flex;
   }
+  .chat-fab {
+    bottom: calc(
+      var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--space-3, 12px)
+    );
+  }
 }
 
 /* Chat 1-a-1: pannello flottante spostabile/ridimensionabile. */
@@ -1639,4 +1644,29 @@ select.input {
     transparent 50%,
     color-mix(in srgb, var(--color-text) 35%, transparent) 50%
   );
+}
+
+/* Mobile (&lt;=768px, gestito da useMediaQuery(MOBILE_QUERY) in ChatPanel):
+   overlay a tutto schermo, niente drag/resize, un solo bottone di chiusura. */
+.chat-panel--mobile {
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  z-index: 950;
+}
+
+.chat-panel--mobile .chat-panel__header {
+  cursor: default;
+  touch-action: auto;
+  padding: 10px 10px 10px 16px;
+}
+
+.chat-panel--mobile .chat-panel__header .btn-icon {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.4rem;
 }
