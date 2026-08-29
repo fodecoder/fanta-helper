@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.2] - 2026-08-30
+
+### Fixed
+
+- **Impossibile cancellare le leghe dalla UI**: la pagina Leghe non offriva
+  un'azione di eliminazione benché l'endpoint `DELETE /leagues/:id`, l'API client
+  e i FK `ON DELETE CASCADE` ci fossero già. Aggiunto il bottone «Elimina» con
+  conferma; la selezione di lega attiva si azzera se si elimina quella corrente.
+- **`TypeError: Failed to construct 'URL'` aprendo l'asta e scegliendo un
+  giocatore**: con `VITE_API_URL` relativo (`/api`) gli helper stats costruivano
+  l'URL con `new URL(baseUrl())` senza base. Ora usano `URLSearchParams` +
+  stringa, come gli altri moduli API.
+
+### Testing
+
+- Introdotta la suite di test con `vitest` + coverage `v8` su tutti i workspace.
+  Gate di coverage **≥ 90%** (righe/branch/funzioni/statement) su `shared`
+  (99,5% righe, 91% branch). `web` e `server` hanno test mirati (regressione dei
+  due bug sopra, comportamento mobile di `useMediaQuery`/`ChatPanel`, funzioni
+  pure di `auctionDerivations`, middleware auth/ruolo, rotte `DELETE /leagues`,
+  `GET /chat/inbox`, `/auth/*`, stress su `/health` e sui ranking). Nuovo
+  workflow CI `test.yml` su push e pull request.
+
 ## [4.7.1] - 2026-08-30
 
 ### Fixed
