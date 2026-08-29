@@ -29,7 +29,8 @@ export function getLatestPlayerSeasonStats(
   playerIds: number[],
   signal?: AbortSignal,
 ): Promise<PlayerLatestSeasonStatsResponse> {
-  const url = new URL(baseUrl());
-  url.searchParams.set("ids", playerIds.join(","));
-  return apiFetch(url, { signal }).then((res) => handle<PlayerLatestSeasonStatsResponse>(res));
+  const qs = new URLSearchParams({ ids: playerIds.join(",") });
+  return apiFetch(`${baseUrl()}?${qs.toString()}`, { signal }).then((res) =>
+    handle<PlayerLatestSeasonStatsResponse>(res),
+  );
 }
