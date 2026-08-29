@@ -268,3 +268,77 @@ mostrato è in scala 0–10 per ruolo, coerente con l'ordinamento esistente.
 
 **Versioning.** `fix` per B1/B2/B4, `feat` per B3/B5 → bump coerente (MINOR se
 accorpato in un'unica release, altrimenti PATCH+MINOR separati per commit).
+
+---
+
+## P10 — Bugfix mobile (leghe/chat) + chat fullscreen + notifiche + audit fasi 1-9
+
+**Obiettivo.** Correggere un bug riprodotto solo su mobile (non riproducibile da
+desktop), adattare la chat (P7) al mobile, aggiungere notifica di messaggio in
+arrivo, e chiudere la fase con un audit di tutti i prompt P1–P9.
+
+- **B6 — dropdown lega vuoto e chat che non si apre, solo su mobile.** Da
+  telefono, con l'utente Fra loggato, il selettore «— seleziona lega —» non
+  mostra le leghe dell'utente (in desktop, stesso utente, funziona) e il
+  pannello Chat mostra «authentication required» invece di aprirsi. Il fatto che
+  desktop funzioni e mobile no, con lo stesso utente, indica un problema di
+  sessione/cookie legato a viewport o user-agent piuttosto che ai dati: sospetti
+  primari da verificare — cookie di sessione (P4) con `SameSite`/`Secure` che si
+  comportano diversamente su Safari/Chrome mobile (in particolare in PWA/standalone
+  o dietro redirect http→https), eventuale mismatch tra dominio del sito e
+  dominio delle chiamate API su mobile, race condition al primo load per cui il
+  fetch di leghe/chat parte prima che il cookie di sessione sia disponibile.
+  Riproduci con device emulation *e* su device reale prima di assumere la causa;
+  non introdurre workaround lato client (es. retry silenzioso) senza aver capito
+  la causa — se è un problema di cookie, il fix va nella configurazione del
+  cookie/sessione lato backend, non in un patch UI.
+- **B7 — chat non può essere flottante su mobile.** Il pannello chat
+  `draggable`/`resizable` di P7 ha senso solo su viewport desktop. Sotto una
+  soglia (stesso breakpoint già in uso nel resto della SPA, se esiste, altrimenti
+  documenta la soglia scelta) la chat deve aprirsi a schermo intero (fullscreen
+  overlay, niente drag/resize, un solo bottone di chiusura chiaro), non come
+  riquadro piccolo in un angolo. Il selettore destinatario e la history restano
+  identici nella logica, cambia solo il contenitore.
+- **B8 — notifica di messaggio in arrivo.** Oggi un utente loggato non ha alcun
+  segnale se gli arriva un messaggio mentre non ha la chat aperta (o è su un'altra
+  pagina della SPA). Aggiungi una notifica in-app (toast o banner, non
+  notifica di sistema/push — nessuna nuova dipendenza per push notification in
+  questo prompt) quando arriva un nuovo messaggio per l'utente loggato e il
+  pannello chat non è aperto sulla conversazione con quel mittente. Riusa il
+  polling già esistente di P7 (`GET /chat?with=...&since=...`): se serve un
+  polling "globale" per sapere di nuovi messaggi da mittenti diversi da quello
+  attualmente aperto, valuta un endpoint leggero (es. `GET /chat/unread` o
+  riuso di `since` su tutti i mittenti) e proponilo nel piano prima di
+  implementarlo.
+
+**Audit (obbligatorio, va fatto per ultimo in questo prompt).** Verifica lo stato
+reale di P1–P9 rispetto al codice attuale: quali sono stati implementati
+correttamente, quali parzialmente, quali per nulla. Non fidarti del solo
+`CHANGELOG.md` — controlla il codice. Sulla base dell'audit:
+
+- Aggiorna `PLAN.md` riflettendo lo stato reale (fatto / parziale / mancante),
+  rimuovendo sezioni ormai obsolete o superate dai prompt successivi.
+- Aggiorna `README.md` perché descriva l'app com'è oggi (auth multiutente, chat,
+  tag, preferenze, ecc. se presenti), togliendo riferimenti a feature non ancora
+  esistenti o a versioni precedenti dell'architettura.
+- Non toccare `CLAUDE.md` né `SPEC.md` in questo prompt: sono fuori perimetro,
+  se contengono discrepanze segnalale in coda al prompt invece di modificarle.
+- Riporta l'audit come lista puntuale (prompt → stato → evidenza nel codice) nel
+  messaggio di commit o in una sezione dedicata di `PLAN.md`, non solo a voce.
+
+**Vincoli.** B6 va diagnosticato prima di essere corretto: se la causa non è
+chiara, il commit di questo prompt può limitarsi a documentare l'ipotesi più
+probabile con evidenza (log, comportamento cookie) e proporre il fix in un
+prompt successivo, invece di introdurre una modifica non verificata su un
+percorso di autenticazione. Nessun segreto/hash nel client. L'audit non fa
+refactor: solo lettura + aggiornamento documentazione.
+
+**Accettazione.** Da mobile, l'utente Fra vede le sue leghe nel selettore e la
+chat si apre senza errore «authentication required» (o, se il fix è rimandato,
+l'ipotesi di causa è documentata con evidenza). Su viewport mobile la chat è
+fullscreen, non flottante. Un utente riceve un segnale visibile per un messaggio
+in arrivo mentre non ha la chat aperta su quel mittente. `PLAN.md` e `README.md`
+riflettono lo stato reale del codice per P1–P9, senza contenuti obsoleti.
+
+**Versioning.** `fix` per B6/B7/B8, `docs` per l'aggiornamento di `PLAN.md`/
+`README.md` → PATCH (o MINOR se B8 introduce un nuovo endpoint).
