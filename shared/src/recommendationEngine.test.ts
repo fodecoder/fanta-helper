@@ -456,6 +456,114 @@ describe("computePlayerRecommendations", () => {
   });
 });
 
+describe("computePlayerRecommendations — nullable data & disabled modifiers", () => {
+  const noModifiers: LeagueRulesConfig = {
+    ...rules,
+    modificatori: {
+      ...defaultModificatori,
+      difesa: { ...defaultModificatori.difesa, enabled: false },
+      portiere: { ...defaultModificatori.portiere, enabled: false },
+    },
+  };
+
+  it("treats every null counting stat as zero and every missing quotation as null", () => {
+    const players = [
+      player(1, "Sparse A", "A"),
+      player(2, "Sparse D", "D"),
+      player(3, "Purchased", "C"),
+    ];
+    const sparse = stat(1, {
+      gf: null,
+      gs: null,
+      assist: null,
+      rp: null,
+      rc: null,
+      rig_plus: null,
+      rig_minus: null,
+      amm: null,
+      esp: null,
+      autogol: null,
+    });
+    const result = computePlayerRecommendations(
+      baseInput({
+        players,
+        stats: [sparse, stat(2), stat(3)],
+        quotations: [], // nessuna quotazione → price.* tutti null
+        purchasedPlayerIds: new Set([3]), // ramo "purchased" del conteggio per ruolo
+        rules: noModifiers,
+      }),
+    );
+
+    const a = result.find((r) => r.player_id === 1)!;
+    expect(a.components.breakdown).not.toBeNull();
+    expect(a.components.breakdown!.perMatchBonus).toBe(0);
+    expect(a.components.breakdown!.difesaBonus).toBe(0);
+    expect(a.components.breakdown!.portiereBonus).toBe(0);
+    expect(a.price).toEqual({
+      qt_i: null,
+      qt_a: null,
+      fvm: null,
+      valuePercentile: expect.any(Number),
+      pricePercentile: null,
+      gapSignal: null,
+    });
+    // il giocatore acquistato non compare tra i disponibili
+    expect(result.some((r) => r.player_id === 3)).toBe(false);
+  });
+
+  it("skips the goalkeeper bonus when presenze is 0 or gs is null", () => {
+    const players = [player(1, "GK zero", "P", "T1"), player(2, "GK nogs", "P", "T2")];
+    const result = computePlayerRecommendations(
+      baseInput({
+        players,
+        stats: [stat(1, { presenze: 0, gs: 0 }), stat(2, { gs: null })],
+      }),
+    );
+    for (const r of result) {
+      expect(r.components.breakdown?.portiereBonus ?? 0).toBe(0);
+    }
+  });
+
+  it("ignores the defense blend for a team with no goalkeeper data and for non-defenders", () => {
+    const players = [
+      player(1, "Def no-gk-team", "D", "NoGkTeam"),
+      player(2, "Mid", "C", "NoGkTeam"),
+    ];
+    const result = computePlayerRecommendations(
+      baseInput({ players, stats: [stat(1, { mv: 7 }), stat(2, { mv: 7 })] }),
+    );
+    const mid = result.find((r) => r.player_id === 2)!;
+    expect(mid.components.breakdown!.difesaBonus).toBe(0);
+    expect(mid.components.breakdown!.blendedMv).toBe(7);
+  });
+
+  it("gives a single-player role pool percentile 1 (score normalized to the top)", () => {
+    const result = computePlayerRecommendations(
+      baseInput({ players: [player(1, "Lonely A", "A")], stats: [stat(1)] }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]!.tier).toBe("Top");
+  });
+
+  it("matches probable-lineup rows by name/team and leaves unmatched players on presenze only", () => {
+    const players = [
+      player(1, "Starter", "C", "T"),
+      player(2, "Unlisted", "C", "T"),
+      player(3, "Veteran", "C", "T"),
+    ];
+    const result = computePlayerRecommendations(
+      baseInput({
+        players,
+        stats: [stat(1, { presenze: 3 }), stat(2, { presenze: 3 }), stat(3, { presenze: 30 })],
+        probableLineup: [lineup("Starter", "T", "titolare")],
+      }),
+    );
+    const starter = result.find((r) => r.player_id === 1)!;
+    const unlisted = result.find((r) => r.player_id === 2)!;
+    expect(starter.components.reliability).toBeGreaterThan(unlisted.components.reliability);
+  });
+});
+
 describe("normalizeScoresByRole", () => {
   it("rescales per-role scores onto 0–10, top of the role pool at 10 and bottom at 0", () => {
     const recs = [

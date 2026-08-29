@@ -326,6 +326,36 @@ describe("computePlayerTags", () => {
 
       expect(idsOf(result.get(1))).not.toContain("scommessa");
     });
+
+    it("tags a cheap starter with no stat row at all (missing sample)", () => {
+      const ghost = player(1, "Senza Storico", "C", "Team A");
+      const mid = player(2, "Prezzo Medio", "C", "Team B");
+      const expensive = player(3, "Big", "C", "Team C");
+      // ghost ha una riga con campi bonus null (esercita i `?? 0`); nessuna
+      // riga per un quarto giocatore esercita il ramo `!stat`.
+      const ghostless = player(4, "Nessuna Riga", "C", "Team D");
+      const stats = [
+        stat(1, { presenze: 2, gf: null, assist: null, mv: 6 }),
+        stat(2, { mv: 6, presenze: 30 }),
+        stat(3, { mv: 7, presenze: 30 }),
+      ];
+      const quotations = [
+        quotation(1, { fvm: 1 }),
+        quotation(2, { fvm: 20 }),
+        quotation(3, { fvm: 100 }),
+        quotation(4, { fvm: 2 }),
+      ];
+
+      const result = tagsFor({
+        players: [ghost, mid, expensive, ghostless],
+        stats,
+        quotations,
+        probableLineup: [lineup("Senza Storico", "Team A", "titolare")],
+      });
+
+      expect(idsOf(result.get(1))).toContain("scommessa");
+      expect(idsOf(result.get(4))).not.toContain("porta-bonus");
+    });
   });
 
   describe("da prendere a 1", () => {
