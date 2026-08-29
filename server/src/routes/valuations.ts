@@ -1,8 +1,15 @@
 import { Router } from "express";
-import { valuationUpsertSchema } from "@fanta-helper/shared";
+import { valuationOverridePatchSchema, valuationUpsertSchema } from "@fanta-helper/shared";
 import { getLeagueById } from "../db/leagues";
 import { getPlayerById } from "../db/players";
-import { listValuationsWithPlayerByLeague, upsertValuation } from "../db/valuations";
+import {
+  listValuationsWithPlayerByLeagueForUser,
+  upsertValuation,
+} from "../db/valuations";
+import {
+  deleteValuationOverride,
+  upsertValuationOverride,
+} from "../db/valuationOverrides";
 import { importValuationsFromJson } from "../import/valuationJson";
 import { generateValuationsForLeague } from "../import/valuationGenerate";
 import { ApiError } from "../http/errors";
@@ -25,14 +32,55 @@ function parseId(raw: string): number {
   return id;
 }
 
+function requireUserId(req: { userId?: number }): number {
+  if (!req.userId) {
+    throw ApiError.unauthorized("authentication required");
+  }
+  return req.userId;
+}
+
 valuationsRouter.get<LeagueParams>("/", async (req, res, next) => {
   try {
     const leagueId = parseId(req.params.leagueId);
+    const userId = requireUserId(req);
     const league = await getLeagueById(leagueId);
     if (!league) {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
-    res.json(await listValuationsWithPlayerByLeague(leagueId));
+    res.json(await listValuationsWithPlayerByLeagueForUser(leagueId, userId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+valuationsRouter.put<ValuationParams>("/overrides/:playerId", async (req, res, next) => {
+  try {
+    const leagueId = parseId(req.params.leagueId);
+    const playerId = parseId(req.params.playerId);
+    const userId = requireUserId(req);
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+      throw ApiError.notFound(`league ${leagueId} not found`);
+    }
+    const player = await getPlayerById(playerId);
+    if (!player) {
+      throw ApiError.notFound(`player ${playerId} not found`);
+    }
+    const patch = valuationOverridePatchSchema.parse(req.body);
+    const outcome = await upsertValuationOverride(userId, leagueId, playerId, patch);
+    res.json(outcome.kind === "set" ? outcome.row : { cleared: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+valuationsRouter.delete<ValuationParams>("/overrides/:playerId", async (req, res, next) => {
+  try {
+    const leagueId = parseId(req.params.leagueId);
+    const playerId = parseId(req.params.playerId);
+    const userId = requireUserId(req);
+    await deleteValuationOverride(userId, leagueId, playerId);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

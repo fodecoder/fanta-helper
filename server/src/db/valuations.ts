@@ -82,17 +82,36 @@ export async function upsertValuation(
   return { row: valuationRow, inserted };
 }
 
-export async function listValuationsWithPlayerByLeague(
+// I valori numerici e la nota sono il COALESCED override → base per l'utente
+// indicato; `override` porta i valori grezzi del suo override (null se non ne
+// ha). La base in tabella `valuation` non viene mai toccata.
+export async function listValuationsWithPlayerByLeagueForUser(
   leagueId: number,
+  userId: number,
 ): Promise<ValuationWithPlayer[]> {
   const result = await pool.query<ValuationWithPlayer>(
-    `SELECT v.league_id, v.player_id, v.tier, v.target, v.fair_value, v.max_bid,
-            v.panic_price, v.confidence, v.note, p.name, p.team, p.ruolo, p.image_url
+    `SELECT v.league_id, v.player_id, v.tier,
+            COALESCE(o.target, v.target)           AS target,
+            COALESCE(o.fair_value, v.fair_value)   AS fair_value,
+            COALESCE(o.max_bid, v.max_bid)         AS max_bid,
+            COALESCE(o.panic_price, v.panic_price) AS panic_price,
+            v.confidence,
+            COALESCE(o.note, v.note)               AS note,
+            p.name, p.team, p.ruolo, p.image_url,
+            CASE WHEN o.user_id IS NULL THEN NULL ELSE json_build_object(
+              'target', o.target,
+              'fair_value', o.fair_value,
+              'max_bid', o.max_bid,
+              'panic_price', o.panic_price,
+              'note', o.note
+            ) END AS override
      FROM valuation v
      JOIN player p ON p.id = v.player_id
+     LEFT JOIN user_valuation_override o
+       ON o.user_id = $2 AND o.league_id = v.league_id AND o.player_id = v.player_id
      WHERE v.league_id = $1
      ORDER BY p.name`,
-    [leagueId],
+    [leagueId, userId],
   );
   return result.rows;
 }

@@ -78,11 +78,40 @@ export const valuationRecordSchema = valuationUpsertSchema.extend({
 });
 export type ValuationRecord = z.infer<typeof valuationRecordSchema>;
 
+// Override personale (per-utente) dei valori del listino. Tabella sparsa:
+// ogni campo è nullable e opzionale, il valore effettivo a lettura è
+// `coalesce(override, base)`. La base resta immutabile e condivisa; l'override
+// vale solo per l'utente che lo scrive. Stessa base 1000 crediti dei valori di
+// listino — il riscalaggio per il budget di lega resta a carico della vista.
+export const valuationOverridePatchSchema = z
+  .object({
+    target: z.number().int().nonnegative().nullable(),
+    fair_value: z.number().int().nonnegative().nullable(),
+    max_bid: z.number().int().nonnegative().nullable(),
+    panic_price: z.number().int().nonnegative().nullable(),
+    note: z.string().trim().min(1).nullable(),
+  })
+  .partial();
+export type ValuationOverridePatch = z.infer<typeof valuationOverridePatchSchema>;
+
+export const valuationOverrideSchema = z.object({
+  target: z.number().int().nonnegative().nullable(),
+  fair_value: z.number().int().nonnegative().nullable(),
+  max_bid: z.number().int().nonnegative().nullable(),
+  panic_price: z.number().int().nonnegative().nullable(),
+  note: z.string().nullable(),
+});
+export type ValuationOverride = z.infer<typeof valuationOverrideSchema>;
+
 export const valuationWithPlayerSchema = valuationRecordSchema.extend({
   name: z.string(),
   team: z.string(),
   ruolo: roleSchema,
   image_url: z.string().nullable(),
+  // I campi ereditati sopra sono il valore COALESCED (override → base).
+  // `override` porta i valori grezzi dell'override dell'utente corrente
+  // (null dove il campo non è sovrascritto), o null se non esiste override.
+  override: valuationOverrideSchema.nullable(),
 });
 export type ValuationWithPlayer = z.infer<typeof valuationWithPlayerSchema>;
 

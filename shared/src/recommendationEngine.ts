@@ -96,6 +96,9 @@ export interface PlayerRecommendation {
   tier: string;
   components: PlayerRecommendationComponents;
   price: PlayerRecommendationPrice;
+  // Annotato a valle da applyTeamPreferences (layer per-utente): non influenza
+  // score/tier, solo badge in UI e ordinamento secondario entro fascia.
+  teamPref?: "prefer" | "avoid" | null;
 }
 
 export interface RecommendationEngineInput {

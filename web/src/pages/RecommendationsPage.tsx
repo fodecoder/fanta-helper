@@ -1,7 +1,9 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import type { League, PlayerRecommendationWithTags } from "@fanta-helper/shared";
+import type { League, PlayerRecommendationWithTags, TeamPref } from "@fanta-helper/shared";
 import { ROLES, type Role } from "@fanta-helper/shared";
 import * as recommendationsApi from "../api/recommendations";
+import * as teamPrefsApi from "../api/teamPrefs";
+import { TeamPrefPanel } from "../components/TeamPrefPanel";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
 import { roleColor } from "../lib/auctionDerivations";
@@ -23,6 +25,8 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [teamPrefs, setTeamPrefs] = useState<TeamPref[]>([]);
+  const [prefsToken, setPrefsToken] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,7 +41,21 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
         setLoadError(err instanceof Error ? err.message : "caricamento consigli fallito");
       });
     return () => controller.abort();
-  }, [league.id]);
+  }, [league.id, prefsToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    teamPrefsApi
+      .listTeamPrefs(league.id, controller.signal)
+      .then(setTeamPrefs)
+      .catch(() => setTeamPrefs([]));
+    return () => controller.abort();
+  }, [league.id, prefsToken]);
+
+  const knownTeams = useMemo(
+    () => [...new Set((recommendations ?? []).map((r) => r.team))],
+    [recommendations],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,6 +82,13 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
         title="Consigli"
         subtitle="Giocatori disponibili ordinati per valore sopra il rimpiazzo (VORP), relativo alle regole della lega: fantamedia ricostruita su scoring/modificatori, affidabilità pesata sulle presenze, scarsità di reparto e bisogni residui di Io. Nessun dato inventato: chi non ha statistiche per l'ultima stagione resta segnalato come tale."
         calls={calls}
+      />
+
+      <TeamPrefPanel
+        leagueId={league.id}
+        teams={knownTeams}
+        prefs={teamPrefs}
+        onChanged={() => setPrefsToken((t) => t + 1)}
       />
 
       <div
@@ -147,6 +172,19 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                         {occasione && (
                           <span className="tag tag-accent" style={{ marginLeft: 6 }}>
                             Occasione
+                          </span>
+                        )}
+                        {r.teamPref === "avoid" && (
+                          <span
+                            className="tag tag-neutral"
+                            style={{ marginLeft: 6, color: "var(--color-accent-2-700)" }}
+                          >
+                            squadra da evitare
+                          </span>
+                        )}
+                        {r.teamPref === "prefer" && (
+                          <span className="tag tag-accent" style={{ marginLeft: 6 }}>
+                            squadra preferita
                           </span>
                         )}
                         {r.tags.map((t) => (

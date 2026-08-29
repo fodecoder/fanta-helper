@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-08-29
+
+### Added
+
+- **Consigli personalizzati per utente**: nuovo layer per-utente che non tocca
+  il dato di base condiviso.
+  - **Override valutazioni** (`user_valuation_override`, tabella sparsa a chiavi
+    `user_id, league_id, player_id`): ogni utente può correggere
+    `target / fair_value / max_bid / panic_price / note` di un giocatore solo
+    per sé. Il valore effettivo a lettura è `coalesce(override, base)`; la
+    tabella `valuation` condivisa resta invariata. Editing inline nella pagina
+    Valutazioni (celle numeriche e nota), con marcatura dei campi sovrascritti e
+    pulsante «Ripristina base». Endpoint `PUT`/`DELETE
+    /leagues/:leagueId/valuations/overrides/:playerId`; il `GET` delle
+    valutazioni ora restituisce i valori coalesced per l'utente loggato.
+  - **Preferenze squadra** (`user_team_pref`, chiavi `user_id, league_id,
+    team`, `kind` in `prefer|avoid`): effetto flag + ordinamento secondario a
+    parità di fascia, nessuna mutazione dello score. Squadra preferita → sale in
+    lista nella propria fascia; squadra da evitare → badge «squadra da evitare»
+    e demozione in coda di fascia. Riordino applicato lato server nella route
+    `/recommendations`; gestione da un pannello in cima alla pagina Consigli.
+    CRUD `GET`/`PUT`/`DELETE /leagues/:leagueId/team-prefs`.
+
 ## [4.1.0] - 2026-08-29
 
 ### Added

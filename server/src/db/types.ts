@@ -58,6 +58,24 @@ export interface ValuationRow {
   note: string | null;
 }
 
+export interface UserValuationOverrideRow {
+  user_id: number;
+  league_id: number;
+  player_id: number;
+  target: number | null;
+  fair_value: number | null;
+  max_bid: number | null;
+  panic_price: number | null;
+  note: string | null;
+}
+
+export interface UserTeamPrefRow {
+  user_id: number;
+  league_id: number;
+  team: string;
+  kind: "prefer" | "avoid";
+}
+
 export interface ManagerRow {
   id: number;
   league_id: number;

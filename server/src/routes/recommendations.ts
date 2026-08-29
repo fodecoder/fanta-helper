@@ -20,11 +20,14 @@ function parseId(raw: string): number {
 recommendationsRouter.get<LeagueParams>("/", async (req, res, next) => {
   try {
     const leagueId = parseId(req.params.leagueId);
+    if (!req.userId) {
+      throw ApiError.unauthorized("authentication required");
+    }
     const league = await getLeagueById(leagueId);
     if (!league) {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
-    res.json(await getPlayerRecommendations(league));
+    res.json(await getPlayerRecommendations(league, req.userId));
   } catch (err) {
     next(err);
   }

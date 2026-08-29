@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { League, ValuationWithPlayer } from "@fanta-helper/shared";
-import { ROLES, scaleValuationAmounts, valuationScaleFactor, type Role } from "@fanta-helper/shared";
+import { ROLES, valuationScaleFactor, type Role } from "@fanta-helper/shared";
 import * as valuationsApi from "../api/valuations";
 import * as purchasesApi from "../api/purchases";
 import { ValuationImportForm } from "../components/ValuationImportForm";
 import { ValuationGenerateForm } from "../components/ValuationGenerateForm";
+import { ValuationOverrideRow } from "../components/ValuationOverrideRow";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
-import { roleColor } from "../lib/auctionDerivations";
 
 interface ValuationsPageProps {
   league: League;
@@ -56,16 +56,15 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
       .filter((v) => roleFilter === "tutti" || v.ruolo === roleFilter)
       .filter(
         (v) => q === "" || v.name.toLowerCase().includes(q) || v.team.toLowerCase().includes(q),
-      )
-      .map((v) => scaleValuationAmounts(v, valuationScale));
-  }, [valuations, query, roleFilter, valuationScale]);
+      );
+  }, [valuations, query, roleFilter]);
 
   return (
     <>
       <PageMasthead
         kicker="Configurazione · listino della lega"
         title="Valutazioni"
-        subtitle="Il listino della lega: tier, target, fair value, max bid e panic price per ogni giocatore. Genera con Claude a chunk per ruolo, oppure importa un JSON già pronto. Niente viene salvato prima della revisione."
+        subtitle="Il listino della lega: tier, target, fair value, max bid e panic price per ogni giocatore. Genera con Claude a chunk per ruolo, oppure importa un JSON già pronto. Niente viene salvato prima della revisione. I valori numerici e la nota sono editabili inline: la modifica diventa un override personale (visibile solo a te), la base condivisa resta invariata."
         calls={calls}
       />
 
@@ -119,7 +118,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         <StatusMessage kind="empty">Nessuna valutazione importata.</StatusMessage>
       ) : (
         <div className="table-scroll">
-          <table className="table" style={{ minWidth: 780 }}>
+          <table className="table" style={{ minWidth: 980 }}>
             <thead>
               <tr>
                 <th>Nome</th>
@@ -131,41 +130,20 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
                 <th style={{ textAlign: "right" }}>Max bid</th>
                 <th style={{ textAlign: "right" }}>Panic price</th>
                 <th>Confidence</th>
+                <th>Nota</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((v) => (
-                <tr
+                <ValuationOverrideRow
                   key={v.player_id}
-                  style={purchasedIds.has(v.player_id) ? { opacity: 0.5 } : undefined}
-                >
-                  <td style={{ whiteSpace: "nowrap" }}>{v.name}</td>
-                  <td>{v.team}</td>
-                  <td style={{ color: roleColor(v.ruolo) }}>{v.ruolo}</td>
-                  <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>{v.tier}</td>
-                  <td className="num" style={{ textAlign: "right" }}>
-                    {v.target}
-                  </td>
-                  <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
-                    {v.fair_value}
-                  </td>
-                  <td className="num" style={{ textAlign: "right" }}>
-                    {v.max_bid}
-                  </td>
-                  <td
-                    className="num"
-                    style={{ textAlign: "right", color: "var(--color-neutral-700)" }}
-                  >
-                    {v.panic_price}
-                  </td>
-                  <td>
-                    <span
-                      className={v.confidence === "high" ? "tag tag-accent" : "tag tag-neutral"}
-                    >
-                      {v.confidence}
-                    </span>
-                  </td>
-                </tr>
+                  leagueId={league.id}
+                  valuation={v}
+                  factor={valuationScale}
+                  purchased={purchasedIds.has(v.player_id)}
+                  onSaved={refresh}
+                />
               ))}
             </tbody>
           </table>
