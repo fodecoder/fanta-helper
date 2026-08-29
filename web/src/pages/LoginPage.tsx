@@ -62,6 +62,15 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
         <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
           Accedi
         </button>
+
+        <a
+          className="login-sofifa"
+          href="https://sofifa.com/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <img src="/sofifa-logo.png" alt="SoFIFA" />
+        </a>
       </form>
     </div>
   );

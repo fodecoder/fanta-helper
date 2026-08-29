@@ -391,8 +391,18 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     href="https://sofifa.com/"
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: "inherit" }}
+                    style={{
+                      color: "inherit",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
                   >
+                    <img
+                      src="/sofifa-logo-small.png"
+                      alt=""
+                      style={{ height: 12, width: "auto" }}
+                    />
                     SoFIFA
                   </a>
                 </div>

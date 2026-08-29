@@ -480,6 +480,16 @@ select.input {
   justify-content: center;
   margin-bottom: var(--space-1);
 }
+.login-sofifa {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+.login-sofifa img {
+  height: 24px;
+  width: auto;
+  display: block;
+}
 
 /* — shell — */
 .shell {
