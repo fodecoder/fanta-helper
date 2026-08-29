@@ -1,4 +1,4 @@
-import type { User, LoginInput } from "@fanta-helper/shared";
+import type { User, LoginInput, UpdateProfileInput } from "@fanta-helper/shared";
 import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/auth`;
@@ -40,4 +40,12 @@ export function logout(): Promise<void> {
 
 export function me(signal?: AbortSignal): Promise<User> {
   return apiFetch(`${BASE_URL}/me`, { signal }).then((res) => handle<User>(res));
+}
+
+export function updateProfile(input: UpdateProfileInput): Promise<User> {
+  return apiFetch(`${BASE_URL}/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  }).then((res) => handle<User>(res));
 }

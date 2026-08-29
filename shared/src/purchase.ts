@@ -41,5 +41,10 @@ export const managerAuctionStatusSchema = z.object({
   residuo: z.number().int(),
   slots: z.array(roleSlotStatusSchema),
   adjustedMaxBid: z.number().int().nonnegative(),
+  // Identità dell'utente collegato al manager (via manager.user_id), quando
+  // presente: usata solo per mostrare l'avatar in panoramica.
+  userName: z.string().nullable().optional(),
+  userAvatar: z.string().nullable().optional(),
+  userAvatarColor: z.string().nullable().optional(),
 });
 export type ManagerAuctionStatus = z.infer<typeof managerAuctionStatusSchema>;

@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-08-29
+
+### Added
+
+- **Avatar e colore per utente**: ogni utente sceglie un'emoji da un set
+  predefinito e una tinta da una palette fissa; nessun upload di immagini. I
+  valori persistono sulle colonne `app_user.avatar` / `app_user.avatar_color`
+  già esistenti tramite il nuovo endpoint `PATCH /auth/me` (validazione a
+  whitelist: emoji e colori fuori set vengono rifiutati). La scelta si fa da
+  una modale aperta dal nome utente nella barra laterale. L'avatar compare
+  nell'header (menu utente) e nella tabella "Stato dei manager" della
+  panoramica per i manager collegati a un utente; in assenza di scelta si
+  ripiega su iniziali e tinta deterministica dallo username.
+
 ## [4.0.1] - 2026-08-27
 
 ### Fixed

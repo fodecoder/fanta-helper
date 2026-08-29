@@ -11,6 +11,17 @@ export async function getUserById(id: number): Promise<AppUserRow | undefined> {
   return result.rows[0];
 }
 
+export async function updateUserProfile(
+  id: number,
+  input: { avatar: string | null; avatar_color: string | null },
+): Promise<AppUserRow | undefined> {
+  const result = await pool.query<AppUserRow>(
+    `UPDATE app_user SET avatar = $2, avatar_color = $3 WHERE id = $1 RETURNING *`,
+    [id, input.avatar, input.avatar_color],
+  );
+  return result.rows[0];
+}
+
 export async function upsertUser(input: Omit<AppUserRow, "id">): Promise<AppUserRow> {
   const result = await pool.query<AppUserRow>(
     `INSERT INTO app_user (username, password_hash, avatar, avatar_color)

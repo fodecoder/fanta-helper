@@ -174,6 +174,7 @@ function App() {
         version={__APP_VERSION__}
         currentUser={currentUser!}
         onLogout={handleLogout}
+        onUserUpdated={setCurrentUser}
       />
       <main className="main">
         {loadError ? (

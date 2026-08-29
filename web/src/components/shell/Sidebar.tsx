@@ -35,6 +35,7 @@ interface SidebarProps {
   version: string;
   currentUser: User;
   onLogout: () => void;
+  onUserUpdated: (user: User) => void;
 }
 
 export function Sidebar({
@@ -48,6 +49,7 @@ export function Sidebar({
   version,
   currentUser,
   onLogout,
+  onUserUpdated,
 }: SidebarProps) {
   const roster = activeLeague?.roster_config;
   const meta = activeLeague
@@ -94,7 +96,7 @@ export function Sidebar({
       </div>
 
       <div className="sidebar-foot">
-        <UserMenu user={currentUser} onLogout={onLogout} />
+        <UserMenu user={currentUser} onLogout={onLogout} onUserUpdated={onUserUpdated} />
         <button
           type="button"
           className="btn btn-primary btn-block"

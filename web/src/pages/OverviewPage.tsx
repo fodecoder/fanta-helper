@@ -12,6 +12,7 @@ import * as valuationsApi from "../api/valuations";
 import * as wishlistApi from "../api/wishlist";
 import { ModifierWarning } from "../components/ModifierWarning";
 import { PageMasthead } from "../components/shell/PageMasthead";
+import { UserAvatar } from "../components/UserAvatar";
 import { StatFigure } from "../components/StatFigure";
 import { StatusMessage } from "../components/StatusMessage";
 import { deltaColor, formatDelta, roleColor } from "../lib/auctionDerivations";
@@ -138,8 +139,21 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                 return (
                   <tr key={s.managerId}>
                     <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                      <span className={isMe ? "mgr-dot mgr-dot--me" : "mgr-dot"} />
-                      {s.managerName}
+                      <span className="mgr-name-cell">
+                        {s.userName ? (
+                          <UserAvatar
+                            size="sm"
+                            user={{
+                              username: s.userName,
+                              avatar: s.userAvatar ?? null,
+                              avatar_color: s.userAvatarColor ?? null,
+                            }}
+                          />
+                        ) : (
+                          <span className={isMe ? "mgr-dot mgr-dot--me" : "mgr-dot"} />
+                        )}
+                        {s.managerName}
+                      </span>
                     </td>
                     <td className="num" style={{ textAlign: "right" }}>
                       {s.spent}
