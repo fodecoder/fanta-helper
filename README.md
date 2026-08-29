@@ -14,14 +14,33 @@ Documenti di riferimento: [SPEC.md](./SPEC.md) (modello dati e decisioni),
 - **Backend**: Node + TypeScript (sottile) → Render
 - **Database**: PostgreSQL → Neon
 
-Uso personale, nessun login. Ogni asta è una riga `league` con nome univoco.
+App condivisa dai partecipanti della lega. Ogni lega è una riga `league` con nome
+univoco; ogni asta è il log immutabile degli acquisti di quella lega.
+
+Funzionalità principali:
+
+- **Autenticazione multiutente**: 4 utenti (Andre, Davide, Fra, Paul), login con
+  cookie di sessione firmato; l'identità del «tu» dei consigli è
+  `manager.user_id` (fallback su `is_owner`).
+- **Avatar e colore avatar** per utente (set predefinito, niente upload).
+- **Engine di consiglio**: valore relativo alla lega (VORP, affidabilità da
+  presenze + titolarità, modificatori portiere/difesa, scarsità di reparto);
+  **tag giocatore** derivati (Rigorista, Titolare da 6, Porta bonus, Difensore da
+  bonus, Scommessa, Da prendere a 1); **score in scala 0–10 per ruolo** (sola
+  presentazione).
+- **Preferenze per-utente**: override di valutazioni (`user_valuation_override`,
+  `coalesce` sul valore di base — non tocca gli altri utenti) e squadre
+  preferite / da evitare (`user_team_pref`, solo flag + ordinamento, nessuna
+  mutazione dello score).
+- **Chat 1-a-1** append-only tra utenti, con notifica in-app dei messaggi in
+  arrivo (toast + badge non letti).
+- **Assistenza all'asta**: wishlist, confronto alternative stesso ruolo,
+  probabili formazioni, rigoristi, matrice coppie portieri.
 
 Note d'uso: alla creazione, una lega parte da default modificabili (rosa
 `3/8/8/6`, 8 squadre, budget 1000, punteggio e modificatori standard) e viene
 popolata con i manager (`Io` + avversari generati). L'import quotazioni accetta
-**CSV o xlsx**; è disponibile anche l'import della **matrice coppie portieri** di
-riferimento, consultabile durante l'asta. Modello dati e formati in
-[SPEC.md](./SPEC.md).
+**CSV o xlsx**. Modello dati e formati in [SPEC.md](./SPEC.md).
 
 I file storici in `docs/` (quotazioni e statistiche Fantacalcio delle ultime
 stagioni) sono la sorgente per l'ingest a database di quotazioni
@@ -90,19 +109,37 @@ cp web/.env.example    web/.env
 DATABASE_URL=postgres://<user>:<pass>@<host>/<db>?sslmode=require
 PORT=8787
 CORS_ORIGIN=http://localhost:5173
+COOKIE_SECRET=<stringa casuale lunga>   # firma il cookie di sessione
+# COOKIE_SECURE=false                    # solo per test su IP LAN non-localhost
+```
+
+Le password dei 4 utenti stanno in un file separato non versionato
+`server/.env.seed-users`, letto solo dallo script di seed utenti:
+
+```
+SEED_PASSWORD_ANDRE=...
+SEED_PASSWORD_DAVIDE=...
+SEED_PASSWORD_FRA=...
+SEED_PASSWORD_PAUL=...
 ```
 
 `web/.env`:
 
 ```
-VITE_API_URL=http://localhost:8787
+VITE_API_URL=/api
 ```
+
+Le chiamate API passano da `/api` sullo stesso origin della SPA: in sviluppo le
+inoltra il proxy di Vite (`web/vite.config.ts` → `http://localhost:8787`), in
+produzione una Cloudflare Pages Function (vedi Hosting). Così il cookie di
+sessione è first-party e i browser mobile non lo scartano.
 
 ### 3. Applica le migrazioni (e opzionalmente il seed)
 
 ```bash
 npm run db:migrate
-npm run db:seed        # opzionale: dati di esempio
+npm run db:seed         # opzionale: dati di esempio
+npm run db:seed:users   # crea i 4 utenti (richiede server/.env.seed-users)
 ```
 
 ### 4. Avvia in sviluppo
@@ -121,7 +158,8 @@ backend.
 
 ```bash
 npm run build      # build di tutti i workspace
-npm run lint       # lint di tutti i workspace
+npm run lint       # lint + typecheck di tutti i workspace
+npm test           # test (vitest) dei moduli puri in shared
 ```
 
 ---
@@ -132,11 +170,10 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-08-19, `v2.2.0`).** **In produzione**: Neon + Render + Cloudflare
-Pages attivi, app funzionante end-to-end. Fasi 0–4, matrice coppie portieri,
-valutazioni generate via LLM e redesign UI (design system Broadsheet) complete.
-In lavorazione la Fase 5 (ingest storico `docs/` + engine di consiglio). La
-procedura sotto resta come riferimento per un nuovo ambiente. I passi eseguiti:
+**Stato (2026-08-29, `v4.6.0`).** **In produzione**: Neon + Render + Cloudflare
+Pages attivi, app funzionante end-to-end. Fasi 0–7 complete (multiutente, chat,
+tag, preferenze per-utente); in corso le rifiniture mobile. La procedura sotto
+resta come riferimento per un nuovo ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati
 - [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
@@ -191,10 +228,16 @@ In alternativa, la configurazione manuale:
 3. **Environment variables**:
 
    ```
-   DATABASE_URL = <connection string pooled di Neon>
-   PORT         = 10000        # Render assegna la porta via $PORT: leggila dal codice
-   CORS_ORIGIN  = <URL del sito Cloudflare Pages>   # compila dopo il passo C
+   DATABASE_URL   = <connection string pooled di Neon>
+   PORT           = 10000      # Render assegna la porta via $PORT: leggila dal codice
+   CORS_ORIGIN    = <URL del sito Cloudflare Pages>   # compila dopo il passo C
+   COOKIE_SECRET  = <stringa casuale lunga>           # firma il cookie di sessione
+   COOKIE_SECURE  = true
    ```
+
+   Gli utenti si creano una tantum in locale con `npm run db:seed:users` puntando
+   `DATABASE_URL` al database di produzione (connessione diretta) e con
+   `server/.env.seed-users` compilato.
 
 4. Deploy. Verifica l'endpoint di salute: `https://<servizio>.onrender.com/health`.
 5. Annota l'URL pubblico del backend: serve al frontend (passo C).
@@ -214,24 +257,35 @@ In alternativa, la configurazione manuale:
 3. **Environment variables**:
 
    ```
-   VITE_API_URL = https://<servizio>.onrender.com
+   VITE_API_URL = /api
+   API_ORIGIN   = https://<servizio>.onrender.com   # usato dalla Pages Function
    ```
 
-4. Routing SPA: assicurati che `web/public/_redirects` contenga:
+4. **Proxy API same-origin**: il repo include
+   `web/functions/api/[[path]].js`, una Cloudflare Pages Function che inoltra
+   ogni `/api/*` al backend Render (`API_ORIGIN`). Le Functions sono rilevate
+   automaticamente dalla cartella `functions/` alla root del progetto Pages
+   (`web/`). Serve a tenere le chiamate sullo stesso origin della SPA: il cookie
+   di sessione resta first-party (`SameSite=Lax`) e i browser mobile non lo
+   scartano come cookie di terze parti.
+5. Routing SPA: assicurati che `web/public/_redirects` contenga:
 
    ```
    /*  /index.html  200
    ```
 
-   Senza questa regola i refresh su rotte interne danno 404.
-5. Deploy. Ottieni l'URL pubblico (es. `https://fanta-helper.pages.dev`).
+   Senza questa regola i refresh su rotte interne danno 404. Le Functions
+   (`/api/*`) hanno precedenza su questa regola.
+6. Deploy. Ottieni l'URL pubblico (es. `https://fanta-helper.pages.dev`).
 
-### D. Chiudi il cerchio (CORS)
+### D. CORS
 
-1. Torna su Render → variabile `CORS_ORIGIN` = URL di Cloudflare Pages del passo C.
-2. Redeploy del backend.
-3. Verifica end-to-end: apri l'URL Pages; la SPA deve leggere `/health` dal
-   backend Render collegato a Neon senza errori CORS.
+Con il proxy same-origin le chiamate del browser partono tutte dal dominio Pages,
+quindi non c'è più una richiesta cross-origin da autorizzare. `CORS_ORIGIN` su
+Render resta impostato all'URL di Pages come difesa in profondità (e per
+eventuali chiamate diagnostiche dirette al backend). Verifica end-to-end: apri
+l'URL Pages, fai login, controlla che il selettore lega e la chat funzionino
+anche con "Block third-party cookies" attivo nel browser.
 
 ### Migrazioni automatiche
 

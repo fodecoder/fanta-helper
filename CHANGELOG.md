@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.0] - 2026-08-29
+
+### Added
+
+- **Notifica messaggi chat in arrivo**: nuovo endpoint `GET /chat/inbox?since=`
+  (messaggi ricevuti dopo un istante, da qualunque mittente). Il pannello chat lo
+  interroga ogni 10 s anche da chiuso: un messaggio da un mittente diverso dalla
+  conversazione aperta genera un toast cliccabile e incrementa un badge di non
+  letti sul FAB. Lo stato «non letto» è derivato a lettura lato client
+  (`localStorage`), nessun campo sul log append-only.
+
+### Fixed
+
+- **Sessione persa su mobile**: SPA (Cloudflare Pages) e API (Render) sono domini
+  diversi, quindi il cookie di sessione era `SameSite=None; Secure` e i browser
+  mobile lo scartavano come cookie di terze parti — selettore lega vuoto e chat
+  «authentication required» solo da telefono. Le chiamate API ora passano da
+  `/api` sullo stesso origin della SPA (proxy Vite in sviluppo, Cloudflare Pages
+  Function `functions/api/[[path]].js` in produzione, env `API_ORIGIN`); il
+  cookie è first-party e usa `SameSite=Lax`.
+- **Chat non usabile su mobile**: sotto 768px il pannello si apre a schermo
+  intero (overlay), senza drag/resize, con un solo bottone di chiusura; sopra
+  resta flottante e ridimensionabile.
+
 ## [4.5.0] - 2026-08-29
 
 ### Added

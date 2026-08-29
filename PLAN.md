@@ -1,20 +1,15 @@
 # PLAN.md — Sequenza di feature
 
-Fasi ordinate. Le fasi 1–2 sono l'obiettivo entro deadline; la fase 3 è successiva.
+Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-08-26 — `v3.3.0`. Fasi 0–6 complete. Completate anche la
-> **correzione griglia portieri** (matrice coppie `gk_pairing`), le **valutazioni
-> generate via LLM in-app** e il **redesign UI** (design system Broadsheet).
-> **Hosting in produzione**: Neon + Render + Cloudflare Pages attivi, app
-> funzionante end-to-end. La **Fase 5 — Dati storici + Engine** è chiusa (ingest
-> storico + corrente, engine di consiglio, UX asta, provider SoFIFA opzionale).
-> La **Fase 6 — Rifiniture v3.0** è chiusa (correzioni UX dall'uso reale,
-> import/export rose, valutazioni di default per leghe da 8/10 squadre,
-> riscalatura al budget di lega, suggerimento coppia portieri in asta).
-> Il vecchio `PROMPTS.md` (Fasi ≤6) è stato eseguito per intero: la sua traccia
-> vive nel `CHANGELOG.md` e nella git history. `PROMPTS.md` è ora ripopolato con i
-> prompt operativi della **Fase 7 — Multiutente v4.0** (login, avatar, chat,
-> preferenze per-utente, tag giocatore, audit engine), il lavoro attivo.
+> Stato al 2026-08-29 — `v4.6.0`. Fasi 0–7 complete. La **Fase 7 — Multiutente
+> v4** (login 4 utenti, avatar, chat 1-a-1, preferenze per-utente, override
+> valutazioni, tag giocatore, modificatori portiere/difesa nell'engine, score
+> 0–10 per ruolo, SoFIFA in landing/asta) è chiusa: audit di verifica sul codice
+> nella sezione «Fase 7» sotto. In corso la **Fase mobile (P10)**: sessione su
+> mobile (proxy same-origin), chat fullscreen sotto 768px, notifiche di messaggio
+> in arrivo. `PROMPTS.md` contiene i prompt operativi P1–P10; la traccia storica
+> (Fasi ≤6) vive nel `CHANGELOG.md` e nella git history.
 
 ## Fase 0 — Scaffolding  *(completa)*
 
@@ -134,60 +129,72 @@ eseguiti; la traccia vive nel `CHANGELOG.md`.
 - [x] **Feat — suggerimento coppia portieri favorevole dopo un acquisto**
       (commit `a4bcd76`).
 
-## Fase 7 — Multiutente v4.0  *(backlog attivo — in progettazione)*
+## Fase 7 — Multiutente v4  *(completa — `v4.0.0` → `v4.5.0`)*
 
-Passaggio da app monoutente a app condivisa dai 4 partecipanti della lega, con
-consigli personalizzabili per utente. Decisioni e tradeoff in
-[docs/design-fase7.md](./docs/design-fase7.md); prompt operativi ordinati
-(P1–P8) in [PROMPTS.md](./PROMPTS.md). **Vincolo invariante**: lo stato dell'asta resta derivato dal log
-`purchase`; le personalizzazioni sono un layer di override, non mutano il valore
-di base.
+Passaggio da app monoutente a app condivisa dai 4 partecipanti, con consigli
+personalizzabili per utente. Decisioni e tradeoff in
+[docs/design-fase7.md](./docs/design-fase7.md); prompt operativi P1–P9 in
+[PROMPTS.md](./PROMPTS.md). **Vincolo invariante rispettato**: lo stato dell'asta
+resta derivato dal log `purchase`; le personalizzazioni sono un layer di override
+(`coalesce`) o di flag, non mutano il valore di base.
 
-- [ ] **Feat — audit engine**: verifica dell'algoritmo di valutazione
-      (replacement level, scarsità, modificatore difesa via proxy `mv`,
-      reliability). Correzioni prioritarie prima di costruirci sopra i tag.
-- [ ] **Feat — tag giocatore derivati** (Scommessa, Da prendere a 1, Titolare da
-      6, Porta bonus, Rigorista, Difensore da bonus, …), calcolati puri dal log +
-      dati, subito visibili in consigli e asta.
-- [ ] **Feat — login** dei 4 utenti (Andre, Davide, Fra, Paul), sessione separata
-      per utente. NB: rompe l'assunzione storica "nessun login" — motivata dal
-      passaggio a multiutente.
-- [ ] **Feat — avatar e colore avatar** per utente.
-- [ ] **Feat — chat 1-a-1** ancorabile e ridimensionabile, minimale.
-- [ ] **Feat — preferenze per-utente**: override di valutazioni/consigli che
-      lasciano invariato il valore di base per gli altri.
-- [ ] **Feat — preferenze di squadra** (squadre preferite / da evitare): i
-      consigli si adattano coerentemente.
-- [ ] **Feat — modificatori portiere/difesa nell'engine**: i consigli si
-      aggiornano tenendone conto (oggi solo `difesa` via proxy, `portiere` no).
-- [ ] **Feat — SoFIFA in landing/asta**: logo (normale in landing, piccolo in
-      asta) + link a `https://sofifa.com/`, prerequisito per l'accesso alle loro API.
+- [x] **P1 — modificatore portiere + difesa team-aware nell'engine**
+- [x] **P2 — reliability da titolarità (probable_lineup) + baseline mv**
+- [x] **P3 — tag giocatore derivati** (Rigorista, Titolare da 6, Porta bonus,
+      Difensore da bonus, Scommessa, Da prendere a 1) — modulo puro, badge in
+      consigli e asta
+- [x] **P4 — login 4 utenti** (Andre/Davide/Fra/Paul), sessione cookie firmato,
+      `manager.user_id` con priorità su `is_owner`
+- [x] **P5 — avatar + colore avatar** per utente
+- [x] **P6 — override valutazioni** (`user_valuation_override`, sparsa,
+      `coalesce`) + **preferenze di squadra** (`user_team_pref`, flag +
+      ordinamento secondario, nessuna mutazione score)
+- [x] **P7 — chat 1-a-1** append-only, polling, pannello flottante
+- [x] **P8 — logo + link SoFIFA** in landing e asta
+- [x] **P9 — bugfix UI + score 0–10 per ruolo**: modale profilo con scroll
+      interno, warning squadra da evitare in asta, tooltip sigle + scomposizione
+      formule, tag «Difensore da bonus» ristretto ai difensori, score normalizzato
+      0–10 per ruolo (sola presentazione)
 
-## Traguardo v4.0.0
+### Audit P1–P9 (verificato sul codice, 2026-08-29)
 
-Rilascio `4.0.0` = Fase 7 completa. Il salto di MAJOR è motivato
-dall'introduzione del modello multiutente (login, identità per-utente,
-personalizzazione dei consigli) e dalle migrazioni schema associate.
+Tutti implementati, con test per i moduli puri. Nessun elemento parziale/mancante.
 
-## Traguardo v1.0.0
+| P | Evidenza principale |
+|---|---|
+| P1 | `shared/src/recommendationEngine.ts` — `portiereBonus`, `blendDifesaMv`, `difesaBonus`, `pBonus`; `recommendationEngine.test.ts` |
+| P2 | `recommendationEngine.ts` — `MV_BASELINE`, `LINEUP_STATO_RELIABILITY`, `reliability`/`rawValue` |
+| P3 | `shared/src/playerTags.ts` + `playerTags.test.ts`; `server/src/db/recommendations.ts` (`computePlayerTags`); badge in `RecommendationsPage.tsx` / `auction/*` |
+| P4 | migrazioni `1787811995007_app-user.sql`, `1787811996024_manager-user-id.sql`; `server/src/routes/auth.ts`, `server/src/auth/*`, `http/requireAuth.ts`, `db/seedUsers.ts`; `web/src/pages/LoginPage.tsx`, gate `App.tsx` |
+| P5 | campi `avatar`/`avatar_color` su `app_user`; `shared/src/avatar.ts`; `web/src/components/UserAvatar.tsx`, `shell/ProfileModal.tsx`, `shell/UserMenu.tsx` |
+| P6 | migrazione `1787961600000_user-personalization.sql`; `server/src/db/{valuationOverrides,teamPrefs}.ts`, `routes/{valuations,teamPrefs}.ts`; `shared/src/teamPreferences.ts` + `teamPreferences.test.ts`; `web/src/components/{TeamPrefPanel,ValuationOverrideRow}.tsx` |
+| P7 | migrazione `1788048000000_chat-message.sql`; `server/src/routes/chat.ts`, `db/chat.ts`; `web/src/components/shell/ChatPanel.tsx`, `web/src/api/chat.ts` |
+| P8 | `web/public/sofifa-logo*.png`; `web/src/pages/LoginPage.tsx`; `web/src/pages/auction/AuctionDesktop.tsx` |
+| P9 | `web/src/components/ui/{Dialog,InfoLabel,TeamPrefBadge}.tsx`, `ScoreBreakdownDialog.tsx`, `lib/columnGlossary.ts`; `recommendationEngine.ts` `breakdown` + `normalizeScoresByRole` + test; `maxBid.ts` `explainAdjustedMaxBid`; `playerTags.ts` ristretto a `"D"` + test |
 
-Rilascio 1.0.0 = Fase 2 completa + servizi in produzione.
+Aggravante nota (candidata a prompt successivo): dopo `POST /auth/login` il
+client non riverifica `/auth/me` (`web/src/App.tsx`), quindi quando il cookie di
+sessione non persiste si resta «loggati ma tutto 401» invece di tornare al login.
 
-**Codice** (operazioni 11–12 in PROMPTS.md) — **completo**
+## Fase mobile (P10)  *(in corso — `v4.6.0`)*
 
-- [x] Rifinitura UI
-- [x] Miniature giocatori
+- [x] **B6 — sessione su mobile**: le chiamate API passano da `/api` same-origin
+      (proxy Vite in dev, Cloudflare Pages Function in prod), cookie di sessione
+      first-party con `SameSite=Lax`. Causa: cookie cross-site `SameSite=None`
+      scartato dai browser mobile come cookie di terze parti (SPA su Pages, API
+      su Render = domini diversi).
+- [x] **B7 — chat fullscreen su mobile**: sotto 768px overlay a tutto schermo,
+      niente drag/resize.
+- [x] **B8 — notifica messaggio in arrivo**: endpoint `GET /chat/inbox?since=`,
+      poll globale ogni 10s, toast cliccabile + badge non-letti sul FAB (stato
+      derivato a lettura lato client).
 
-**Provisioning** (manuale, nessun codice — dettaglio in README.md) — **completo**
+## Traguardi di rilascio (storico)
 
-- [x] Neon: progetto e database creati
-- [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,
-      connessione **diretta** non pooled)
-- [x] Render: web service (build dalla root del repo, Blueprint [`render.yaml`](./render.yaml))
-- [x] Cloudflare Pages: progetto (build dalla root, output `web/dist`)
-- [x] `CORS_ORIGIN` su Render = URL di Pages, con redeploy (chiusura del cerchio)
-- [x] Push umano su `main`: workflow (lint/build/migrazioni) e redeploy eseguiti
-
-Rilascio in produzione: app funzionante end-to-end (attuale `v2.2.0`). Fasi 0–4,
-griglia portieri, valutazioni LLM e redesign UI complete; il prossimo lavoro è la
-**Fase 5 — Dati storici + Engine**.
+- `v1.0.0` — Fase 2 completa + servizi in produzione (Neon + Render + Cloudflare
+  Pages).
+- `v2.2.0` — redesign UI (design system Broadsheet).
+- `v3.3.0` — Fase 6 (rifiniture v3.0).
+- `v4.0.0` — Fase 7: modello multiutente (login, identità per-utente,
+  personalizzazione consigli) + migrazioni schema associate.
+- `v4.5.0` — Fase 7 chiusa (bugfix UI + score 0–10 per ruolo).
