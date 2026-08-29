@@ -205,3 +205,66 @@ API).
 cliccabili verso il sito.
 
 **Versioning.** `feat` → MINOR. Ultimo taglio verso `v4.0.0`.
+
+---
+
+## P9 — Bugfix UI + tag + normalizzazione score (da review manuale)
+
+**Obiettivo.** Correggere 4 difetti emersi da un giro di test manuale su modale
+profilo, preferenze squadra, tag giocatore e leggibilità dello score. Nessuna
+modifica architetturale: sono fix mirati, ognuno isolabile.
+
+- **B1 — modale profilo tronca il contenuto.** Il dialog «Profilo» (avatar +
+  colore, P5) non copre l'intera viewport quando il contenuto supera l'altezza
+  disponibile: righe di avatar/colore restano tagliate fuori dal riquadro visibile
+  invece di scrollare dentro il modale. Fissa il layout del dialog perché scrolli
+  internamente (`max-height` legata al viewport + `overflow-y: auto` nel body del
+  modale), overlay e bottoni azione (Annulla/Salva) sempre visibili.
+- **B2 — preferenze squadra (P6) invisibili in asta.** Oggi «squadra preferita» /
+  «squadra da evitare» sono impostate in Consigli ma non hanno segnale nel
+  pannello asta: chi asta non vede che sta per prendere un giocatore di una
+  squadra segnata come «da evitare». Aggiungi un warning visibile nel pannello
+  asta (badge o banner accanto al giocatore in chiamata, e nella lista
+  alternative) quando la squadra del giocatore è in `user_team_pref` con
+  `kind='avoid'` per l'utente loggato. Nessun cambio allo score: solo segnale
+  visivo, coerente col vincolo di P6 (flag, non mutazione del valore).
+- **B3 — tooltip mancanti + colonne calcolate senza dettaglio.** Aggiungi tooltip
+  su tutte le colonne con sigle non ovvie (es. VORP, FVM, QT.A) in Consigli e
+  panoramica. Per le colonne che derivano da un calcolo (score, reliability,
+  max bid rettificato, ecc.) il tooltip mostra una sintesi leggibile della
+  formula applicata (valori usati, non solo il nome della formula) e un bottone
+  «Dettagli» che apre un pannello/modale con lo scomposto passo-passo. Riusa,
+  dove possibile, i dati già calcolati dal motore (`recommendationEngine`) invece
+  di ricalcolare lato client.
+- **B4 — tag «Difensore da bonus» applicato ai portieri.** In
+  `shared/src/playerTags.ts` la condizione include `recommendation.ruolo === "P"`
+  insieme a `"D"` (riga ~148), quindi i portieri prendono il tag pensato per i
+  difensori. Restringi la condizione al solo `ruolo === "D"`. Se un segnale
+  equivalente ha senso per i portieri (es. «Portiere di squadra solida»), va
+  proposto come tag distinto in un prompt successivo, non riusando questo.
+  Aggiorna `playerTags.test.ts` con un caso che verifica l'assenza del tag sui
+  portieri.
+
+**Non-bug, ma richiesto insieme (B5) — normalizzazione score 0–10.** Lo score
+mostrato in Consigli/asta non ha oggi una scala fissa e leggibile. Introduci una
+normalizzazione **di sola presentazione** (0 = da evitare, 10 = da prendere),
+calcolata per ruolo sulla distribuzione degli score del pool corrente (es.
+min-max o percentile clampato). Il valore normalizzato è derivato a lettura, non
+sostituisce lo score grezzo usato dal motore per ordinamento/fasce/VORP: quello
+resta la fonte di verità interna. Documenta la formula di normalizzazione e il
+suo dominio (per-ruolo vs. globale — per-ruolo è la scelta di default, dato che
+gli score non sono comparabili tra ruoli).
+
+**Vincoli.** Nessun campo di stato mutabile introdotto (B2 e B5 sono derivazioni
+a lettura). B4 è un fix di una riga più test, va isolato dal resto in un commit
+separato se comodo. Per B1/B3 nessuna modifica al backend.
+
+**Accettazione.** Il modale profilo è interamente utilizzabile su viewport
+piccole (scroll interno, bottoni sempre raggiungibili). Un giocatore di una
+squadra «da evitare» mostra un warning nel pannello asta. Le colonne con sigle
+hanno tooltip; le colonne calcolate hanno sintesi + bottone Dettagli funzionante.
+Nessun portiere ha il tag «Difensore da bonus» (verificato da test). Lo score
+mostrato è in scala 0–10 per ruolo, coerente con l'ordinamento esistente.
+
+**Versioning.** `fix` per B1/B2/B4, `feat` per B3/B5 → bump coerente (MINOR se
+accorpato in un'unica release, altrimenti PATCH+MINOR separati per commit).
