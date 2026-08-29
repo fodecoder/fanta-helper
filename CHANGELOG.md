@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.1] - 2026-08-30
+
+### Fixed
+
+- **Pages Function del proxy API non deployata**: spostata da `web/functions/` a
+  `functions/` alla root del repo (Cloudflare la cerca nella root directory
+  configurata per il progetto Pages, che qui è la root del repo). Prima le
+  chiamate `/api/*` cadevano sul rewrite SPA e fallivano tutte in produzione.
+
 ## [4.7.0] - 2026-08-29
 
 ### Added
