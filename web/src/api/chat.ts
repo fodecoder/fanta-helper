@@ -44,6 +44,13 @@ export function fetchConversation(
   );
 }
 
+export function fetchInbox(since: string, signal?: AbortSignal): Promise<ChatMessage[]> {
+  const params = new URLSearchParams({ since });
+  return apiFetch(`${BASE_URL}/chat/inbox?${params.toString()}`, { signal }).then((res) =>
+    handle<ChatMessage[]>(res),
+  );
+}
+
 export function sendMessage(input: SendMessageInput): Promise<ChatMessage> {
   return apiFetch(`${BASE_URL}/chat`, {
     method: "POST",

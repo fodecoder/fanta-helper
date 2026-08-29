@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { sendMessageSchema } from "@fanta-helper/shared";
+import { inboxQuerySchema, sendMessageSchema } from "@fanta-helper/shared";
 import { getUserById } from "../db/users";
-import { insertMessage, listConversation } from "../db/chat";
+import { insertMessage, listConversation, listInboxSince } from "../db/chat";
 import { ApiError } from "../http/errors";
 
 export const chatRouter = Router();
@@ -20,6 +20,16 @@ function parseId(raw: unknown): number {
   }
   return id;
 }
+
+chatRouter.get("/inbox", async (req, res, next) => {
+  try {
+    const me = requireUserId(req);
+    const { since } = inboxQuerySchema.parse(req.query);
+    res.json(await listInboxSince(me, since));
+  } catch (err) {
+    next(err);
+  }
+});
 
 chatRouter.get("/", async (req, res, next) => {
   try {

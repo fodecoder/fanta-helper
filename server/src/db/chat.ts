@@ -14,6 +14,19 @@ export async function insertMessage(
   return result.rows[0]!;
 }
 
+// Messaggi ricevuti da `userId` dopo `sinceIso`, da qualunque mittente.
+// Proiezione di lettura del log: nessun concetto di "letto" sul server.
+export async function listInboxSince(userId: number, sinceIso: string): Promise<ChatMessageRow[]> {
+  const result = await pool.query<ChatMessageRow>(
+    `SELECT * FROM chat_message
+     WHERE to_user = $1 AND created_at > $2::timestamptz
+     ORDER BY created_at, id
+     LIMIT 200`,
+    [userId, sinceIso],
+  );
+  return result.rows;
+}
+
 export async function listConversation(
   userA: number,
   userB: number,

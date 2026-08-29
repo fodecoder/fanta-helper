@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChatMessage, User } from "@fanta-helper/shared";
-import { fetchConversation, listUsers, sendMessage } from "../../api/chat";
+import { fetchConversation, fetchInbox, listUsers, sendMessage } from "../../api/chat";
 import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import { UserAvatar } from "../UserAvatar";
 
 const STORAGE_KEY = "chat-panel:v1";
+const UNREAD_KEY = "chat-unread:v1";
 const POLL_MS = 2500;
+const POLL_INBOX_MS = 10000;
+const TOAST_MS = 6000;
 const MIN_W = 260;
 const MIN_H = 240;
 
@@ -38,6 +41,33 @@ function savePrefs(prefs: PanelPrefs) {
   }
 }
 
+// Non letti per mittente, derivati a lettura sul client: nessun campo di stato
+// sul log append-only lato server. Persistiti per sopravvivere ai reload.
+type UnreadByUser = Record<number, number>;
+
+function loadUnread(): UnreadByUser {
+  try {
+    const raw = localStorage.getItem(UNREAD_KEY);
+    return raw ? (JSON.parse(raw) as UnreadByUser) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveUnread(state: UnreadByUser) {
+  try {
+    localStorage.setItem(UNREAD_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage non disponibile: i non letti semplicemente non persistono.
+  }
+}
+
+interface Toast {
+  id: number;
+  text: string;
+  withUserId: number;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -57,19 +87,30 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [unread, setUnread] = useState<UnreadByUser>(loadUnread);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const messagesRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ mode: "move" | "resize"; startX: number; startY: number; base: PanelPrefs } | null>(
     null,
   );
+  // Cursore del poll globale: notifica solo i messaggi arrivati dopo il mount.
+  const inboxCursorRef = useRef<string>(new Date().toISOString());
+  const viewRef = useRef({ open: prefs.open, withUserId: prefs.withUserId });
 
   useEffect(() => {
     savePrefs(prefs);
   }, [prefs]);
-
-  // Lista destinatari: una fetch quando il pannello è aperto.
   useEffect(() => {
-    if (!prefs.open) return;
+    saveUnread(unread);
+  }, [unread]);
+  useEffect(() => {
+    viewRef.current = { open: prefs.open, withUserId: prefs.withUserId };
+  }, [prefs.open, prefs.withUserId]);
+
+  // Lista destinatari: caricata al mount (serve anche alle notifiche a pannello
+  // chiuso, non solo al selettore).
+  useEffect(() => {
     const controller = new AbortController();
     listUsers(controller.signal)
       .then(setUsers)
@@ -78,9 +119,84 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
         setError(err instanceof Error ? err.message : "impossibile caricare gli utenti");
       });
     return () => controller.abort();
-  }, [prefs.open]);
+  }, []);
 
   const withUserId = prefs.withUserId;
+
+  const markConversationRead = useCallback((userId: number) => {
+    setUnread((u) => {
+      if (!u[userId]) return u;
+      const next = { ...u };
+      delete next[userId];
+      return next;
+    });
+  }, []);
+
+  // Apre il pannello su un mittente e ne azzera i non letti. Unico punto da cui
+  // una conversazione diventa "quella aperta" (FAB, selettore, toast).
+  const openConversation = useCallback(
+    (userId: number) => {
+      setMessages([]);
+      setPrefs((p) => ({ ...p, open: true, withUserId: userId }));
+      markConversationRead(userId);
+    },
+    [markConversationRead],
+  );
+
+  const pushToast = useCallback((text: string, forUserId: number) => {
+    setToasts((cur) => {
+      if (cur.some((t) => t.withUserId === forUserId)) return cur;
+      const id = Date.now() + Math.floor(Math.random() * 1000);
+      window.setTimeout(() => setToasts((next) => next.filter((t) => t.id !== id)), TOAST_MS);
+      return [...cur, { id, text, withUserId: forUserId }];
+    });
+  }, []);
+
+  const totalUnread = useMemo(
+    () => Object.values(unread).reduce((sum, n) => sum + n, 0),
+    [unread],
+  );
+
+  // Poll globale: segnala i messaggi in arrivo da qualunque mittente anche a
+  // pannello chiuso o su un'altra pagina della SPA.
+  useEffect(() => {
+    const controller = new AbortController();
+    let stopped = false;
+    const tick = () => {
+      if (document.hidden) return;
+      fetchInbox(inboxCursorRef.current, controller.signal)
+        .then((rows) => {
+          if (stopped || rows.length === 0) return;
+          inboxCursorRef.current = rows[rows.length - 1]!.created_at;
+          const { open, withUserId: openWith } = viewRef.current;
+          const bySender = new Map<number, number>();
+          for (const m of rows) {
+            if (open && openWith === m.from_user) continue;
+            bySender.set(m.from_user, (bySender.get(m.from_user) ?? 0) + 1);
+          }
+          if (bySender.size === 0) return;
+          setUnread((u) => {
+            const next = { ...u };
+            for (const [sender, n] of bySender) next[sender] = (next[sender] ?? 0) + n;
+            return next;
+          });
+          for (const sender of bySender.keys()) {
+            const name = users.find((x) => x.id === sender)?.username ?? "un utente";
+            pushToast(`Nuovo messaggio da ${name}`, sender);
+          }
+        })
+        .catch(() => {
+          // Notifica best-effort: un errore transitorio non deve disturbare.
+        });
+    };
+    const timer = window.setInterval(tick, POLL_INBOX_MS);
+    tick();
+    return () => {
+      stopped = true;
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, [users, pushToast]);
 
   const loadConversation = useCallback(
     (signal?: AbortSignal) => {
@@ -173,20 +289,49 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
       });
   }
 
+  const toastStack =
+    toasts.length > 0 ? (
+      <div className="chat-toasts">
+        {toasts.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className="chat-toast"
+            onClick={() => {
+              setToasts((cur) => cur.filter((x) => x.id !== t.id));
+              openConversation(t.withUserId);
+            }}
+          >
+            {t.text}
+          </button>
+        ))}
+      </div>
+    ) : null;
+
   if (!prefs.open) {
     return (
-      <button
-        type="button"
-        className="btn btn-primary chat-fab"
-        onClick={() => setPrefs((p) => ({ ...p, open: true }))}
-        aria-label="Apri chat"
-      >
-        Chat
-      </button>
+      <>
+        {toastStack}
+        <button
+          type="button"
+          className="btn btn-primary chat-fab"
+          onClick={() =>
+            withUserId !== null
+              ? openConversation(withUserId)
+              : setPrefs((p) => ({ ...p, open: true }))
+          }
+          aria-label={totalUnread > 0 ? `Apri chat, ${totalUnread} non letti` : "Apri chat"}
+        >
+          Chat
+          {totalUnread > 0 && <span className="chat-fab__badge">{totalUnread}</span>}
+        </button>
+      </>
     );
   }
 
   return (
+    <>
+    {toastStack}
     <section
       className={isMobile ? "chat-panel chat-panel--mobile" : "chat-panel"}
       style={
@@ -215,8 +360,12 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
           className="input"
           value={withUserId ?? ""}
           onChange={(e) => {
-            setMessages([]);
-            setPrefs((p) => ({ ...p, withUserId: e.target.value ? Number(e.target.value) : null }));
+            if (e.target.value) {
+              openConversation(Number(e.target.value));
+            } else {
+              setMessages([]);
+              setPrefs((p) => ({ ...p, withUserId: null }));
+            }
           }}
         >
           <option value="">Scegli un destinatario…</option>
@@ -276,5 +425,6 @@ export function ChatPanel({ currentUser }: ChatPanelProps) {
         />
       )}
     </section>
+    </>
   );
 }
