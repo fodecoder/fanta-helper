@@ -264,13 +264,16 @@ In alternativa, la configurazione manuale:
    API_ORIGIN   = https://<servizio>.onrender.com   # usato dalla Pages Function
    ```
 
-4. **Proxy API same-origin**: il repo include
-   `web/functions/api/[[path]].js`, una Cloudflare Pages Function che inoltra
-   ogni `/api/*` al backend Render (`API_ORIGIN`). Le Functions sono rilevate
-   automaticamente dalla cartella `functions/` alla root del progetto Pages
-   (`web/`). Serve a tenere le chiamate sullo stesso origin della SPA: il cookie
-   di sessione resta first-party (`SameSite=Lax`) e i browser mobile non lo
-   scartano come cookie di terze parti.
+4. **Proxy API same-origin**: il repo include `functions/api/[[path]].js`, una
+   Cloudflare Pages Function che inoltra ogni `/api/*` al backend Render
+   (`API_ORIGIN`). Cloudflare rileva le Functions dalla cartella `functions/`
+   nella **root directory** configurata per il progetto Pages: qui la root
+   directory è la root del repo (non `web/`), quindi la cartella è
+   `functions/` alla root, non `web/functions/`. Serve a tenere le chiamate
+   sullo stesso origin della SPA: il cookie di sessione resta first-party
+   (`SameSite=Lax`) e i browser mobile non lo scartano come cookie di terze
+   parti. Dopo aver aggiunto/modificato `API_ORIGIN` e `VITE_API_URL` serve un
+   **redeploy** perché abbiano effetto.
 5. Routing SPA: assicurati che `web/public/_redirects` contenga:
 
    ```

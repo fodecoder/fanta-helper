@@ -179,7 +179,8 @@ sessione non persiste si resta «loggati ma tutto 401» invece di tornare al log
 ## Fase mobile (P10)  *(in corso — `v4.6.0`)*
 
 - [x] **B6 — sessione su mobile**: le chiamate API passano da `/api` same-origin
-      (proxy Vite in dev, Cloudflare Pages Function in prod), cookie di sessione
+      (proxy Vite in dev, Cloudflare Pages Function `functions/api/[[path]].js`
+      alla root del repo in prod, env `API_ORIGIN`), cookie di sessione
       first-party con `SameSite=Lax`. Causa: cookie cross-site `SameSite=None`
       scartato dai browser mobile come cookie di terze parti (SPA su Pages, API
       su Render = domini diversi).
