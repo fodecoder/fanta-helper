@@ -2,20 +2,19 @@ import type { Response, CookieOptions } from "express";
 
 export const SESSION_COOKIE = "session";
 
-// httpOnly sempre (mai leggibile da JS client). Web (Cloudflare Pages) e
-// server (Render) sono origini diverse sia in prod sia in dev
-// (localhost:5173 vs :8787, cross-site anche in locale ai fini di
-// SameSite): SameSite=Lax romperebbe le fetch cross-port in dev, quindi
-// serve SameSite=None, che a sua volta richiede Secure — concesso dai
-// browser anche su http://localhost (origine "trustworthy" per eccezione)
-// ma non su un IP LAN non-localhost, da cui l'escape hatch COOKIE_SECURE.
+// httpOnly sempre (mai leggibile da JS client). Il browser parla solo con
+// l'origin della SPA: in dev via proxy Vite, in prod via Pages Function, le
+// chiamate API sono `/api/*` same-origin, quindi il cookie è first-party e
+// `SameSite=Lax` basta. Il salto cross-site verso Render avviene server-to-server
+// (proxy → backend), dove SameSite non si applica. `Secure` resta di default;
+// l'escape hatch COOKIE_SECURE=false serve solo per test su IP LAN non-localhost.
 function cookieOptions(): CookieOptions {
   const secure = process.env.COOKIE_SECURE !== "false";
   return {
     httpOnly: true,
     signed: true,
     secure,
-    sameSite: secure ? "none" : "lax",
+    sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 24 * 30,
     path: "/",
   };
