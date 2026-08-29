@@ -17,6 +17,7 @@ import { RosterExchangePage } from "./pages/RosterExchangePage";
 import { ProbableLineupPage } from "./pages/ProbableLineupPage";
 import { LeaguesPage } from "./pages/LeaguesPage";
 import { AuctionMode } from "./pages/auction/AuctionMode";
+import { ChatPanel } from "./components/shell/ChatPanel";
 
 type ConnectionStatus = "checking" | "ok" | "error";
 type Mode = "setup" | "auction";
@@ -157,8 +158,15 @@ function App() {
     );
   }
 
+  const chatPanel = <ChatPanel currentUser={currentUser!} />;
+
   if (mode === "auction" && activeLeague) {
-    return <AuctionMode league={activeLeague} onExit={handleExitAuction} />;
+    return (
+      <>
+        <AuctionMode league={activeLeague} onExit={handleExitAuction} />
+        {chatPanel}
+      </>
+    );
   }
 
   return (
@@ -217,6 +225,7 @@ function App() {
         onEnterAuction={() => setMode("auction")}
         onLogout={handleLogout}
       />
+      {chatPanel}
     </div>
   );
 }

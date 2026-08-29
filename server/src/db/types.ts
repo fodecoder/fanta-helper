@@ -92,6 +92,14 @@ export interface AppUserRow {
   avatar_color: string | null;
 }
 
+export interface ChatMessageRow {
+  id: number;
+  from_user: number;
+  to_user: number;
+  body: string;
+  created_at: Date;
+}
+
 export interface PurchaseRow {
   league_id: number;
   player_id: number;

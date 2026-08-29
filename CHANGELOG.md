@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.3.0] - 2026-08-29
+
+### Added
+
+- **Chat 1-a-1**: pannello flottante spostabile e ridimensionabile per lo
+  scambio di messaggi diretti tra utenti, disponibile sia nella shell di setup
+  sia in modalità asta.
+  - Tabella append-only `chat_message` (`id, from_user, to_user, body,
+    created_at`): la conversazione è la proiezione ordinata del log, nessun
+    campo di stato mutabile (niente "letto"/contatori).
+  - Endpoint `GET /users` (elenco degli altri utenti) e `GET /chat?with=&since=`
+    / `POST /chat`; il mittente è sempre derivato dal cookie di sessione.
+  - Trasporto a polling ogni 2,5 s, nessun websocket. Posizione, dimensione e
+    ultimo destinatario del pannello salvati in `localStorage` (comodità
+    per-utente, non stato condiviso).
+
 ## [4.2.0] - 2026-08-29
 
 ### Added

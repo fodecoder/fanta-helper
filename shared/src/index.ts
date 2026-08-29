@@ -14,6 +14,7 @@ export * from "./manager";
 export * from "./teamPref";
 export * from "./teamPreferences";
 export * from "./user";
+export * from "./chat";
 export * from "./avatar";
 export * from "./purchase";
 export * from "./rosterExchange";

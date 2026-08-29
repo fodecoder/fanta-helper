@@ -18,6 +18,8 @@ import { setPieceTakerRouter } from "./routes/setPieceTaker";
 import { statsEnrichmentRouter } from "./routes/statsEnrichment";
 import { playerSeasonStatsRouter } from "./routes/playerSeasonStats";
 import { quotationRouter } from "./routes/quotation";
+import { usersRouter } from "./routes/users";
+import { chatRouter } from "./routes/chat";
 import { errorHandler } from "./http/errorHandler";
 import { requireAuth } from "./http/requireAuth";
 
@@ -43,6 +45,8 @@ export function createApp(): Express {
 
   app.use(requireAuth);
 
+  app.use("/users", usersRouter);
+  app.use("/chat", chatRouter);
   app.use("/leagues", leaguesRouter);
   app.use("/leagues/:leagueId/managers", managersRouter);
   app.use("/leagues/:leagueId/valuations", valuationsRouter);

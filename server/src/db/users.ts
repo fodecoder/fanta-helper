@@ -11,6 +11,14 @@ export async function getUserById(id: number): Promise<AppUserRow | undefined> {
   return result.rows[0];
 }
 
+export async function listOtherUsers(excludeId: number): Promise<AppUserRow[]> {
+  const result = await pool.query<AppUserRow>(
+    "SELECT * FROM app_user WHERE id <> $1 ORDER BY username",
+    [excludeId],
+  );
+  return result.rows;
+}
+
 export async function updateUserProfile(
   id: number,
   input: { avatar: string | null; avatar_color: string | null },
