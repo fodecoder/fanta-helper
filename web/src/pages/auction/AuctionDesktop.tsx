@@ -548,7 +548,11 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                 {tags.length > 0 && (
                                   <span style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
                                     {tags.map((t) => (
-                                      <span key={t.id} className="tag tag-neutral" style={{ fontWeight: 400 }}>
+                                      <span
+                                        key={t.id}
+                                        className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
+                                        style={{ fontWeight: 400 }}
+                                      >
                                         {t.label}
                                       </span>
                                     ))}

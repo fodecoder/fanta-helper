@@ -77,6 +77,12 @@ export interface UserTeamPrefRow {
   kind: "prefer" | "avoid";
 }
 
+export interface UserPlayerTrapTagRow {
+  user_id: number;
+  league_id: number;
+  player_id: number;
+}
+
 export interface ManagerRow {
   id: number;
   league_id: number;

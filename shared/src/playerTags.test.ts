@@ -90,6 +90,7 @@ interface Scenario {
   setPieceTaker?: SetPieceTakerEntry[];
   rules?: LeagueRulesConfig;
   ioStatus?: ManagerAuctionStatus;
+  fairValueByPlayerId?: Map<number, number>;
 }
 
 // Compone recommendations (via computePlayerRecommendations, stessa
@@ -122,6 +123,7 @@ function tagsFor(scenario: Scenario): Map<number, PlayerTag[]> {
     probableLineup,
     rules,
     recommendations,
+    fairValueByPlayerId: scenario.fairValueByPlayerId,
   });
 }
 
@@ -415,6 +417,82 @@ describe("computePlayerTags", () => {
       });
 
       expect(idsOf(result.get(2))).not.toContain("da-prendere-a-1");
+    });
+  });
+
+  describe("trappola", () => {
+    // Il tag non dipende da score/reliability: stat identiche per tutti, conta
+    // solo fvm di mercato vs fair_value del motore, a percentili entro ruolo.
+    function roleScenario(
+      ruolo: Player["ruolo"],
+      fvmById: Record<number, number>,
+      fairValueById: Record<number, number>,
+    ): Scenario {
+      const ids = Object.keys(fvmById).map(Number);
+      return {
+        players: ids.map((id) => player(id, `P${id}`, ruolo)),
+        stats: ids.map((id) => stat(id)),
+        quotations: ids.map((id) => quotation(id, { fvm: fvmById[id] ?? 0 })),
+        fairValueByPlayerId: new Map(ids.map((id) => [id, fairValueById[id] ?? 0])),
+        ioStatus: ioStatus([{ ruolo, free: 15 }]),
+      };
+    }
+
+    const tenIds = Array.from({ length: 10 }, (_, i) => i + 1);
+    // id 1: fvm piu alto del ruolo, fair_value piu basso -> gap massimo.
+    const marketHighEngineLow = () => ({
+      fvm: Object.fromEntries(tenIds.map((id) => [id, 110 - id * 10])),
+      fair: Object.fromEntries(tenIds.map((id) => [id, id * 10])),
+    });
+
+    it("tags a player priced high by the market but low by the engine", () => {
+      const { fvm, fair } = marketHighEngineLow();
+      const result = tagsFor(roleScenario("C", fvm, fair));
+
+      expect(idsOf(result.get(1))).toContain("trappola");
+      expect(idsOf(result.get(10))).not.toContain("trappola");
+    });
+
+    it("computes the percentiles within the role (same mismatch tagged for a different role)", () => {
+      const { fvm, fair } = marketHighEngineLow();
+      const result = tagsFor(roleScenario("A", fvm, fair));
+
+      expect(idsOf(result.get(1))).toContain("trappola");
+    });
+
+    it("does not tag a player the engine also rates highly", () => {
+      const fvm = Object.fromEntries(tenIds.map((id) => [id, id * 10]));
+      const fair = Object.fromEntries(tenIds.map((id) => [id, id * 10]));
+      const result = tagsFor(roleScenario("C", fvm, fair));
+
+      expect(idsOf(result.get(10))).not.toContain("trappola");
+    });
+
+    it("does not tag a cheap player the engine rates low (occasione, not trappola)", () => {
+      const fvm = Object.fromEntries(tenIds.map((id) => [id, id * 10]));
+      const fair = Object.fromEntries(tenIds.map((id) => [id, 110 - id * 10]));
+      const result = tagsFor(roleScenario("C", fvm, fair));
+
+      expect(idsOf(result.get(1))).not.toContain("trappola");
+    });
+
+    it("does not tag when the price/value percentile gap is below threshold", () => {
+      // 5 giocatori: id 1 e' 4o per fvm (pct .75) e 3o per fair_value (pct .5),
+      // quindi gap .25 < TRAP_PERCENTILE_GAP pur superando le due soglie di fascia.
+      const fvm = { 2: 10, 3: 20, 4: 30, 1: 40, 5: 50 };
+      const fair = { 2: 10, 3: 20, 1: 30, 4: 40, 5: 50 };
+      const result = tagsFor(roleScenario("C", fvm, fair));
+
+      expect(idsOf(result.get(1))).not.toContain("trappola");
+    });
+
+    it("does not tag any player when fair_value data is missing", () => {
+      const { fvm } = marketHighEngineLow();
+      const scenario = roleScenario("C", fvm, {});
+      scenario.fairValueByPlayerId = undefined;
+      const result = tagsFor(scenario);
+
+      expect(idsOf(result.get(1))).not.toContain("trappola");
     });
   });
 });

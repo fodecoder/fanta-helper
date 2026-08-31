@@ -90,7 +90,10 @@ export function PlayerDetailPanel({
       {tags.length > 0 && (
         <div style={{ flexBasis: "100%", display: "flex", flexWrap: "wrap", gap: 6 }}>
           {tags.map((t) => (
-            <span key={t.id} className="tag tag-neutral">
+            <span
+              key={t.id}
+              className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
+            >
               {t.label}
             </span>
           ))}

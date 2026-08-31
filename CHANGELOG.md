@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.11.0] - 2026-08-31
+
+### Added
+
+- **Tag "trappola" e lista giocatori trappola**: `shared/src/playerTags.ts`
+  marca un giocatore `trappola` quando il suo FVM di mercato è nella fascia alta
+  del ruolo (percentile ≥ 0.75) ma il `fair_value` del motore resta nella metà
+  bassa/media (percentile ≤ 0.5), con uno scarto minimo di 0.3 tra i due
+  percentili — l'inverso del segnale "occasione". Nuovo layer manuale per
+  lega/utente (`shared/src/playerTrapTag.ts`, tabella sparsa
+  `user_player_trap_tag`, rotte `GET`/`PUT`/`DELETE /leagues/:id/trap-tags`):
+  `mergeManualTrapTags` aggiunge il tag ai giocatori marcati a mano senza
+  sostituire quello derivato né toccare `fair_value` (solo flag di
+  visualizzazione). In `RecommendationsPage.tsx` il controllo ruoli guadagna un
+  filtro "Trappole" e ogni riga un toggle "Segna/Rimuovi trappola" (anche nel
+  dialog di dettaglio); il badge è riusato in Vista Asta come gli altri tag
+  giocatore.
+
 ## [4.10.0] - 2026-08-31
 
 ### Added

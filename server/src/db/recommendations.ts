@@ -2,11 +2,14 @@ import {
   applyTeamPreferences,
   computePlayerRecommendations,
   computePlayerTags,
+  mergeManualTrapTags,
   type LeagueRulesConfig,
   type PlayerRecommendationWithTags,
   type TeamPrefKind,
 } from "@fanta-helper/shared";
 import { listTeamPrefs } from "./teamPrefs";
+import { listPlayerTrapTags } from "./playerTrapTags";
+import { listValuationsWithPlayerByLeagueForUser } from "./valuations";
 import type { LeagueRow } from "./types";
 import { listPlayers } from "./players";
 import { listPurchasesByLeague } from "./purchases";
@@ -34,6 +37,8 @@ export async function getPlayerRecommendations(
     probableLineup,
     setPieceTaker,
     teamPrefs,
+    valuations,
+    manualTrapPlayerIds,
   ] = await Promise.all([
     listPlayers(),
     listPurchasesByLeague(league.id),
@@ -43,6 +48,8 @@ export async function getPlayerRecommendations(
     listProbableLineup(),
     listSetPieceTakers(),
     listTeamPrefs(userId, league.id),
+    listValuationsWithPlayerByLeagueForUser(league.id, userId),
+    listPlayerTrapTags(userId, league.id),
   ]);
 
   const [quotations, stats] = await Promise.all([
@@ -80,6 +87,7 @@ export async function getPlayerRecommendations(
     probableLineup,
     rules,
     recommendations,
+    fairValueByPlayerId: new Map(valuations.map((v) => [v.player_id, v.fair_value])),
   });
 
   const withTags: PlayerRecommendationWithTags[] = recommendations.map((r) => ({
@@ -87,8 +95,10 @@ export async function getPlayerRecommendations(
     tags: tagsByPlayerId.get(r.player_id) ?? [],
   }));
 
-  // Layer per-utente: annota il flag squadra e riordina a parità di fascia,
-  // senza toccare score/tier (vedi shared/src/teamPreferences.ts).
+  // Layer per-utente sparso: il flag "trappola" manuale si aggiunge a quello
+  // derivato senza sostituirlo (mergeManualTrapTags), poi il flag squadra
+  // annota e riordina a parità di fascia senza toccare score/tier.
+  const withTrapTags = mergeManualTrapTags(withTags, manualTrapPlayerIds);
   const prefsByTeam = new Map<string, TeamPrefKind>(teamPrefs.map((p) => [p.team, p.kind]));
-  return applyTeamPreferences(withTags, prefsByTeam);
+  return applyTeamPreferences(withTrapTags, prefsByTeam);
 }

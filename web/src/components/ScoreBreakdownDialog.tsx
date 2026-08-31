@@ -4,6 +4,8 @@ import { Dialog } from "./ui/Dialog";
 interface ScoreBreakdownDialogProps {
   player: Pick<PlayerRecommendation, "name" | "ruolo" | "score" | "tier" | "components" | "price">;
   normalizedScore?: number | null;
+  isTrap?: boolean;
+  onToggleTrap?: () => void;
   onClose: () => void;
 }
 
@@ -21,7 +23,13 @@ function Step({ children }: { children: React.ReactNode }) {
 
 // Scomposizione passo-passo del Punteggio, con i valori realmente usati dal
 // motore (`components.breakdown`). Nessun ricalcolo lato client.
-export function ScoreBreakdownDialog({ player, normalizedScore, onClose }: ScoreBreakdownDialogProps) {
+export function ScoreBreakdownDialog({
+  player,
+  normalizedScore,
+  isTrap,
+  onToggleTrap,
+  onClose,
+}: ScoreBreakdownDialogProps) {
   const b = player.components.breakdown;
 
   return (
@@ -29,9 +37,21 @@ export function ScoreBreakdownDialog({ player, normalizedScore, onClose }: Score
       title={`Scomposizione punteggio · ${player.name}`}
       onClose={onClose}
       actions={
-        <button type="button" className="btn btn-primary" onClick={onClose}>
-          Chiudi
-        </button>
+        <>
+          {onToggleTrap && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              aria-pressed={isTrap ?? false}
+              onClick={onToggleTrap}
+            >
+              {isTrap ? "Rimuovi trappola" : "Segna trappola"}
+            </button>
+          )}
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            Chiudi
+          </button>
+        </>
       }
     >
       {b === null ? (

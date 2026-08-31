@@ -36,6 +36,17 @@ const UPSIDE_MV_THRESHOLD = 6.2;
 const SMALL_SAMPLE_MATCHES = 10;
 // ...oppure titolare oggi con poche presenze storiche (stesso limite sopra).
 
+// "Trappola": inverso di "occasione" — il mercato lo prezza in alto ma il
+// motore no, quindi probabile che un avversario ci spenda sopra. FVM nel
+// quartile più caro del ruolo...
+const TRAP_FVM_HIGH_PERCENTILE = 0.75;
+// ...mentre fair_value resta nella metà bassa/media del ruolo...
+const TRAP_FAIR_VALUE_LOW_MID_PERCENTILE = 0.5;
+// ...con uno scarto minimo tra i due percentili, così da escludere i mismatch
+// marginali (stesso ordine di grandezza della soglia 0.25 del badge "Occasione"
+// in RecommendationsPage).
+const TRAP_PERCENTILE_GAP = 0.3;
+
 // "Da prendere a 1": FVM al minimo...
 const MIN_FVM_THRESHOLD = 1;
 // ...score praticamente al livello del rimpiazzo (score = scarcityAdjustedValue
@@ -50,7 +61,8 @@ export type PlayerTagId =
   | "porta-bonus"
   | "difensore-da-bonus"
   | "scommessa"
-  | "da-prendere-a-1";
+  | "da-prendere-a-1"
+  | "trappola";
 
 export interface PlayerTag {
   id: PlayerTagId;
@@ -64,6 +76,7 @@ const TAG_LABEL: Record<PlayerTagId, string> = {
   "difensore-da-bonus": "Difensore da bonus",
   scommessa: "Scommessa",
   "da-prendere-a-1": "Da prendere a 1",
+  trappola: "Trappola",
 };
 
 function tag(id: PlayerTagId): PlayerTag {
@@ -83,6 +96,9 @@ export interface PlayerTagsInput {
   // Output già calcolato da computePlayerRecommendations per la stessa
   // lega/stagione: evita di ricalcolare reliability/score/tier qui.
   recommendations: PlayerRecommendation[];
+  // fair_value per giocatore (coalescato con l'override utente), base 1000.
+  // Assente per un ruolo = tag "trappola" non calcolabile lì.
+  fairValueByPlayerId?: Map<number, number>;
 }
 
 export interface PlayerRecommendationWithTags extends PlayerRecommendation {
@@ -104,6 +120,11 @@ export function computePlayerTags(input: PlayerTagsInput): Map<number, PlayerTag
   const teamDefenseRate = teamDefenseRateByTeam(players, statsByPlayer);
 
   const bonusRatePercentileByPlayer = bonusRatePercentiles(recommendations, statsByPlayer);
+  const trapPercentileByPlayer = trapPercentiles(
+    recommendations,
+    quotationByPlayer,
+    input.fairValueByPlayerId ?? new Map(),
+  );
 
   const result = new Map<number, PlayerTag[]>();
 
@@ -181,6 +202,16 @@ export function computePlayerTags(input: PlayerTagsInput): Map<number, PlayerTag
       tags.push(tag("da-prendere-a-1"));
     }
 
+    const trapPct = trapPercentileByPlayer.get(recommendation.player_id);
+    if (
+      trapPct !== undefined &&
+      trapPct.fvmPct >= TRAP_FVM_HIGH_PERCENTILE &&
+      trapPct.fairPct <= TRAP_FAIR_VALUE_LOW_MID_PERCENTILE &&
+      trapPct.fvmPct - trapPct.fairPct >= TRAP_PERCENTILE_GAP
+    ) {
+      tags.push(tag("trappola"));
+    }
+
     result.set(recommendation.player_id, tags);
   }
 
@@ -216,4 +247,57 @@ function bonusRatePercentiles(
   }
 
   return result;
+}
+
+// Percentili (entro ruolo) di FVM di mercato e fair_value del motore, usati dal
+// tag "trappola". Girano sui soli giocatori del ruolo che hanno ENTRAMBI i
+// valori: senza uno dei due il mismatch non è definibile. Stessa struttura del
+// blocco prezzo in recommendationEngine.ts (percentileByGroup per ruolo).
+function trapPercentiles(
+  recommendations: PlayerRecommendation[],
+  quotationByPlayer: Map<number, QuotationRow>,
+  fairValueByPlayerId: Map<number, number>,
+): Map<number, { fvmPct: number; fairPct: number }> {
+  const result = new Map<number, { fvmPct: number; fairPct: number }>();
+
+  for (const role of ROLES) {
+    const entries = recommendations
+      .filter((r) => r.ruolo === role)
+      .map((r) => {
+        const fvm = quotationByPlayer.get(r.player_id)?.fvm;
+        const fairValue = fairValueByPlayerId.get(r.player_id);
+        if (fvm === null || fvm === undefined || fairValue === undefined) return null;
+        return { id: r.player_id, fvm, fairValue };
+      })
+      .filter((e): e is { id: number; fvm: number; fairValue: number } => e !== null);
+
+    if (entries.length === 0) continue;
+
+    const fvmPct = percentileByGroup(entries.map((e) => ({ id: e.id, value: e.fvm })));
+    const fairPct = percentileByGroup(entries.map((e) => ({ id: e.id, value: e.fairValue })));
+    for (const e of entries) {
+      result.set(e.id, { fvmPct: fvmPct.get(e.id) ?? 0, fairPct: fairPct.get(e.id) ?? 0 });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Unione additiva del flag "trappola" manuale per lega sopra i tag derivati:
+ * aggiunge il tag ai giocatori marcati che non l'hanno già dal modello, senza
+ * mai rimuovere o sostituire un tag derivato. Il flag manuale è solo di
+ * visualizzazione, non tocca `fair_value`.
+ */
+export function mergeManualTrapTags<T extends { player_id: number; tags: PlayerTag[] }>(
+  withTags: T[],
+  manualTrapPlayerIds: Iterable<number>,
+): T[] {
+  const manual = new Set(manualTrapPlayerIds);
+  return withTags.map((row) => {
+    if (!manual.has(row.player_id) || row.tags.some((t) => t.id === "trappola")) {
+      return row;
+    }
+    return { ...row, tags: [...row.tags, tag("trappola")] };
+  });
 }

@@ -23,6 +23,7 @@ export * from "./maxBid";
 export * from "./recommendationEngine";
 export * from "./defaultValuationGenerator";
 export * from "./playerTags";
+export * from "./playerTrapTag";
 export * from "./wishlist";
 export * from "./statsEnrichment";
 export * from "./matchPlayer";

@@ -3,6 +3,7 @@ import type { League, PlayerRecommendationWithTags, TeamPref } from "@fanta-help
 import { ROLES, normalizeScoresByRole, type Role } from "@fanta-helper/shared";
 import * as recommendationsApi from "../api/recommendations";
 import * as teamPrefsApi from "../api/teamPrefs";
+import * as playerTrapTagsApi from "../api/playerTrapTags";
 import { TeamPrefPanel } from "../components/TeamPrefPanel";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
@@ -16,7 +17,7 @@ interface RecommendationsPageProps {
   calls: number | null;
 }
 
-type RoleFilter = "tutti" | Role;
+type RoleFilter = "tutti" | Role | "trappole";
 
 function pct(value: number): string {
   return `${Math.round(value * 100)}%`;
@@ -30,6 +31,8 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [teamPrefs, setTeamPrefs] = useState<TeamPref[]>([]);
   const [prefsToken, setPrefsToken] = useState(0);
+  const [trapTagIds, setTrapTagIds] = useState<Set<number>>(new Set());
+  const [trapToken, setTrapToken] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -44,7 +47,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
         setLoadError(err instanceof Error ? err.message : "caricamento consigli fallito");
       });
     return () => controller.abort();
-  }, [league.id, prefsToken]);
+  }, [league.id, prefsToken, trapToken]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,6 +57,22 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
       .catch(() => setTeamPrefs([]));
     return () => controller.abort();
   }, [league.id, prefsToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    playerTrapTagsApi
+      .listPlayerTrapTags(league.id, controller.signal)
+      .then((ids) => setTrapTagIds(new Set(ids)))
+      .catch(() => setTrapTagIds(new Set()));
+    return () => controller.abort();
+  }, [league.id, trapToken]);
+
+  const toggleTrap = (playerId: number) => {
+    const call = trapTagIds.has(playerId)
+      ? playerTrapTagsApi.removePlayerTrapTag(league.id, playerId)
+      : playerTrapTagsApi.addPlayerTrapTag(league.id, playerId);
+    call.then(() => setTrapToken((t) => t + 1)).catch(() => setTrapToken((t) => t + 1));
+  };
 
   const knownTeams = useMemo(
     () => [...new Set((recommendations ?? []).map((r) => r.team))],
@@ -68,7 +87,13 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (recommendations ?? [])
-      .filter((r) => roleFilter === "tutti" || r.ruolo === roleFilter)
+      .filter((r) =>
+        roleFilter === "tutti"
+          ? true
+          : roleFilter === "trappole"
+            ? r.tags.some((t) => t.id === "trappola")
+            : r.ruolo === roleFilter,
+      )
       .filter(
         (r) => q === "" || r.name.toLowerCase().includes(q) || r.team.toLowerCase().includes(q),
       );
@@ -117,7 +142,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
             onChange={(e) => setQuery(e.target.value)}
           />
           <div className="seg" role="group" aria-label="Filtro ruolo">
-            {(["tutti", ...ROLES] as RoleFilter[]).map((r) => (
+            {(["tutti", ...ROLES, "trappole"] as RoleFilter[]).map((r) => (
               <button
                 key={r}
                 type="button"
@@ -125,7 +150,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                 aria-pressed={roleFilter === r}
                 onClick={() => setRoleFilter(r)}
               >
-                {r === "tutti" ? "Tutti" : r}
+                {r === "tutti" ? "Tutti" : r === "trappole" ? "Trappole" : r}
               </button>
             ))}
           </div>
@@ -203,7 +228,11 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                           </span>
                         )}
                         {r.tags.map((t) => (
-                          <span key={t.id} className="tag tag-neutral" style={{ marginLeft: 6 }}>
+                          <span
+                            key={t.id}
+                            className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
+                            style={{ marginLeft: 6 }}
+                          >
                             {t.label}
                           </span>
                         ))}
@@ -222,7 +251,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                       <td className="num" style={{ textAlign: "right" }}>
                         {r.price.fvm ?? "—"}
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: "nowrap" }}>
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -230,6 +259,15 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                           onClick={() => setDetailPlayerId(r.player_id)}
                         >
                           Dettagli
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{ padding: "2px 10px", fontSize: 12, marginLeft: 6 }}
+                          aria-pressed={trapTagIds.has(r.player_id)}
+                          onClick={() => toggleTrap(r.player_id)}
+                        >
+                          {trapTagIds.has(r.player_id) ? "Rimuovi trappola" : "Segna trappola"}
                         </button>
                       </td>
                     </tr>
@@ -244,6 +282,8 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
         <ScoreBreakdownDialog
           player={detailPlayer}
           normalizedScore={normById.get(detailPlayer.player_id) ?? null}
+          isTrap={trapTagIds.has(detailPlayer.player_id)}
+          onToggleTrap={() => toggleTrap(detailPlayer.player_id)}
           onClose={() => setDetailPlayerId(null)}
         />
       )}
