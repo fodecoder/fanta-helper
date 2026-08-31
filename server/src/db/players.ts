@@ -50,22 +50,25 @@ export interface PlayerUpsertResult {
   inserted: boolean;
 }
 
-const UPSERT_RETURNING =
-  "id, fanta_id, sofifa_id, name, nome_completo, team, ruolo, image_url, (xmax = 0) AS inserted";
+const PLAYER_COLUMNS = "id, fanta_id, sofifa_id, name, nome_completo, team, ruolo, image_url";
 
-function splitInserted(row: PlayerRow & { inserted: boolean }): PlayerUpsertResult {
-  const { inserted, ...playerRow } = row;
-  return { row: playerRow, inserted };
-}
+// Conflitto di identità irrisolvibile in automatico: due righe distinte in DB
+// rivendicano lo stesso giocatore (una per fanta_id, una per name+team), o il
+// file assegna a un fanta_id un name+team già occupato. Non si sceglie né si
+// fonde d'ufficio: la riga finisce nel report di scarto, la fusione è
+// l'operazione manuale di `db:report:duplicate-players`.
+export class PlayerUpsertConflict extends Error {}
 
 // fanta_id è la chiave stabile del giocatore (SPEC.md): quando presente,
 // identifica la riga anche se `name`/`team` cambiano tra due import (es.
-// trasferimento). L'upsert su `(name, team)` non lo faceva — stesso giocatore
-// con squadra diversa creava un duplicato. Percorso:
-//  1. se esiste già una riga con quel fanta_id → UPDATE per id (aggiorna anche
-//     name/team);
-//  2. altrimenti INSERT con fallback ON CONFLICT (name, team): adotta una riga
-//     name+team senza fanta_id (backfill) o ne crea una nuova.
+// trasferimento). Risolve il bersaglio in memoria e scrive solo mosse sicure,
+// così un vincolo unico (`player_name_team_uk`/`player_fanta_id_uk`) non viene
+// mai violato a livello DB (che abortirebbe l'intera transazione d'import):
+//  - riga con quel fanta_id → UPDATE per id (aggiorna anche name/team);
+//  - altrimenti unica riga name+team → UPDATE per id (adotta/backfilla fanta_id);
+//  - altrimenti INSERT.
+// Se lo spostamento di name/team calpesterebbe un'altra riga, o il fanta_id
+// esistente è diverso da quello del file → PlayerUpsertConflict.
 // nome_completo/image_url sono COALESCE(nuovo, esistente): il listone li
 // aggiorna quando li fornisce, senza mai azzerarli se assenti nel file.
 export async function upsertPlayer(
@@ -76,38 +79,77 @@ export async function upsertPlayer(
   const nomeCompleto = input.nome_completo ?? null;
   const imageUrl = input.image_url ?? null;
 
+  let target: PlayerRow | undefined;
   if (fantaId !== null) {
-    const byFantaId = await executor.query<PlayerRow & { inserted: boolean }>(
-      `UPDATE player
-         SET name = $1, team = $2, ruolo = $3,
-             nome_completo = COALESCE($5, nome_completo),
-             image_url = COALESCE($6, image_url)
-       WHERE fanta_id = $4
-       RETURNING ${UPSERT_RETURNING}`,
-      [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl],
-    );
-    const updated = byFantaId.rows[0];
-    if (updated) {
-      return { ...splitInserted(updated), inserted: false };
+    target = (
+      await executor.query<PlayerRow>(`SELECT ${PLAYER_COLUMNS} FROM player WHERE fanta_id = $1`, [
+        fantaId,
+      ])
+    ).rows[0];
+  }
+  if (!target) {
+    const sameNameTeam = (
+      await executor.query<PlayerRow>(
+        `SELECT ${PLAYER_COLUMNS} FROM player
+         WHERE lower(trim(name)) = lower(trim($1)) AND lower(trim(team)) = lower(trim($2))`,
+        [input.name, input.team],
+      )
+    ).rows;
+    if (sameNameTeam.length > 1) {
+      throw new PlayerUpsertConflict(
+        `più righe già presenti per '${input.name}' / '${input.team}'`,
+      );
     }
+    target = sameNameTeam[0];
   }
 
-  const result = await executor.query<PlayerRow & { inserted: boolean }>(
-    `INSERT INTO player (name, team, ruolo, fanta_id, nome_completo, image_url)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (name, team) DO UPDATE
-       SET ruolo = EXCLUDED.ruolo,
-           fanta_id = COALESCE(player.fanta_id, EXCLUDED.fanta_id),
-           nome_completo = COALESCE(EXCLUDED.nome_completo, player.nome_completo),
-           image_url = COALESCE(EXCLUDED.image_url, player.image_url)
-     RETURNING ${UPSERT_RETURNING}`,
-    [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl],
-  );
-  const row = result.rows[0];
-  if (!row) {
-    throw new Error("upsertPlayer: upsert returned no row");
+  if (target) {
+    if (fantaId !== null && target.fanta_id !== null && target.fanta_id !== fantaId) {
+      throw new PlayerUpsertConflict(
+        `la riga esistente ha fanta_id ${target.fanta_id}, il file ${fantaId}`,
+      );
+    }
+    if (target.name !== input.name || target.team !== input.team) {
+      const blocker = (
+        await executor.query<{ id: number }>(
+          `SELECT id FROM player
+           WHERE lower(trim(name)) = lower(trim($1)) AND lower(trim(team)) = lower(trim($2))
+             AND id <> $3`,
+          [input.name, input.team, target.id],
+        )
+      ).rows[0];
+      if (blocker) {
+        throw new PlayerUpsertConflict(
+          `'${input.name}' / '${input.team}' è già un'altra riga (id ${blocker.id})`,
+        );
+      }
+    }
+    const updated = (
+      await executor.query<PlayerRow>(
+        `UPDATE player
+           SET name = $1, team = $2, ruolo = $3,
+               fanta_id = COALESCE(fanta_id, $4),
+               nome_completo = COALESCE($5, nome_completo),
+               image_url = COALESCE($6, image_url)
+         WHERE id = $7
+         RETURNING ${PLAYER_COLUMNS}`,
+        [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl, target.id],
+      )
+    ).rows[0];
+    if (!updated) throw new Error("upsertPlayer: update returned no row");
+    return { row: updated, inserted: false };
   }
-  return splitInserted(row);
+
+  const insertedRow = (
+    await executor.query<PlayerRow>(
+      `INSERT INTO player (name, team, ruolo, fanta_id, nome_completo, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING ${PLAYER_COLUMNS}`,
+      [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl],
+    )
+  ).rows[0];
+  if (!insertedRow) throw new Error("upsertPlayer: insert returned no row");
+  return { row: insertedRow, inserted: true };
 }
 
 // Used by the historical quotation import to fill in fanta_id for players

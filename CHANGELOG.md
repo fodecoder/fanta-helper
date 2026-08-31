@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.8.1] - 2026-08-31
+
+### Fixed
+
+- **Import listone interrotto da un conflitto di vincolo unico**: con dati già
+  in DB, il nuovo `upsertPlayer` poteva violare `player_name_team_uk` o
+  `player_fanta_id_uk` (es. una riga senza `fanta_id` e una con lo stesso
+  `fanta_id` ma nome diverso), abortendo l'intera transazione d'import — che
+  l'error handler mostrava, fuorviante, come «a league with this name already
+  exists». Ora l'upsert risolve il bersaglio in memoria e scrive solo mosse
+  sicure: i conflitti d'identità irrisolvibili (duplicati da fondere) diventano
+  righe scartate nel report, l'import prosegue. L'error handler espone il nome
+  del constraint per i casi non mappati.
+
 ## [4.8.0] - 2026-08-31
 
 ### Added

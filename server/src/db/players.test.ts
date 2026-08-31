@@ -1,38 +1,56 @@
 import { describe, it, expect, vi } from "vitest";
-import { upsertPlayer } from "./players";
+import { upsertPlayer, PlayerUpsertConflict } from "./players";
 import type { Queryable } from "./client";
 
 type QueryCall = { text: string; params: unknown[] };
 
-function fakeExecutor(responder: (call: QueryCall) => { rows: unknown[]; rowCount?: number }) {
+function fakeExecutor(responder: (call: QueryCall) => unknown[]) {
   const calls: QueryCall[] = [];
   const query = vi.fn(async (text: string, params: unknown[] = []) => {
     const call = { text, params };
     calls.push(call);
-    const res = responder(call);
-    return { rows: res.rows, rowCount: res.rowCount ?? res.rows.length };
+    const rows = responder(call);
+    return { rows, rowCount: rows.length };
   });
   return { executor: { query } as unknown as Queryable, calls };
 }
 
-const row = (over: Record<string, unknown> = {}) => ({
+const player = (over: Record<string, unknown> = {}) => ({
   id: 1,
   fanta_id: 4431,
   sofifa_id: null,
   name: "Carnesecchi",
   nome_completo: "Marco Carnesecchi",
-  team: "Juventus",
+  team: "Atalanta",
   ruolo: "P",
   image_url: null,
-  inserted: false,
   ...over,
 });
 
+const kind = (text: string) =>
+  text.includes("UPDATE player")
+    ? "update"
+    : text.includes("INSERT INTO player")
+      ? "insert"
+      : text.includes("WHERE fanta_id = $1")
+        ? "select-fanta"
+        : text.includes("id <> $3")
+          ? "select-blocker"
+          : "select-nameteam";
+
 describe("upsertPlayer", () => {
-  it("updates the existing row by fanta_id, changing team (no duplicate)", async () => {
-    const { executor, calls } = fakeExecutor((call) => {
-      if (call.text.includes("UPDATE player")) return { rows: [row({ team: "Juventus" })] };
-      throw new Error(`unexpected query: ${call.text}`);
+  it("updates the row found by fanta_id, changing team, without a duplicate", async () => {
+    const { executor, calls } = fakeExecutor(({ text }) => {
+      switch (kind(text)) {
+        case "select-fanta":
+          return [player({ team: "Atalanta" })];
+        case "select-blocker":
+          return [];
+        case "update":
+          return [player({ team: "Juventus" })];
+        default:
+          throw new Error(`unexpected: ${text}`);
+      }
     });
 
     const result = await upsertPlayer(
@@ -40,53 +58,83 @@ describe("upsertPlayer", () => {
       executor,
     );
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0]!.text).toMatch(/UPDATE player[\s\S]*WHERE fanta_id = \$4/);
+    expect(calls.map((c) => kind(c.text))).toEqual(["select-fanta", "select-blocker", "update"]);
     expect(result.inserted).toBe(false);
     expect(result.row.team).toBe("Juventus");
   });
 
-  it("falls back to name+team insert when no row has that fanta_id", async () => {
-    const { executor, calls } = fakeExecutor((call) => {
-      if (call.text.includes("UPDATE player")) return { rows: [] };
-      if (call.text.includes("INSERT INTO player")) return { rows: [row({ inserted: true })] };
-      throw new Error(`unexpected query: ${call.text}`);
+  it("adopts the single name+team row when no fanta_id row exists (backfill)", async () => {
+    const { executor, calls } = fakeExecutor(({ text }) => {
+      switch (kind(text)) {
+        case "select-fanta":
+          return [];
+        case "select-nameteam":
+          return [player({ fanta_id: null })];
+        case "update":
+          return [player({ fanta_id: 4431 })];
+        default:
+          throw new Error(`unexpected: ${text}`);
+      }
     });
 
     const result = await upsertPlayer(
-      { name: "Nuovo", team: "Como", ruolo: "D", fanta_id: 9999 },
+      { name: "Carnesecchi", team: "Atalanta", ruolo: "P", fanta_id: 4431 },
       executor,
     );
 
-    expect(calls).toHaveLength(2);
-    expect(calls[1]!.text).toMatch(/ON CONFLICT \(name, team\)/);
-    expect(result.inserted).toBe(true);
+    expect(calls.map((c) => kind(c.text))).toEqual(["select-fanta", "select-nameteam", "update"]);
+    expect(result.row.fanta_id).toBe(4431);
   });
 
-  it("uses only the name+team conflict path when fanta_id is absent", async () => {
-    const { executor, calls } = fakeExecutor(() => ({ rows: [row({ fanta_id: null })] }));
+  it("inserts a new row when nothing matches", async () => {
+    const { executor, calls } = fakeExecutor(({ text }) => {
+      if (kind(text) === "insert") return [player({ id: 9 })];
+      return [];
+    });
+
+    const result = await upsertPlayer(
+      { name: "Nuovo", team: "Como", ruolo: "D", fanta_id: 9999, image_url: "https://img/x.png" },
+      executor,
+    );
+
+    expect(result.inserted).toBe(true);
+    const insert = calls.find((c) => kind(c.text) === "insert")!;
+    expect(insert.params).toEqual(["Nuovo", "Como", "D", 9999, null, "https://img/x.png"]);
+  });
+
+  it("uses only a name+team lookup when fanta_id is absent", async () => {
+    const { executor, calls } = fakeExecutor(({ text }) =>
+      kind(text) === "select-nameteam" || kind(text) === "update"
+        ? [player({ fanta_id: null, name: "X", team: "T" })]
+        : [],
+    );
 
     await upsertPlayer({ name: "X", team: "T", ruolo: "C" }, executor);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0]!.text).toMatch(/INSERT INTO player/);
-    expect(calls[0]!.text).toMatch(/ON CONFLICT \(name, team\)/);
+    expect(calls.map((c) => kind(c.text))).toEqual(["select-nameteam", "update"]);
   });
 
-  it("passes nome_completo and image_url through as parameters", async () => {
-    const { executor, calls } = fakeExecutor(() => ({ rows: [row()] }));
+  it("throws PlayerUpsertConflict when the existing fanta_id differs from the file", async () => {
+    const { executor } = fakeExecutor(({ text }) => {
+      if (kind(text) === "select-fanta") return [];
+      if (kind(text) === "select-nameteam") return [player({ fanta_id: 111 })];
+      throw new Error(`unexpected: ${text}`);
+    });
 
-    await upsertPlayer(
-      {
-        name: "X",
-        team: "T",
-        ruolo: "A",
-        nome_completo: "Xavier Full",
-        image_url: "https://img/x.png",
-      },
-      executor,
-    );
+    await expect(
+      upsertPlayer({ name: "Carnesecchi", team: "Atalanta", ruolo: "P", fanta_id: 4431 }, executor),
+    ).rejects.toBeInstanceOf(PlayerUpsertConflict);
+  });
 
-    expect(calls[0]!.params).toEqual(["X", "T", "A", null, "Xavier Full", "https://img/x.png"]);
+  it("throws PlayerUpsertConflict when moving name/team would collide with another row", async () => {
+    const { executor } = fakeExecutor(({ text }) => {
+      if (kind(text) === "select-fanta") return [player({ team: "Atalanta" })];
+      if (kind(text) === "select-blocker") return [{ id: 42 }];
+      throw new Error(`unexpected: ${text}`);
+    });
+
+    await expect(
+      upsertPlayer({ name: "Carnesecchi", team: "Juventus", ruolo: "P", fanta_id: 4431 }, executor),
+    ).rejects.toBeInstanceOf(PlayerUpsertConflict);
   });
 });

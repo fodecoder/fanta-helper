@@ -7,7 +7,10 @@ const { upsertPlayer, replaceQuotationsForSeasonTx } = vi.hoisted(() => ({
   replaceQuotationsForSeasonTx: vi.fn(),
 }));
 
-vi.mock("../db/players", () => ({ upsertPlayer }));
+vi.mock("../db/players", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../db/players")>()),
+  upsertPlayer,
+}));
 vi.mock("../db/quotation", () => ({ replaceQuotationsForSeasonTx }));
 vi.mock("../db/client", () => ({
   pool: { connect: async () => ({ query: vi.fn(), release: vi.fn() }) },
@@ -64,6 +67,28 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     expect(report.discarded).toHaveLength(0);
     expect(report.inserted).toBe(1);
     expect(upsertPlayer.mock.calls[0]![0]).toMatchObject({ name: "Sportiello", team: "Atalanta" });
+  });
+
+  it("turns a PlayerUpsertConflict into a discard instead of aborting the import", async () => {
+    const { PlayerUpsertConflict } = await import("../db/players");
+    upsertPlayer
+      .mockImplementationOnce(() => {
+        throw new PlayerUpsertConflict("duplicato in DB da fondere");
+      })
+      .mockImplementation(async (input: { name: string; team: string }) => ({
+        row: { id: nextId++, name: input.name, team: input.team },
+        inserted: true,
+      }));
+
+    const csv = [
+      "1,Tizio,Tizio Uno,P,Por,1,1,1,1,Inter,1,1",
+      "2,Caio,Caio Due,D,Dc,1,1,1,1,Como,1,1",
+    ].join("\n");
+    const report = await importListoneFromCsv(csv, "2026-27");
+
+    expect(report.discarded).toHaveLength(1);
+    expect(report.discarded[0]).toMatchObject({ name: "Tizio", reason: /fondere/ });
+    expect(report.inserted).toBe(1);
   });
 
   it("reimport of the same fanta_id with a different team updates via fanta_id", async () => {

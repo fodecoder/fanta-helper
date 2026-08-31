@@ -1,7 +1,7 @@
 import { ROLES } from "@fanta-helper/shared";
 import type { PlayerImportReport, DiscardedPlayerRow } from "@fanta-helper/shared";
 import type { Queryable } from "../db/client";
-import { upsertPlayer } from "../db/players";
+import { upsertPlayer, PlayerUpsertConflict } from "../db/players";
 import type { PlayerUpsertResult } from "../db/players";
 import { ApiError } from "../http/errors";
 import { cell, parseCsvRows, parseXlsxRows, rowsToRecords } from "./fileRows";
@@ -74,17 +74,29 @@ export async function importPlayersFromRecords(
     const nomeCompleto = cell(record["Nome completo"]) || null;
     const imageUrl = cell(record.image_url) || null;
 
-    const result = await upsertPlayer(
-      {
-        name,
-        team,
-        ruolo: ruolo as (typeof ROLES)[number],
-        fanta_id: fantaId,
-        nome_completo: nomeCompleto,
-        image_url: imageUrl,
-      },
-      executor,
-    );
+    let result: PlayerUpsertResult;
+    try {
+      result = await upsertPlayer(
+        {
+          name,
+          team,
+          ruolo: ruolo as (typeof ROLES)[number],
+          fanta_id: fantaId,
+          nome_completo: nomeCompleto,
+          image_url: imageUrl,
+        },
+        executor,
+      );
+    } catch (err) {
+      // Conflitto d'identità già in DB (duplicato da fondere): la riga non
+      // aggiorna nulla e finisce nel report, senza abortire l'import.
+      if (err instanceof PlayerUpsertConflict) {
+        discarded.push({ row: rowNumber, name, team, ruolo, reason: err.message });
+        upsertResults.push(undefined);
+        continue;
+      }
+      throw err;
+    }
     upsertResults.push(result);
     if (result.inserted) {
       inserted += 1;

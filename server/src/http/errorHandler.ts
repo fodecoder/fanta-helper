@@ -39,7 +39,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
                   ? "this rank is already assigned to another player for this team and set piece type"
                   : constraint === "gk_pairing_team_pair_uk"
                     ? "this team pair is already recorded in the pairing matrix"
-                    : "a league with this name already exists";
+                    : constraint === "league_name_key"
+                      ? "a league with this name already exists"
+                      : `unique constraint violated${constraint ? `: ${constraint}` : ""}`;
     res.status(409).json({ error: { code: "CONFLICT", message } });
     return;
   }
