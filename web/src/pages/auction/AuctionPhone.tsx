@@ -59,6 +59,7 @@ function formatCompareValue(v: number | null): string {
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
+  const [opponentsOpen, setOpponentsOpen] = useState(false);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const selectedManagerName =
@@ -289,6 +290,64 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               }}
             >
               {view.assignError ?? view.impact.text}
+            </div>
+            {view.strongRoleAlerts.map((a) => (
+              <div
+                key={a.managerId}
+                style={{ fontSize: 12, color: "var(--color-accent-2-700)", lineHeight: 1.35 }}
+              >
+                {a.text}
+              </div>
+            ))}
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-block"
+                style={{ minHeight: 40 }}
+                aria-expanded={opponentsOpen}
+                onClick={() => setOpponentsOpen((v) => !v)}
+              >
+                {opponentsOpen ? "▾" : "▸"} Avversari ({view.opponents.length})
+              </button>
+              {opponentsOpen && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                  {view.opponents.map((o) => (
+                    <div key={o.managerId} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 13 }}>
+                        <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
+                          {o.name}
+                        </span>
+                        <span className="num" style={{ color: "var(--color-neutral-800)" }}>
+                          res {o.residuo}
+                        </span>
+                        <span className="num" style={{ fontWeight: 600 }}>
+                          max {o.maxOnCurrent}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {o.freeSlots.map((s) => (
+                          <span
+                            key={s.ruolo}
+                            className="num"
+                            style={{ fontSize: 11, color: "var(--color-neutral-700)" }}
+                          >
+                            <span style={{ color: roleColor(s.ruolo), fontWeight: 600 }}>
+                              {s.ruolo}
+                            </span>{" "}
+                            {Math.max(s.free, 0)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {view.opponents.length === 0 && (
+                    <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                      Nessun avversario.
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </>
         ) : (

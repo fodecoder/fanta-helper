@@ -1,4 +1,9 @@
-import type { Manager, CreateManagerInput, UpdateManagerInput } from "@fanta-helper/shared";
+import type {
+  Manager,
+  ManagerRoster,
+  CreateManagerInput,
+  UpdateManagerInput,
+} from "@fanta-helper/shared";
 import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
@@ -30,6 +35,15 @@ async function handle<T>(res: Response): Promise<T> {
 
 export function listManagers(leagueId: number, signal?: AbortSignal): Promise<Manager[]> {
   return apiFetch(baseUrl(leagueId), { signal }).then((res) => handle<Manager[]>(res));
+}
+
+export function listManagerRosters(
+  leagueId: number,
+  signal?: AbortSignal,
+): Promise<ManagerRoster[]> {
+  return apiFetch(`${baseUrl(leagueId)}/rosters`, { signal }).then((res) =>
+    handle<ManagerRoster[]>(res),
+  );
 }
 
 export function createManager(leagueId: number, input: CreateManagerInput): Promise<Manager> {

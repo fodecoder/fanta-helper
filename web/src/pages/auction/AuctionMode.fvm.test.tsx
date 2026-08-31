@@ -71,6 +71,7 @@ function stubApis() {
   vi.mocked(valuationsApi.listValuations).mockResolvedValue([]);
   vi.mocked(quotationApi.listCurrentQuotations).mockResolvedValue([quotation]);
   vi.mocked(managersApi.listManagers).mockResolvedValue([]);
+  vi.mocked(managersApi.listManagerRosters).mockResolvedValue([]);
   vi.mocked(statsEnrichmentApi.getStatsEnrichment).mockResolvedValue(null as never);
   vi.mocked(playerSeasonStatsApi.getLatestPlayerSeasonStats).mockResolvedValue([]);
   vi.mocked(probableLineupApi.listProbableLineup).mockResolvedValue([]);

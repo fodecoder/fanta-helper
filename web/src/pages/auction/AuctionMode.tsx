@@ -4,6 +4,7 @@ import type {
   League,
   Manager,
   ManagerAuctionStatus,
+  ManagerRoster,
   Player,
   PlayerAttributes,
   PlayerLatestSeasonStats,
@@ -43,11 +44,15 @@ import {
   gkPairingSuggestionFor,
   impact as computeImpact,
   ladderModel,
+  opponentSummaries,
   rankSameRole,
+  strongRoleAlerts,
   verdict as computeVerdict,
   type CompareSortKey,
   type GkPairingSuggestion,
+  type OpponentSummary,
   type RankRow,
+  type StrongRoleAlert,
 } from "../../lib/auctionDerivations";
 import { AuctionDesktop } from "./AuctionDesktop";
 import { AuctionPhone } from "./AuctionPhone";
@@ -88,6 +93,8 @@ export interface AuctionView {
   managers: Manager[];
   statuses: ManagerAuctionStatus[] | null;
   me: ManagerAuctionStatus | undefined;
+  opponents: OpponentSummary[];
+  strongRoleAlerts: StrongRoleAlert[];
   selectedManagerId: number | null;
   onSelectManager: (id: number) => void;
 
@@ -160,6 +167,7 @@ export interface AuctionView {
 export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [purchases, setPurchases] = useState<PurchaseWithDetails[] | null>(null);
   const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
+  const [managerRosters, setManagerRosters] = useState<ManagerRoster[] | null>(null);
   const [wishlist, setWishlist] = useState<WishlistEntryWithPlayer[] | null>(null);
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
@@ -193,6 +201,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     void purchasesApi
       .getAuctionState(league.id, controller.signal)
       .then(setStatuses)
+      .catch(() => {});
+    void managersApi
+      .listManagerRosters(league.id, controller.signal)
+      .then(setManagerRosters)
       .catch(() => {});
     void wishlistApi
       .listWishlist(league.id, controller.signal)
@@ -363,6 +375,15 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const gkPairingSuggestion = useMemo(
     () => gkPairingSuggestionFor(myGoalkeeperTeams, gkPairing ?? [], isTeamGoalkeeperAvailable),
     [myGoalkeeperTeams, gkPairing, isTeamGoalkeeperAvailable],
+  );
+
+  const opponents = useMemo(
+    () => opponentSummaries(statuses, selectedPlayer?.ruolo ?? null),
+    [statuses, selectedPlayer?.ruolo],
+  );
+  const strongAlerts = useMemo(
+    () => strongRoleAlerts(managerRosters, selectedPlayer?.ruolo ?? null),
+    [managerRosters, selectedPlayer?.ruolo],
   );
 
   const verdict = computeVerdict(priceNum, selectedValuation);
@@ -601,6 +622,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     managers,
     statuses,
     me,
+    opponents,
+    strongRoleAlerts: strongAlerts,
     selectedManagerId: effectiveManagerId,
     onSelectManager: setSelectedManagerId,
     visiblePlayers,

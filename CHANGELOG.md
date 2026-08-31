@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.10.0] - 2026-08-31
+
+### Added
+
+- **Riepilogo avversari contestuale in Vista Asta**: mentre un giocatore è in
+  chiamata, il pannello "Avversari" (colonna destra nel desktop, sezione
+  collassabile nel mobile) mostra per ogni avversario i crediti residui, gli
+  slot liberi per ruolo e il massimo ancora spendibile sul giocatore corrente
+  (stesso `adjustedMaxBid` di `shared/src/maxBid.ts`, azzerato se gli slot del
+  ruolo sono pieni). Sotto il giocatore in chiamata compare un avviso breve e
+  non bloccante quando un avversario ha già preso giocatori forti nello stesso
+  ruolo (tier "Top"/"Solido" del motore consigli). Nuova rotta read-only
+  `GET /leagues/:id/managers/rosters` che ricalcola fascia e tag sull'intero
+  pool e li unisce alle rose derivate dal log `purchase`; nessun campo di stato
+  mutabile.
+
 ## [4.9.0] - 2026-08-31
 
 ### Added

@@ -9,6 +9,7 @@ import {
 } from "../db/managers";
 import { getLeagueById } from "../db/leagues";
 import { managerHasPurchases } from "../db/purchases";
+import { getManagerRosters } from "../db/rosters";
 import { ApiError } from "../http/errors";
 
 export const managersRouter = Router({ mergeParams: true });
@@ -37,6 +38,19 @@ managersRouter.get<LeagueParams>("/", async (req, res, next) => {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
     res.json(await listManagersByLeague(leagueId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+managersRouter.get<LeagueParams>("/rosters", async (req, res, next) => {
+  try {
+    const leagueId = parseId(req.params.leagueId);
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+      throw ApiError.notFound(`league ${leagueId} not found`);
+    }
+    res.json(await getManagerRosters(league));
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type {
   GkPairingEntry,
   ManagerAuctionStatus,
+  ManagerRoster,
   Player,
   ValuationWithPlayer,
 } from "@fanta-helper/shared";
@@ -14,9 +15,12 @@ import {
   impact,
   ladderModel,
   lineupStatusFor,
+  maxSpendableOn,
+  opponentSummaries,
   rankSameRole,
   roleColor,
   setPieceRanksFor,
+  strongRoleAlerts,
   verdict,
 } from "./auctionDerivations";
 
@@ -59,6 +63,90 @@ function status(overrides: Partial<ManagerAuctionStatus> = {}): ManagerAuctionSt
     ...overrides,
   };
 }
+
+function roster(overrides: Partial<ManagerRoster> = {}): ManagerRoster {
+  return {
+    managerId: 1,
+    managerName: "Rivale",
+    isOwner: false,
+    players: [],
+    ...overrides,
+  };
+}
+
+function rosterPlayer(
+  ruolo: ManagerRoster["players"][number]["ruolo"],
+  tier: string,
+  id = Math.floor(Math.random() * 1e6),
+): ManagerRoster["players"][number] {
+  return { player_id: id, name: `P${id}`, ruolo, prezzo: 10, tier, tags: [] };
+}
+
+describe("maxSpendableOn", () => {
+  it("returns the adjusted max bid when the role still has a free slot", () => {
+    expect(maxSpendableOn(status({ adjustedMaxBid: 80 }), "A")).toBe(80);
+  });
+  it("returns 0 when the role slots are full", () => {
+    const s = status({ adjustedMaxBid: 80, slots: [{ ruolo: "A", total: 2, used: 2, free: 0 }] });
+    expect(maxSpendableOn(s, "A")).toBe(0);
+  });
+});
+
+describe("opponentSummaries", () => {
+  it("excludes the owner and maps residuo, slots and the max on the called role", () => {
+    const statuses: ManagerAuctionStatus[] = [
+      status({ managerId: 1, managerName: "Io", isOwner: true }),
+      status({
+        managerId: 2,
+        managerName: "Rivale",
+        isOwner: false,
+        residuo: 120,
+        adjustedMaxBid: 90,
+        slots: [
+          { ruolo: "P", total: 3, used: 0, free: 3 },
+          { ruolo: "A", total: 6, used: 6, free: 0 },
+        ],
+      }),
+    ];
+    const rows = opponentSummaries(statuses, "A");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.name).toBe("Rivale");
+    expect(rows[0]!.residuo).toBe(120);
+    expect(rows[0]!.maxOnCurrent).toBe(0); // A slots full
+    expect(opponentSummaries(statuses, "P")[0]!.maxOnCurrent).toBe(90);
+  });
+  it("falls back to the raw adjusted max bid with no called player", () => {
+    const statuses = [status({ managerId: 2, isOwner: false, adjustedMaxBid: 42 })];
+    expect(opponentSummaries(statuses, null)[0]!.maxOnCurrent).toBe(42);
+  });
+});
+
+describe("strongRoleAlerts", () => {
+  it("is empty with no called role or no purchases", () => {
+    expect(strongRoleAlerts([roster()], null)).toEqual([]);
+    expect(strongRoleAlerts([roster({ players: [] })], "C")).toEqual([]);
+  });
+  it("counts only Top/Solido in the called role, sorted by strong desc", () => {
+    const rosters: ManagerRoster[] = [
+      roster({
+        managerId: 2,
+        managerName: "A",
+        players: [rosterPlayer("C", "Top"), rosterPlayer("C", "Utile"), rosterPlayer("D", "Top")],
+      }),
+      roster({
+        managerId: 3,
+        managerName: "B",
+        players: [rosterPlayer("C", "Top"), rosterPlayer("C", "Solido")],
+      }),
+      roster({ managerId: 4, managerName: "Owner", isOwner: true, players: [rosterPlayer("C", "Top")] }),
+    ];
+    const alerts = strongRoleAlerts(rosters, "C");
+    expect(alerts.map((a) => a.name)).toEqual(["B", "A"]);
+    expect(alerts[0]!.strong).toBe(2);
+    expect(alerts[1]!).toMatchObject({ strong: 1, total: 2 });
+    expect(alerts[1]!.text).toContain("A: già 1 Centrocampista forti (2 in reparto)");
+  });
+});
 
 describe("roleColor", () => {
   it("maps a role to its CSS custom property", () => {

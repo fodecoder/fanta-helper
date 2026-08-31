@@ -1,10 +1,12 @@
 import type {
   GkPairingEntry,
   ManagerAuctionStatus,
+  ManagerRoster,
   Player,
   ProbableLineupEntry,
   ProbableLineupStato,
   Role,
+  RoleSlotStatus,
   SetPieceTakerEntry,
   ValuationWithPlayer,
 } from "@fanta-helper/shared";
@@ -206,6 +208,80 @@ export function gkPairingSuggestionFor(
     .sort((a, b) => a.score - b.score);
   const best = candidates.find((c) => isTeamGoalkeeperAvailable(c.team));
   return best ? { referenceTeam, ...best } : null;
+}
+
+// Fasce del motore consigli che contano come "giocatore forte" per l'avviso
+// contestuale durante l'asta (vedi TIER_THRESHOLDS in
+// shared/src/recommendationEngine.ts).
+export const STRONG_TIERS: ReadonlySet<string> = new Set(["Top", "Solido"]);
+
+// Massimo spendibile di un manager sul giocatore in chiamata: il max bid
+// rettificato (unica fonte di verità in shared/src/maxBid.ts, già calcolato
+// per ogni manager e servito in `adjustedMaxBid`), azzerato se gli slot di
+// quel ruolo sono già pieni.
+export function maxSpendableOn(status: ManagerAuctionStatus, ruolo: Role): number {
+  const slot = status.slots.find((s) => s.ruolo === ruolo);
+  if (slot && slot.free <= 0) return 0;
+  return status.adjustedMaxBid;
+}
+
+export interface OpponentSummary {
+  managerId: number;
+  name: string;
+  residuo: number;
+  freeSlots: RoleSlotStatus[];
+  maxOnCurrent: number;
+}
+
+// Riepilogo per ogni avversario (manager non proprietario) rispetto al ruolo
+// del giocatore in chiamata. Puro consumo di `ManagerAuctionStatus`, a sua
+// volta derivato dal log `purchase`.
+export function opponentSummaries(
+  statuses: ManagerAuctionStatus[] | null,
+  ruolo: Role | null,
+): OpponentSummary[] {
+  return (statuses ?? [])
+    .filter((s) => !s.isOwner)
+    .map((s) => ({
+      managerId: s.managerId,
+      name: s.managerName,
+      residuo: s.residuo,
+      freeSlots: s.slots,
+      maxOnCurrent: ruolo === null ? s.adjustedMaxBid : maxSpendableOn(s, ruolo),
+    }));
+}
+
+export interface StrongRoleAlert {
+  managerId: number;
+  name: string;
+  strong: number;
+  total: number;
+  text: string;
+}
+
+// Avviso contestuale: avversari che hanno già preso giocatori forti nel ruolo
+// del giocatore in chiamata. `strong` = tier Top/Solido dal motore consigli;
+// `total` = tutti i giocatori dell'avversario in quel reparto.
+export function strongRoleAlerts(
+  rosters: ManagerRoster[] | null,
+  ruolo: Role | null,
+): StrongRoleAlert[] {
+  if (ruolo === null) return [];
+  return (rosters ?? [])
+    .filter((r) => !r.isOwner)
+    .map((r) => {
+      const inRole = r.players.filter((p) => p.ruolo === ruolo);
+      const strong = inRole.filter((p) => STRONG_TIERS.has(p.tier)).length;
+      return {
+        managerId: r.managerId,
+        name: r.managerName,
+        strong,
+        total: inRole.length,
+        text: `${r.managerName}: già ${strong} ${ROLE_LABEL[ruolo]} forti (${inRole.length} in reparto)`,
+      };
+    })
+    .filter((a) => a.strong >= 1)
+    .sort((a, b) => b.strong - a.strong);
 }
 
 export interface RankRow {

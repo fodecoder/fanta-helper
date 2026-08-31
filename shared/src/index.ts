@@ -17,6 +17,7 @@ export * from "./user";
 export * from "./chat";
 export * from "./avatar";
 export * from "./purchase";
+export * from "./roster";
 export * from "./rosterExchange";
 export * from "./maxBid";
 export * from "./recommendationEngine";
