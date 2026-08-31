@@ -13,6 +13,9 @@ import { ROLE_LABEL, roleColor } from "../lib/auctionDerivations";
 interface PlayerDetailPanelProps {
   player: Player;
   quotation: QuotationRow | undefined;
+  // FVM di listino già riscalato al budget di lega (base 500). Il componente
+  // non ha `league` in scope: il numero arriva pre-calcolato da AuctionMode.
+  fvmWeighted: number | null;
   seasonStats: PlayerLatestSeasonStats | undefined;
   lineupStatus: ProbableLineupStato | null;
   setPieceRanks: SetPieceTakerEntry[];
@@ -65,6 +68,7 @@ function Stat({ label, value }: { label: ReactNode; value: ReactNode }) {
 export function PlayerDetailPanel({
   player,
   quotation,
+  fvmWeighted,
   seasonStats,
   lineupStatus,
   setPieceRanks,
@@ -109,10 +113,10 @@ export function PlayerDetailPanel({
       <Stat label="Gol" value={statValue(seasonStats?.gf)} />
       <Stat label="Assist" value={statValue(seasonStats?.assist)} />
       <Stat label="Qt.A" value={quotation?.qt_a ?? "—"} />
-      <Stat label="FVM" value={quotation?.fvm ?? "—"} />
+      <Stat label="FVM" value={fvmWeighted ?? "—"} />
       <div style={{ minWidth: 160 }}>
         <StatLabel>Prezzo medio pagato (proxy FVM)</StatLabel>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>{quotation?.fvm ?? "—"}</div>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>{fvmWeighted ?? "—"}</div>
         <div style={{ fontSize: 11, color: "var(--color-neutral-700)", marginTop: 2 }}>
           Indice del trend dei prezzi ad asta — non è una media di aggiudicazioni reali.
         </div>

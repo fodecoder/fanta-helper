@@ -11,6 +11,21 @@ export function valuationScaleFactor(leagueBudget: number): number {
   return leagueBudget / DEFAULT_BUDGET;
 }
 
+// L'FVM (Fantavalore di Mercato) del listino è pubblicato su base 500 crediti,
+// NON 1000 come le valutazioni sopra: è la convenzione ufficiale del listino
+// Fantacalcio. Quando è mostrato in Vista Asta come proxy di prezzo assoluto va
+// quindi riscalato al budget reale della lega con questo fattore (budget / 500).
+// Base distinta da DEFAULT_BUDGET proprio perché la sorgente è diversa.
+export const FVM_BASE_BUDGET = 500;
+
+export function fvmScaleFactor(leagueBudget: number): number {
+  return leagueBudget / FVM_BASE_BUDGET;
+}
+
+export function scaleFvm(fvm: number, factor: number): number {
+  return Math.round(fvm * factor);
+}
+
 export interface ScalableValuationAmounts {
   target: number;
   fair_value: number;

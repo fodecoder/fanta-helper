@@ -1,6 +1,6 @@
 {
   "name": "fanta-helper",
-  "version": "4.8.1",
+  "version": "4.9.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -27,7 +27,8 @@
     "db:seed:historical:quotations": "npm run db:seed:historical:quotations --workspace server",
     "db:seed:historical:stats": "npm run db:seed:historical:stats --workspace server",
     "db:seed:historical:rigoristi": "npm run db:seed:historical:rigoristi --workspace server",
-    "db:seed:historical:formazioni": "npm run db:seed:historical:formazioni --workspace server"
+    "db:seed:historical:formazioni": "npm run db:seed:historical:formazioni --workspace server",
+    "gen:valuations": "tsx server/src/scripts/generateDefaultValuations.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

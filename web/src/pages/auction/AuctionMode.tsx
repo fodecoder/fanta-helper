@@ -33,7 +33,9 @@ import * as gkPairingApi from "../../api/gkPairing";
 import * as recommendationsApi from "../../api/recommendations";
 import { MOBILE_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import {
+  fvmScaleFactor,
   normalizeScoresByRole,
+  scaleFvm,
   scaleValuationAmounts,
   valuationScaleFactor,
 } from "@fanta-helper/shared";
@@ -104,6 +106,7 @@ export interface AuctionView {
   wishlistPlayerIds: Set<number>;
   valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
   quotationFor: (playerId: number) => QuotationRow | undefined;
+  weightedFvmFor: (playerId: number) => number | null;
   sortValueFor: (playerId: number) => number | null;
   tagsFor: (playerId: number) => PlayerTag[];
   teamPrefFor: (playerId: number) => "prefer" | "avoid" | null;
@@ -247,6 +250,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   // shared/src/valuationScale.ts): si riscalano qui, una sola volta, per il
   // budget reale della lega — il dato salvato in `valuation` resta intatto.
   const valuationScale = valuationScaleFactor(league.budget);
+  // L'FVM di listino è su base 500 crediti (vedi valuationScale.ts), base
+  // diversa da quella delle valutazioni: quando è mostrato come prezzo va
+  // riscalato al budget reale della lega. Solo display, a valle dei tag.
+  const fvmScale = fvmScaleFactor(league.budget);
   const scaledValuations = useMemo(
     () => (valuations ?? []).map((v) => scaleValuationAmounts(v, valuationScale)),
     [valuations, valuationScale],
@@ -263,6 +270,14 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     return map;
   }, [quotations]);
   const quotationFor = useCallback((id: number) => quotationById.get(id), [quotationById]);
+  // FVM di listino riscalato al budget di lega (base 500). `null` se assente.
+  const weightedFvmFor = useCallback(
+    (id: number): number | null => {
+      const raw = quotationById.get(id)?.fvm;
+      return raw == null ? null : scaleFvm(raw, fvmScale);
+    },
+    [quotationById, fvmScale],
+  );
   const recommendationById = useMemo(() => {
     const map = new Map<number, PlayerRecommendationWithTags>();
     for (const r of recommendations ?? []) map.set(r.player_id, r);
@@ -295,9 +310,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const sortValueFor = useCallback(
     (playerId: number): number | null => {
       if (sortKey === "valore") return valuationById.get(playerId)?.fair_value ?? null;
+      if (sortKey === "fvm") return weightedFvmFor(playerId);
       return quotationById.get(playerId)?.[sortKey] ?? null;
     },
-    [sortKey, valuationById, quotationById],
+    [sortKey, valuationById, quotationById, weightedFvmFor],
   );
 
   const ownerManagerId = useMemo(
@@ -383,14 +399,14 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
         case "fm":
           return seasonStatsById.get(playerId)?.fm ?? null;
         case "fvm":
-          return quotationById.get(playerId)?.fvm ?? null;
+          return weightedFvmFor(playerId);
         case "qt_a":
           return quotationById.get(playerId)?.qt_a ?? null;
         case "score":
           return recommendationById.get(playerId)?.score ?? null;
       }
     },
-    [compareSortKey, valuationById, quotationById, seasonStatsById, recommendationById],
+    [compareSortKey, valuationById, quotationById, seasonStatsById, recommendationById, weightedFvmFor],
   );
 
   const compareBase = useMemo(() => {
@@ -601,6 +617,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     wishlistPlayerIds,
     valuationFor,
     quotationFor,
+    weightedFvmFor,
     sortValueFor,
     tagsFor,
     teamPrefFor,

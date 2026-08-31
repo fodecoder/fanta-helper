@@ -5,6 +5,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.9.0] - 2026-08-31
+
+### Added
+
+- **Valutazioni di default a copertura totale**: i dataset seed
+  `docs/sample/asta_1000_lega8.json` e `asta_1000_lega10.json` coprivano solo
+  79 giocatori su un pool di ~550, lasciando senza valutazione chiunque venisse
+  chiamato fuori da quella lista. Ora sono generati in modo deterministico dal
+  motore di raccomandazione (`shared/src/defaultValuationGenerator.ts`,
+  eseguibile con `npm run gen:valuations`): una riga per ogni giocatore del
+  pool (505), con `tier` S/A/B/C/D su percentili di valore per ruolo,
+  `confidence` differenziata per ruolo secondo il tasso di conferma storico
+  (soglia minima 15 fantavoti → `low`), e `fair_value`/`max_bid`/`panic_price`
+  vincolati al budget per reparto (P/D/C/A) col replacement level già usato dal
+  motore. Il meccanismo di seed per-`n_squadre` resta invariato.
+
+### Changed
+
+- **FVM riscalato al budget di lega in Vista Asta**: l'FVM di listino è su base
+  500 crediti e veniva mostrato grezzo come proxy di prezzo atteso, incoerente
+  con budget di lega diversi. Nuova `fvmScaleFactor` in
+  `shared/src/valuationScale.ts` (base 500, distinta dalla base 1000 delle
+  valutazioni); applicata dove l'FVM compare come prezzo assoluto in Vista Asta
+  (dettaglio giocatore, ordinamenti, confronto). Il calcolo a percentile del
+  motore e i tag restano sull'FVM grezzo (percentile invariante al riscalaggio).
+
 ## [4.8.1] - 2026-08-31
 
 ### Fixed

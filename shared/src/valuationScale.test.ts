@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { scaleValuationAmounts, valuationScaleFactor } from "./valuationScale";
+import {
+  fvmScaleFactor,
+  scaleFvm,
+  scaleValuationAmounts,
+  valuationScaleFactor,
+} from "./valuationScale";
+
+describe("fvmScaleFactor", () => {
+  it("returns 1 at the 500-credit FVM base", () => {
+    expect(fvmScaleFactor(500)).toBe(1);
+  });
+
+  it("doubles for a 1000-credit league", () => {
+    expect(fvmScaleFactor(1000)).toBe(2);
+  });
+
+  it("scales 750 to 1.5 and 250 to 0.5", () => {
+    expect(fvmScaleFactor(750)).toBe(1.5);
+    expect(fvmScaleFactor(250)).toBe(0.5);
+  });
+});
+
+describe("scaleFvm", () => {
+  it("multiplies and rounds", () => {
+    expect(scaleFvm(37, 2)).toBe(74);
+    expect(scaleFvm(37, 1.5)).toBe(56);
+  });
+});
 
 describe("valuationScaleFactor", () => {
   it("returns 1 for the standard 1000-credit budget", () => {

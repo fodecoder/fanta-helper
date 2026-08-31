@@ -167,6 +167,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
             <PlayerDetailPanel
               player={sel}
               quotation={view.quotationFor(sel.id)}
+              fvmWeighted={view.weightedFvmFor(sel.id)}
               seasonStats={view.seasonStatsById.get(sel.id)}
               lineupStatus={lineupStatusFor(sel, view.probableLineup)}
               setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
@@ -529,6 +530,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                       <PlayerDetailPanel
                         player={player}
                         quotation={view.quotationFor(player.id)}
+                        fvmWeighted={view.weightedFvmFor(player.id)}
                         seasonStats={view.seasonStatsById.get(player.id)}
                         lineupStatus={lineupStatusFor(player, view.probableLineup)}
                         setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}

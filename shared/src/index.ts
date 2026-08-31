@@ -20,6 +20,7 @@ export * from "./purchase";
 export * from "./rosterExchange";
 export * from "./maxBid";
 export * from "./recommendationEngine";
+export * from "./defaultValuationGenerator";
 export * from "./playerTags";
 export * from "./wishlist";
 export * from "./statsEnrichment";

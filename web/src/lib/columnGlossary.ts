@@ -34,7 +34,11 @@ export const COLUMN_GLOSSARY = {
   },
   qtA: { label: "Qt.A", tooltip: "Quotazione attuale di listino, in crediti." },
   qtI: { label: "Qt.I", tooltip: "Quotazione iniziale di listino, in crediti." },
-  fvm: { label: "FVM", tooltip: "Fantavalore di mercato: indice di prezzo di listino." },
+  fvm: {
+    label: "FVM",
+    tooltip:
+      "Fantavalore di mercato: indice di prezzo di listino, riscalato al budget di lega (base listino 500 crediti).",
+  },
   vorp: {
     label: "VORP",
     tooltip:
