@@ -386,3 +386,18 @@ Valori forniti (derivati dal riferimento del proprietario):
 
 > Nota: da consolidare come design token (es. variabili CSS) al momento della
 > rifinitura UI (Fase 2). La scelta tra i due blu va fissata sul riferimento reale.
+
+### Colori ruolo
+
+Consolidati come design token in `web/src/index.css` (`--role-p/-d/-c/-a`),
+categorici e distinti (non tonalità dello stesso colore), verificati AA
+(≥4.5:1) su sfondo bianco e sui badge a sfondo pieno `.player-avatar--role-*`:
+
+- **P** (portiere) — giallo di processo `#EDBB00`
+- **D** (difensore) — blu `#144F89` (tra i due blu disponibili, scelto quello
+  meno scuro: contrasto ~8.4:1, resta percepito come "blu" anziché quasi-nero)
+- **C** (centrocampista) — verde secondario `#077449` (il verde principale
+  `#2BA756` non raggiunge AA per testo su bianco, ~3.1:1)
+- **A** (attaccante) — rosso `#C0392B`, non presente nella palette brand:
+  scelto per contrasto e per non riusare l'arancione (`#FF8300`) o il magenta
+  (`#d6006c`, oggi liberato da questo uso)

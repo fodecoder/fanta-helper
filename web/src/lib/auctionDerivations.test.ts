@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type {
   GkPairingEntry,
@@ -62,6 +64,22 @@ describe("roleColor", () => {
   it("maps a role to its CSS custom property", () => {
     expect(roleColor("P")).toBe("var(--role-p)");
     expect(roleColor("A")).toBe("var(--role-a)");
+  });
+
+  it("ties each --role-* var to the expected color in index.css (P giallo, D blu, C verde, A rosso)", () => {
+    // Guards against a silent palette rename/edit in index.css: this asserts
+    // the actual hex values, not just the var names above.
+    const css = readFileSync(join(import.meta.dirname, "../index.css"), "utf-8");
+
+    expect(css).toContain("--color-process-yellow: #edbb00;");
+    expect(css).toContain("--color-role-blue: #144f89;");
+    expect(css).toContain("--color-role-green: #077449;");
+    expect(css).toContain("--color-role-red: #c0392b;");
+
+    expect(css).toContain("--role-p: var(--color-process-yellow);");
+    expect(css).toContain("--role-d: var(--color-role-blue);");
+    expect(css).toContain("--role-c: var(--color-role-green);");
+    expect(css).toContain("--role-a: var(--color-role-red);");
   });
 });
 

@@ -47,11 +47,19 @@
   /* Solo per i trattamenti di stampa (lastre CMYK): mai chrome o corpo. */
   --color-process-yellow: #edbb00;
 
-  /* Colori ruolo del prototipo: P giallo di processo, D accento, C neutro-700, A magenta. */
+  /* Colori dedicati ai ruoli (SPEC.md § Palette): non riusano --color-accent
+     (D)/--color-accent-2 (A)/--color-neutral-700 (C), che restano liberi per
+     altri usi UI. Contrasto AA verificato su sfondo bianco e sui badge a
+     sfondo pieno .player-avatar--role-*. */
+  --color-role-blue: #144f89;
+  --color-role-green: #077449;
+  --color-role-red: #c0392b;
+
+  /* Colori ruolo: P giallo, D blu, C verde, A rosso. */
   --role-p: var(--color-process-yellow);
-  --role-d: var(--color-accent);
-  --role-c: var(--color-neutral-700);
-  --role-a: var(--color-accent-2);
+  --role-d: var(--color-role-blue);
+  --role-c: var(--color-role-green);
+  --role-a: var(--color-role-red);
 
   --font-heading: "Source Serif 4", system-ui, serif;
   --font-heading-weight: 600;
