@@ -1,344 +1,340 @@
-# PROMPTS.md — Fase 7 (Multiutente v4.0)
+# PROMPTS.md — Fase 8 (correzioni post-asta reale)
 
-Prompt operativi ordinati per Claude Code. **Uno alla volta, in sequenza.** Ogni
-prompt = una feature = un commit locale con build+lint verdi, voce in
-`CHANGELOG.md`, bump SemVer e tag locale `vX.Y.Z` (nessun push).
+Prompt operativi per Claude Code, **in plan mode**. La Fase 7 (P1–P9) e la fase
+mobile (P10) sono chiuse: la loro traccia vive nel `CHANGELOG.md` e nella git
+history, non più qui.
 
-Regole valide per tutti (da `CLAUDE.md`): Conventional Commits in inglese, nessun
-riferimento ad AI/attribuzioni, commenti solo dove la logica non è ovvia,
-**invariante**: lo stato d'asta e ogni valore effettivo sono derivati (nessun
-campo di stato mutabile; override = layer sparso, `effettivo = override ?? base`),
-segreti solo lato backend. Prima di modifiche ampie proponi il piano. Contesto e
-tradeoff completi in [docs/design-fase7.md](./docs/design-fase7.md).
+Regole valide per tutti (da `CLAUDE.md`): Conventional Commits in inglese,
+nessun riferimento ad AI/attribuzioni, commenti solo dove la logica non è
+ovvia, **invariante**: lo stato d'asta e ogni valore effettivo sono derivati
+(nessun campo di stato mutabile; override = layer sparso, `effettivo = override
+?? base`), segreti solo lato backend, build+lint verdi prima di ogni commit.
+Ogni prompt = un piano proposto prima di modifiche ampie, poi feature +
+commit locale + `CHANGELOG.md` + bump SemVer + tag locale (mai push). Ogni
+prompt include **test** (unit sui moduli puri condivisi, integrazione dove
+tocca DB/route) a verifica dell'implementazione, non solo del codice che
+compila.
+
+**Ordine consigliato:** P11 → P12 → P13 (due agenti paralleli) → P14 → P15.
+P12 tocca schema/import del pool giocatori: va chiuso prima di P13, che genera
+valutazioni sull'intero pool. P15 dipende dal `fair_value` prodotto da P13.
 
 ---
 
-## P1 — Fix engine: modificatore portiere + difesa team-aware
+## P11 — Fix palette colori ruolo
 
-**Obiettivo.** Correggere due difetti dell'audit (A1, A2) in
-`shared/src/recommendationEngine.ts`, mantenendo il motore puro e deterministico.
+**Obiettivo.** Allineare i colori ruolo nell'app alla palette richiesta: **P
+giallo, D blu, C verde, A rosso**.
 
-- **A1 — portiere.** Oggi `modificatori.portiere.enabled` non è mai letto. Quando
-  attivo, aggiungi al valore del ruolo P un bonus atteso stimato dal tasso gol
-  subiti di squadra: usa `gs/presenze` del portiere come proxy di clean-sheet
-  propensity, mappato a un bonus atteso (meno gol subiti → bonus più alto).
-  Documenta la formula e dichiara la confidenza (proxy, non media di reparto).
-- **A2 — difesa team-aware.** Sostituisci il proxy `mv` individuale in
-  `difesaBonus` con un `mv` fuso col tasso gol-subiti della squadra del giocatore
-  (blend pesato, es. 0.7·mv_norm + 0.3·team_defense_norm), così il bonus riflette
-  la solidità del reparto e non solo il voto isolato. Mantieni retrocompatibile
-  la tabella `modificatori.difesa.tabella`.
+**Contesto.** `web/src/index.css` righe 50–55 definisce oggi `--role-p:
+var(--color-process-yellow)` (corretto), `--role-d: var(--color-accent)`
+(arancione), `--role-c: var(--color-neutral-700)` (grigio), `--role-a:
+var(--color-accent-2)` (magenta). Sono usati via `roleColor()` in
+`web/src/lib/auctionDerivations.ts` e consumati in una decina di componenti
+(`AuctionDesktop.tsx`, `AuctionPhone.tsx`, `OverviewPage.tsx`,
+`RecommendationsPage.tsx`, `ValuationOverrideRow.tsx`, `ProbableLineupBoard.tsx`,
+`PlayerDetailPanel.tsx`) — non serve toccarli, solo i token.
 
-**Vincoli.** Nessun dato inventato: se mancano gol-subiti di squadra, degrada al
-comportamento attuale e marca `dataMissing`/confidenza bassa. Aggiorna
-`recommendationEngine.test.ts` con casi per portiere ON/OFF e per il blend difesa.
+**Lavoro.**
+- Aggiungi/aggiorna i design token in `web/src/index.css` per D (blu), C
+  (verde), A (rosso), scegliendo valori coerenti con la palette di brand già
+  in `SPEC.md` (verde `#2BA756`/`#077449`, blu `#11246F`/`#144F89`) e con
+  sufficiente contrasto testo/sfondo (verifica AA su sfondo bianco e sui badge
+  a sfondo pieno in `.player-avatar--role-*`).
+  Il rosso non è nella palette di brand attuale: sceglilo per contrasto e
+  distinguibilità dagli altri tre (non riusare arancione/magenta esistenti),
+  e documentalo in `SPEC.md` insieme agli altri.
+- Aggiorna `SPEC.md` § Palette con i 4 colori ruolo definitivi.
 
-**Accettazione.** Con `portiere.enabled=true`, due P con stesso mv ma gol-subiti
-diversi ricevono score diversi. Con difesa attiva, un D di squadra solida supera
-un D con pari mv di squadra fragile. Test verdi.
+**Test.** Aggiorna `web/src/lib/auctionDerivations.test.ts` (il test
+`roleColor` esiste già e verifica il nome della variabile CSS, non il colore:
+aggiungi un'asserzione o un commento che leghi il nome var al colore atteso in
+`index.css`, per non regredire in silenzio se qualcuno rinomina la palette).
+Screenshot prima/dopo della vista Asta (desktop e mobile) per verifica visiva.
+
+**Accettazione.** I quattro ruoli sono visivamente distinti per colore
+categorico (non tonalità dello stesso colore), P giallo/D blu/C verde/A rosso,
+in tutte le viste che usano `roleColor`/le classi `.role-*`.
+
+**Versioning.** `fix` → PATCH.
+
+---
+
+## P12 — Import Listone v2: nuovo formato, nome completo, fix duplicati, foto
+
+**Obiettivo.** Sostituire l'import quotazioni/giocatori per reggere il nuovo
+formato del listone (colonne posizionali, senza header), aggiungere il nome
+completo, correggere il duplicato-su-cambio-squadra, e far ricadere le foto
+rotte sullo stemma squadra. Quattro problemi diversi ma sullo stesso file/area
+di codice (`playerImport.ts`, `players.ts`, `player.ts`, migrazioni): un solo
+prompt sequenziale, non parallelizzabile senza rischio di conflitto.
+
+**Contesto — leggi prima di scrivere codice.**
+- File di riferimento allegato: `Lista-FantaAsta-Fantacalcio.csv` (559 righe
+  dati, **nessuna riga di header**, 19 colonne separate da virgola). Prima
+  riga di esempio: `4431,Carnesecchi,Marco Carnesecchi,P,Por,16,16,16,16,
+  Atalanta,52,52,destro,Italia,01/07/2000 00:00:00,https://content.fantacalcio.it/
+  web/campioncini/21/card/4431.png?v=765,0,6.5,6.5`. Ipotesi di mappatura da
+  **verificare sul file reale, non assumere**: 1=Id, 2=Nome, 3=Nome completo,
+  4=Ruolo (P/D/C/A), 5=Ruolo Mantra, 6-9=quotazioni (identiche a inizio
+  stagione), 10=Squadra, 11-12=FVM (Classic/Mantra), 13=piede, 14=nazionalità,
+  15=data di nascita, 16=URL foto, 17=flag (infortunato?), 18=Mv, 19=Fm.
+  Conferma leggendo altre righe del file e, se serve, cercando online la
+  struttura dell'export "Lista FantaAsta" di Fantacalcio.it (nessuna
+  documentazione ufficiale pubblica trovata in questa sessione — solo
+  ricostruzione dal file).
+- Importer attuale: `server/src/import/playerImport.ts`
+  (`PLAYER_REQUIRED_COLUMNS = ["R", "Nome", "Squadra"]`, via `rowsToRecords`
+  che richiede una riga di header con questi nomi esatti) e
+  `server/src/import/quotationImport.ts`/`currentSeasonImport.ts` per i file
+  quotazioni/statistiche esistenti (che *hanno* header e vanno lasciati
+  funzionanti: `docs/Quotazioni_*.xlsx` resta un formato valido di import).
+- Bug duplicati: `server/src/db/players.ts`, `upsertPlayer` —
+  `ON CONFLICT (name, team) DO UPDATE` non scatta se `team` cambia tra un
+  import e l'altro (stesso nome, squadra diversa in due import successivi →
+  riga nuova invece di update). `fanta_id` è già la chiave stabile prevista da
+  `SPEC.md` per questo esatto motivo, ma l'upsert non lo usa come chiave di
+  conflitto.
+- Nome completo: `shared/src/player.ts` (`playerSchema`) non ha il campo.
+  Nessuna migrazione lo prevede.
+- Foto senza fallback: `web/src/components/PlayerAvatar.tsx` riga ~34, `<img
+  src={image_url} />` senza `onError`. Il placeholder squadra+ruolo esiste già
+  nello stesso componente per `image_url` assente: va riusato per l'errore di
+  caricamento, non riscritto.
+
+**Lavoro.**
+1. **Import flessibile senza header.** Aggiungi rilevamento: se la prima riga
+   non è interpretabile come header (es. la colonna attesa `Ruolo` contiene un
+   valore numerico, o nessuna cella matcha i nomi colonna noti), tratta il file
+   come posizionale e applica una mappatura per indice, configurabile e con
+   commento che ne spiega l'origine (non hardcoded senza spiegazione). Se
+   colonne sono mancanti/vuote su una riga, la riga non va scartata in blocco:
+   solo i campi mancanti restano `null`/non aggiornati, coerente con la
+   richiesta di flessibilità. Mantieni il path a header esistente (file con
+   header nominati continuano a funzionare invariati).
+2. **`nome_completo`.** Migrazione additiva su `player` (colonna nullable,
+   nessun default inventato per le righe esistenti). Aggiorna `playerSchema`,
+   l'upsert, e mostra il nome completo dove oggi si vede solo `name` (schede
+   giocatore in asta, dettaglio, liste) — `name` resta il nome breve usato per
+   il matching, `nome_completo` è solo presentazione.
+3. **Fix duplicati.** Riscrivi `upsertPlayer` per usare `fanta_id` come chiave
+   di conflitto primaria quando presente (aggiorna `name`/`team`/`ruolo` sulla
+   riga esistente), con fallback a `name+team` solo per righe senza
+   `fanta_id`. Aggiungi un vincolo unico su `fanta_id` (dove non null) via
+   migrazione. Scrivi anche uno script una-tantum
+   (`server/src/scripts/`) che rilevi e segnali (non cancelli in automatico
+   senza conferma) i duplicati già presenti in DB da fondere, con lo stesso
+   criterio.
+4. **Fallback foto.** `PlayerAvatar` cattura l'errore di caricamento
+   dell'`<img>` e ricade sul placeholder squadra+ruolo esistente, esattamente
+   come già fa per `image_url` nullo.
+5. **Rinomina UI.** La schermata/voce di import del listone si chiama "Import
+   Listone" (o equivalente parlante) invece del nome attuale — trova il testo
+   nella UI (`web/src/pages`) e aggiornalo, senza toccare le route/URL se
+   referenziate altrove.
+
+**Test.**
+- `shared`: test per `playerSchema` con `nome_completo` nullo e valorizzato.
+- `server`: test di `playerImport`/`quotationImport` con (a) il file allegato
+  come fixture reale (posizionale, senza header), (b) un file con header
+  esistente (non regredire), (c) righe con colonne mancanti/vuote (non
+  scartate in blocco), (d) reimport dello stesso `fanta_id` con `team` diverso
+  → una sola riga in `player`, `team` aggiornato, non duplicata. Aggiungi la
+  fixture del CSV allegato sotto `server/src/test/fixtures/` (nome
+  esplicito tipo `listone-2026-27-fantaasta.csv`).
+- `web`: test del fallback `onError` di `PlayerAvatar` (simulando l'evento
+  error sull'`<img>`, verifica che renda il placeholder).
+
+**Accettazione.** Il file allegato si importa senza scarti di massa (solo le
+righe realmente non valide finiscono nel report), il nome completo compare
+nelle schermate giocatore, un giocatore reimportato con squadra diversa
+aggiorna la riga esistente invece di duplicarla, una foto non caricabile mostra
+lo stemma squadra invece di un'icona rotta, e la voce di import ha un nome
+parlante.
+
+**Versioning.** `feat` → MINOR (include un `fix` per i duplicati, ma la
+migrazione/campo nuovo qualifica il bump come feature).
+
+---
+
+## P13 — Valutazioni per tutti i giocatori (8/10) + FVM ponderato al budget
+
+**Due lavori indipendenti sullo stesso obiettivo di fondo (coprire l'asta con
+dati completi), che non si toccano a livello di file: eseguili con due agenti
+paralleli nello stesso prompt.**
+
+### P13a — Generazione valutazioni a copertura totale (agente 1)
+
+**Obiettivo.** Sostituire `docs/sample/asta_1000_lega8.json` e `lega10.json`
+(79 giocatori ciascuno) con dataset che coprono **tutto il pool giocatori**
+importato (~550+), generati in modo deterministico e riproducibile, non a
+mano.
+
+**Contesto.** Il meccanismo di seed (`server/src/import/defaultValuations.ts`
+→ `seedDefaultValuationsForLeague`, chiamato da `routes/leagues.ts` alla
+creazione lega) funziona ed è per-`n_squadre` (8/10) per design (`SPEC.md`:
+sono dataset dedicati, non un riscalaggio lineare) — non toccarlo. Manca solo
+la generazione dei due file con copertura piena. `shared/src/valuation.ts`
+definisce lo schema di destinazione (base 1000 crediti, vedi
+`valuationScale.ts`). `recommendationEngine.ts` già calcola valore relativo
+alla lega da quotazioni + statistiche storiche; `claudeExtraction/` è la
+pipeline LLM esistente (Fase 3) usabile in alternativa/rifinitura ma non
+obbligatoria — preferisci un generatore deterministico basato sull'engine
+esistente se copre la qualità richiesta, per non introdurre dipendenza da
+costo/token API su un dataset che va rigenerato ogni stagione.
+
+**Metodologia (fonte: [fantacalcio.dev — Fasce oneste 2026-27](https://fantacalcio.dev/report/fasce-oneste-2026-27),
+dati backtestati su 2 stagioni, non solo dichiarati).**
+- Fasce (`tier`) per ruolo su percentili di valore motore, non quote fisse
+  uguali per tutti i ruoli.
+- `confidence` per riga derivata dal tasso di conferma per ruolo misurato nel
+  backtest: centrocampisti 62% → `high` sulla fascia top più ampia; difensori
+  54% → `medium`; attaccanti e portieri 33% → `medium`/`low` anche in fascia
+  top. Non inventare una confidenza uniforme.
+- Scarta o marca a `confidence: "low"` i giocatori sotto 15 fantavoti nella
+  stagione di riferimento (soglia di affidabilità minima usata nel report).
+- `max_bid`/`panic_price` calibrati sul concetto di prezzo massimo = (valore
+  motore del giocatore − valore del primo sostituto gratuito dello stesso
+  ruolo) — coerente col replacement level già in `recommendationEngine.ts`,
+  non una formula nuova scollegata.
+- Debuttanti/neo-arrivati senza storico Serie A: applica l'euristica per
+  provenienza del report (Premier top/semi-top → fascia alta diretta, altre
+  grandi leghe → semi-top, Serie B/neopromossa → terza fascia) solo se il dato
+  di provenienza è disponibile; altrimenti `confidence: "low"` esplicita, mai
+  una fascia inventata.
+
+**Test.** Test del generatore (dato un pool giocatori + quotazioni +
+statistiche di fixture, verifica che copra il 100% del pool, rispetti gli enum
+di `shared/src/valuation.ts`, e produca `confidence` differenziata per ruolo
+secondo le soglie sopra). Test di integrazione: creazione lega a 8 e a 10 →
+tutti i giocatori del pool hanno una `valuation`.
+
+**Accettazione.** Nessun giocatore chiamabile in asta risulta senza
+valutazione per una lega da 8 o da 10 squadre.
+
+### P13b — FVM ponderato al budget di lega (agente 2)
+
+**Obiettivo.** Rispondere al gap: FVM oggi non è riscalato al budget di lega
+quando mostrato come proxy di prezzo assoluto (lo è già, correttamente, per
+l'ordinamento a percentile in `recommendationEngine.ts` — quello non si
+tocca).
+
+**Contesto.** FVM ufficiale Fantacalcio è su base standard 500 crediti.
+`shared/src/valuationScale.ts` ha già il pattern corretto per `valuation`
+(riscala in lettura, non all'import, dividendo per `DEFAULT_BUDGET`). FVM va
+trattato allo stesso modo ma con la propria base (500, non 1000): serve una
+funzione parallela, non un riuso diretto di `valuationScaleFactor` che assume
+base 1000.
+
+**Lavoro.** Aggiungi in `shared/src` (stesso file o uno nuovo accanto a
+`valuationScale.ts`, valuta tu quale minimizza duplicazione) una funzione di
+riscalaggio FVM analoga, con base 500 dichiarata e commentata (perché diversa
+dalla base valutazioni). Applicala nei punti dove `quotation.fvm` è mostrato
+come prezzo atteso assoluto nella Vista Asta (`AuctionDesktop.tsx`,
+`AuctionPhone.tsx`, `PlayerDetailPanel.tsx` — cerca gli usi di `fvm` in
+`web/src`), **non** nel calcolo a percentile di `recommendationEngine.ts` né
+in `playerTags.ts` (quelli sono correttamente relativi, riscalarli sarebbe un
+bug diverso: percentile è invariante al riscalaggio lineare, quindi cambiare
+lì non farebbe nulla di dannoso ma nemmeno di utile — lascia stare per non
+gonfiare il diff).
+
+**Test.** Test unitario della funzione di riscalaggio (budget 500 → fattore 1,
+budget 1000 → fattore 2, ecc., simmetrico a `valuationScaleFactor`). Test che
+la Vista Asta mostri l'FVM riscalato per una lega con budget ≠ 500.
+
+**Accettazione.** In una lega con budget diverso da 500, l'FVM mostrato in
+asta come prezzo atteso è coerente con il budget reale, non il numero grezzo
+del listone.
+
+**Versioning (per entrambi, un solo commit/tag a fine prompt).** `feat` →
+MINOR.
+
+---
+
+## P14 — Vista avversari in asta
+
+**Obiettivo.** Rendere visibile durante l'asta cosa hanno già preso gli
+avversari, contestualmente al giocatore chiamato, non solo come pagina
+separata.
+
+**Contesto.** `ManagersPage.tsx` ha già la logica di rosa-per-manager
+(derivata dal log `purchase`, invariante rispettata). La Vista Asta
+(`AuctionDesktop.tsx`/`AuctionPhone.tsx`) oggi non mostra un riepilogo
+avversari mentre un giocatore è "in chiamata". Nessuna sovrapposizione di file
+con P12/P13: puro consumo di dati derivati già esistenti via API esistenti
+(o una nuova rotta di sola lettura se serve un aggregato ad hoc — verifica
+prima se `routes/managers.ts` o simili bastano).
+
+**Lavoro.**
+- Pannello (desktop: sidebar/riquadro; mobile: sezione collassabile per non
+  affollare lo schermo piccolo) con, per ogni avversario: slot liberi per
+  ruolo, crediti residui, crediti massimi spendibili sul giocatore in asta
+  (stesso calcolo di `maxBid.ts` già usato per "Io", applicato a ciascun
+  manager).
+  Il calcolo del max spendibile ha una fonte di verità unica in
+  `maxBid.ts`; se oggi assume implicitamente "Io" come budget/rosa target,
+  generalizzalo per accettare un manager qualsiasi invece di duplicare la
+  logica.
+- Avviso contestuale sotto il giocatore in chiamata: se uno o più avversari
+  hanno già preso giocatori "forti" dello stesso ruolo (usa i tag/valore
+  motore esistenti da `playerTags.ts`/`recommendationEngine.ts`, non una
+  nuova euristica scollegata) o dello stesso reparto in generale, mostralo
+  come nota breve ("Manager X ha già preso 2 top C"), non come blocco della
+  UI.
+
+**Test.** Test dei nuovi derivati (slot liberi/crediti/max-spendibile per
+manager generico, non solo "Io") — se `maxBid.ts` viene generalizzato,
+aggiorna `maxBid.test.ts` perché copra il caso multi-manager. Test del
+pannello (rendering con fixture di più manager e acquisti, incluso il caso
+zero-acquisti).
+
+**Accettazione.** Durante l'asta, senza lasciare la schermata, si vede per
+ogni avversario: slot liberi, crediti residui, quanto può spendere ancora sul
+giocatore corrente, e un segnale se ha già preso giocatori forti nel ruolo/
+reparto del giocatore in chiamata.
 
 **Versioning.** `feat` → MINOR.
 
 ---
 
-## P2 — Fix engine: reliability da titolarità + baseline mv
+## P15 — Giocatori trappola
 
-**Obiettivo.** Correggere A3 e A4.
+**Obiettivo.** Esporre una lista di giocatori utili da chiamare per far
+spendere budget agli avversari senza comprarli.
 
-- **A4 — reliability.** Integra `probable_lineup.stato` (titolare/panchina/
-  ballottaggio) nel calcolo di `reliability`: un titolare oggi non deve essere
-  penalizzato dalle sole presenze storiche (neopromossi/nuovi acquisti). Definisci
-  una combinazione esplicita (es. `reliability = max(presenzeRatio, statoWeight)`
-  con `titolare=0.9, ballottaggio=0.6, panchina=0.3`) e documentala. Matching
-  giocatore↔lineup per nome/`fanta_id` come già fatto altrove.
-- **A3 — baseline mv.** Introduci `MV_BASELINE` (costante documentata, es. 6.0) e
-  calcola il contributo del voto come `mv − MV_BASELINE`, così lo score misura il
-  margine sopra la sufficienza e i bonus (bomber/rigoristi) pesano di più. Non
-  rendere negativo lo score in modo spurio: chiarisci il floor.
+**Dipendenza.** Usa il `fair_value` prodotto da **P13a** (deve essere già a
+copertura totale, altrimenti la lista sarebbe parziale) — va dopo P13, non in
+parallelo.
 
-**Vincoli.** Puro e deterministico. Se il lineup non è disponibile per un
-giocatore, ricadi sul solo `presenzeRatio`. Aggiorna i test.
+**Contesto.** Non esiste un pattern statistico affidabile per "trappola"
+(vedi nota di ricerca in `PLAN.md` — è un giudizio editoriale caso per caso su
+Fantacalcio.it). La definizione operativa più solida con i dati in-app è
+l'inverso delle "occasioni" già calcolate: FVM/prezzo di mercato alto ma
+`fair_value` del motore basso (il mercato lo sopravvaluta rispetto al modello
+→ probabile che un avversario ci spenda sopra). Guarda come
+`recommendationEngine.ts`/`playerTags.ts` calcolano già il percentile
+costo/valore (righe intorno a 462–494 di `recommendationEngine.ts`) prima di
+scrivere una seconda logica di percentile ridondante.
 
-**Accettazione.** Un titolare con poche presenze storiche ma `stato=titolare`
-guadagna reliability. Con baseline attiva, il distacco tra bomber e difensore di
-pari mv aumenta in modo verificabile nei test.
+**Lavoro.**
+- Modulo puro (`shared/src`, accanto a `playerTags.ts` o dentro se il tag
+  entra naturalmente nell'enum esistente — valuta tu) che marca un giocatore
+  "trappola" quando FVM è in fascia alta del ruolo e `fair_value` è in fascia
+  bassa/media, con soglie esplicite e documentate (non magic number senza
+  commento).
+- Tag manuale opzionale per lega (stessa forma di
+  `user_valuation_override`/`user_team_pref`: layer sparso, non sovrascrive il
+  derivato) per i casi editoriali che il modello non cattura — coerente con
+  l'invariante: il tag manuale è un flag di visualizzazione, non cambia
+  `fair_value`.
+- Lista "Giocatori trappola" (nuova vista o sezione di una esistente —
+  `RecommendationsPage.tsx` è il posto naturale) con badge riusato in asta.
 
-**Versioning.** `feat` → MINOR.
+**Test.** Test del modulo puro (casi sopra/sotto soglia per ciascun lato,
+ruoli diversi). Test del tag manuale (override additivo, non sostitutivo).
 
----
-
-## P3 — Tag giocatore derivati
-
-**Obiettivo.** Aggiungere un modulo puro `shared/src/playerTags.ts` che, da pool +
-stats + quotazioni + `set_piece_taker` + `probable_lineup` + regole lega, ritorna
-per ogni giocatore l'elenco di tag applicabili. Nessun campo salvato: derivazione
-a lettura, esposta dall'endpoint consigli e usata in asta.
-
-**Tag e regole (bozza, affinabile con soglie documentate):**
-
-- **Rigorista** — rigorista rank ≤ 2 della propria squadra (`tipo=rigore`).
-- **Titolare da 6** — `stato=titolare` + reliability alta + bassa attesa di bonus
-  (FVM/score medio nel ruolo): affidabile, poco esplosivo.
-- **Porta bonus** — tasso (gol+assist)/partita nel top del ruolo.
-- **Difensore da bonus** — D/P con alto tasso bonus **oppure** squadra a difesa
-  solida (basso `gs`/partita).
-- **Scommessa** — FVM basso + segnale di upside (campione piccolo ad alto
-  rendimento, o titolare oggi con poche presenze storiche).
-- **Da prendere a 1** — FVM minimo + score ≈ replacement + «Io» ha ancora lo slot.
-
-**Disambiguazione.** Rinomina la fascia bassa in `TIER_THRESHOLDS` (oggi
-«Scommessa») per non collidere col tag omonimo: fasce = asse valore, tag = asse
-separato. Un giocatore può avere più tag.
-
-**UI.** Badge compatti in Consigli e nel pannello asta (giocatore in asta +
-alternative). Nessun ricalcolo di stato mutabile.
-
-**Accettazione.** Test in `playerTags.test.ts` con casi mirati per ciascun tag.
-Badge visibili in entrambe le viste.
+**Accettazione.** La lista mostra giocatori con mismatch prezzo/valore nella
+direzione "costoso ma scarso", consultabile prima e durante l'asta, con
+badge visibile nella schermata Asta come gli altri tag giocatore.
 
 **Versioning.** `feat` → MINOR.
-
----
-
-## P4 — Login 4 utenti + identità
-
-**Obiettivo.** Introdurre autenticazione minimale e legarla all'identità esistente.
-
-- **Schema.** `app_user(id, username unique, password_hash, avatar, avatar_color)`.
-  Seed idempotente dei 4 utenti (Andre, Davide, Fra, Paul) con le password
-  fornite **hashate con bcrypt al seed** (mai in chiaro nel repo/config: le
-  password in chiaro restano solo nell'input del seed locale, non versionate).
-- **Auth.** `POST /auth/login` (verifica bcrypt) → cookie di sessione `httpOnly`
-  firmato; `POST /auth/logout`; `GET /auth/me`. Nessun segreto o hash nel client.
-- **Mapping identità.** Aggiungi `manager.user_id` (FK opzionale a `app_user`): in
-  una lega il manager collegato all'utente loggato è il «tu» dei consigli.
-  Mantieni `is_owner` per i dati esistenti; se `user_id` è presente ha priorità.
-- **Gate UI.** Schermata di login come **landing** dell'app (vedi P8 per il logo
-  SoFIFA su questa schermata).
-
-**Vincoli.** Migrazione schema con `db:migrate`. Nessuna password/hash mai
-inviata al client. Proponi il piano di migrazione prima di applicarlo.
-
-**Accettazione.** I 4 utenti accedono con le rispettive password; sessione
-separata per utente; `GET /auth/me` riflette l'utente loggato.
-
-**Versioning.** `feat` con migrazione → MAJOR (apre la strada a `v4.0.0`).
-
----
-
-## P5 — Avatar e colore avatar
-
-**Obiettivo.** Ogni utente sceglie avatar e colore.
-
-- **Dati.** Usa `avatar` e `avatar_color` già su `app_user`. Avatar da set
-  predefinito (emoji o iniziali su tinta), niente upload immagini.
-- **UI.** Pagina profilo per modificarli; avatar mostrato in header, lista
-  manager/panoramica e (poi) chat.
-
-**Accettazione.** La scelta persiste per utente e compare in header e panoramica.
-
-**Versioning.** `feat` → MINOR.
-
----
-
-## P6 — Preferenze per-utente + preferenze di squadra
-
-**Obiettivo.** Personalizzare i consigli lasciando invariato il valore di base per
-gli altri utenti.
-
-- **Override valutazioni.** Tabella sparsa `user_valuation_override(user_id,
-  league_id, player_id, target?, fair_value?, max_bid?, panic_price?, note?)`,
-  campi nullable. Valore effettivo a lettura: `coalesce(override, base)`. Base
-  immutabile; l'override vale solo per l'utente che lo scrive. CRUD dedicato +
-  editing inline nella vista valutazioni/consigli dell'utente loggato.
-- **Preferenze squadra.** `user_team_pref(user_id, league_id, team, kind:
-  'prefer'|'avoid')`. **Effetto (deciso): flag + ordinamento secondario, nessuna
-  mutazione dello score.** Squadra preferita → a parità di fascia sale in lista;
-  squadra da evitare → badge «squadra da evitare» + demozione in coda. Lo score
-  di base resta comparabile e non corrotto.
-
-**Vincoli.** Puro/derivato: gli override e le preferenze sono un layer, non
-sovrascrivono il dato di base condiviso. Migrazione schema.
-
-**Accettazione.** Un override di Andre non cambia i valori visti da Davide.
-Impostando una squadra preferita, i suoi giocatori salgono a parità di fascia;
-una squadra da evitare è flaggata e demossa.
-
-**Versioning.** `feat` con migrazione → MINOR (o MAJOR se accorpato al taglio v4).
-
----
-
-## P7 — Chat 1-a-1 ancorabile
-
-**Obiettivo.** Chat minimale, solo 1-a-1, pannello piccolo ancorabile/
-ridimensionabile.
-
-- **Schema.** `chat_message(id, from_user, to_user, body, created_at)`,
-  append-only (coerente con la filosofia log immutabile).
-- **Trasporto (deciso): polling.** `GET /chat?with=<userId>&since=<ts>` ogni 2–3 s;
-  `POST /chat` per inviare. Niente websocket.
-- **UI.** Pannello flottante piccolo, `draggable` + `resizable`; posizione e
-  dimensione salvate in `localStorage` (comodità per-utente, non stato condiviso).
-  Selettore del destinatario dalla lista utenti. Solo conversazioni 1-a-1.
-
-**Vincoli.** Nessun segreto nel client; i messaggi passano dal backend. Non
-introdurre stato mutabile: la conversazione è la proiezione ordinata del log.
-
-**Accettazione.** Due utenti si scambiano messaggi visibili entro pochi secondi;
-il pannello si sposta/ridimensiona e ricorda la posizione al reload.
-
-**Versioning.** `feat` → MINOR.
-
----
-
-## P8 — SoFIFA in landing e asta
-
-**Obiettivo.** Inserire logo e link SoFIFA (prerequisito per l'accesso alle loro
-API).
-
-- **Landing (schermata di login, P4):** logo `public/sofifa-logo.png` (versione
-  normale) con link a `https://sofifa.com/`.
-- **Asta:** logo `public/sofifa-logo-small.png` (versione piccola) accanto al link
-  «SoFIFA» già presente in `AuctionDesktop.tsx`, con link a `https://sofifa.com/`.
-
-**Accettazione.** Logo normale visibile in landing, logo piccolo in asta, entrambi
-cliccabili verso il sito.
-
-**Versioning.** `feat` → MINOR. Ultimo taglio verso `v4.0.0`.
-
----
-
-## P9 — Bugfix UI + tag + normalizzazione score (da review manuale)
-
-**Obiettivo.** Correggere 4 difetti emersi da un giro di test manuale su modale
-profilo, preferenze squadra, tag giocatore e leggibilità dello score. Nessuna
-modifica architetturale: sono fix mirati, ognuno isolabile.
-
-- **B1 — modale profilo tronca il contenuto.** Il dialog «Profilo» (avatar +
-  colore, P5) non copre l'intera viewport quando il contenuto supera l'altezza
-  disponibile: righe di avatar/colore restano tagliate fuori dal riquadro visibile
-  invece di scrollare dentro il modale. Fissa il layout del dialog perché scrolli
-  internamente (`max-height` legata al viewport + `overflow-y: auto` nel body del
-  modale), overlay e bottoni azione (Annulla/Salva) sempre visibili.
-- **B2 — preferenze squadra (P6) invisibili in asta.** Oggi «squadra preferita» /
-  «squadra da evitare» sono impostate in Consigli ma non hanno segnale nel
-  pannello asta: chi asta non vede che sta per prendere un giocatore di una
-  squadra segnata come «da evitare». Aggiungi un warning visibile nel pannello
-  asta (badge o banner accanto al giocatore in chiamata, e nella lista
-  alternative) quando la squadra del giocatore è in `user_team_pref` con
-  `kind='avoid'` per l'utente loggato. Nessun cambio allo score: solo segnale
-  visivo, coerente col vincolo di P6 (flag, non mutazione del valore).
-- **B3 — tooltip mancanti + colonne calcolate senza dettaglio.** Aggiungi tooltip
-  su tutte le colonne con sigle non ovvie (es. VORP, FVM, QT.A) in Consigli e
-  panoramica. Per le colonne che derivano da un calcolo (score, reliability,
-  max bid rettificato, ecc.) il tooltip mostra una sintesi leggibile della
-  formula applicata (valori usati, non solo il nome della formula) e un bottone
-  «Dettagli» che apre un pannello/modale con lo scomposto passo-passo. Riusa,
-  dove possibile, i dati già calcolati dal motore (`recommendationEngine`) invece
-  di ricalcolare lato client.
-- **B4 — tag «Difensore da bonus» applicato ai portieri.** In
-  `shared/src/playerTags.ts` la condizione include `recommendation.ruolo === "P"`
-  insieme a `"D"` (riga ~148), quindi i portieri prendono il tag pensato per i
-  difensori. Restringi la condizione al solo `ruolo === "D"`. Se un segnale
-  equivalente ha senso per i portieri (es. «Portiere di squadra solida»), va
-  proposto come tag distinto in un prompt successivo, non riusando questo.
-  Aggiorna `playerTags.test.ts` con un caso che verifica l'assenza del tag sui
-  portieri.
-
-**Non-bug, ma richiesto insieme (B5) — normalizzazione score 0–10.** Lo score
-mostrato in Consigli/asta non ha oggi una scala fissa e leggibile. Introduci una
-normalizzazione **di sola presentazione** (0 = da evitare, 10 = da prendere),
-calcolata per ruolo sulla distribuzione degli score del pool corrente (es.
-min-max o percentile clampato). Il valore normalizzato è derivato a lettura, non
-sostituisce lo score grezzo usato dal motore per ordinamento/fasce/VORP: quello
-resta la fonte di verità interna. Documenta la formula di normalizzazione e il
-suo dominio (per-ruolo vs. globale — per-ruolo è la scelta di default, dato che
-gli score non sono comparabili tra ruoli).
-
-**Vincoli.** Nessun campo di stato mutabile introdotto (B2 e B5 sono derivazioni
-a lettura). B4 è un fix di una riga più test, va isolato dal resto in un commit
-separato se comodo. Per B1/B3 nessuna modifica al backend.
-
-**Accettazione.** Il modale profilo è interamente utilizzabile su viewport
-piccole (scroll interno, bottoni sempre raggiungibili). Un giocatore di una
-squadra «da evitare» mostra un warning nel pannello asta. Le colonne con sigle
-hanno tooltip; le colonne calcolate hanno sintesi + bottone Dettagli funzionante.
-Nessun portiere ha il tag «Difensore da bonus» (verificato da test). Lo score
-mostrato è in scala 0–10 per ruolo, coerente con l'ordinamento esistente.
-
-**Versioning.** `fix` per B1/B2/B4, `feat` per B3/B5 → bump coerente (MINOR se
-accorpato in un'unica release, altrimenti PATCH+MINOR separati per commit).
-
----
-
-## P10 — Bugfix mobile (leghe/chat) + chat fullscreen + notifiche + audit fasi 1-9
-
-**Obiettivo.** Correggere un bug riprodotto solo su mobile (non riproducibile da
-desktop), adattare la chat (P7) al mobile, aggiungere notifica di messaggio in
-arrivo, e chiudere la fase con un audit di tutti i prompt P1–P9.
-
-- **B6 — dropdown lega vuoto e chat che non si apre, solo su mobile.** Da
-  telefono, con l'utente Fra loggato, il selettore «— seleziona lega —» non
-  mostra le leghe dell'utente (in desktop, stesso utente, funziona) e il
-  pannello Chat mostra «authentication required» invece di aprirsi. Il fatto che
-  desktop funzioni e mobile no, con lo stesso utente, indica un problema di
-  sessione/cookie legato a viewport o user-agent piuttosto che ai dati: sospetti
-  primari da verificare — cookie di sessione (P4) con `SameSite`/`Secure` che si
-  comportano diversamente su Safari/Chrome mobile (in particolare in PWA/standalone
-  o dietro redirect http→https), eventuale mismatch tra dominio del sito e
-  dominio delle chiamate API su mobile, race condition al primo load per cui il
-  fetch di leghe/chat parte prima che il cookie di sessione sia disponibile.
-  Riproduci con device emulation *e* su device reale prima di assumere la causa;
-  non introdurre workaround lato client (es. retry silenzioso) senza aver capito
-  la causa — se è un problema di cookie, il fix va nella configurazione del
-  cookie/sessione lato backend, non in un patch UI.
-- **B7 — chat non può essere flottante su mobile.** Il pannello chat
-  `draggable`/`resizable` di P7 ha senso solo su viewport desktop. Sotto una
-  soglia (stesso breakpoint già in uso nel resto della SPA, se esiste, altrimenti
-  documenta la soglia scelta) la chat deve aprirsi a schermo intero (fullscreen
-  overlay, niente drag/resize, un solo bottone di chiusura chiaro), non come
-  riquadro piccolo in un angolo. Il selettore destinatario e la history restano
-  identici nella logica, cambia solo il contenitore.
-- **B8 — notifica di messaggio in arrivo.** Oggi un utente loggato non ha alcun
-  segnale se gli arriva un messaggio mentre non ha la chat aperta (o è su un'altra
-  pagina della SPA). Aggiungi una notifica in-app (toast o banner, non
-  notifica di sistema/push — nessuna nuova dipendenza per push notification in
-  questo prompt) quando arriva un nuovo messaggio per l'utente loggato e il
-  pannello chat non è aperto sulla conversazione con quel mittente. Riusa il
-  polling già esistente di P7 (`GET /chat?with=...&since=...`): se serve un
-  polling "globale" per sapere di nuovi messaggi da mittenti diversi da quello
-  attualmente aperto, valuta un endpoint leggero (es. `GET /chat/unread` o
-  riuso di `since` su tutti i mittenti) e proponilo nel piano prima di
-  implementarlo.
-
-**Audit (obbligatorio, va fatto per ultimo in questo prompt).** Verifica lo stato
-reale di P1–P9 rispetto al codice attuale: quali sono stati implementati
-correttamente, quali parzialmente, quali per nulla. Non fidarti del solo
-`CHANGELOG.md` — controlla il codice. Sulla base dell'audit:
-
-- Aggiorna `PLAN.md` riflettendo lo stato reale (fatto / parziale / mancante),
-  rimuovendo sezioni ormai obsolete o superate dai prompt successivi.
-- Aggiorna `README.md` perché descriva l'app com'è oggi (auth multiutente, chat,
-  tag, preferenze, ecc. se presenti), togliendo riferimenti a feature non ancora
-  esistenti o a versioni precedenti dell'architettura.
-- Non toccare `CLAUDE.md` né `SPEC.md` in questo prompt: sono fuori perimetro,
-  se contengono discrepanze segnalale in coda al prompt invece di modificarle.
-- Riporta l'audit come lista puntuale (prompt → stato → evidenza nel codice) nel
-  messaggio di commit o in una sezione dedicata di `PLAN.md`, non solo a voce.
-
-**Vincoli.** B6 va diagnosticato prima di essere corretto: se la causa non è
-chiara, il commit di questo prompt può limitarsi a documentare l'ipotesi più
-probabile con evidenza (log, comportamento cookie) e proporre il fix in un
-prompt successivo, invece di introdurre una modifica non verificata su un
-percorso di autenticazione. Nessun segreto/hash nel client. L'audit non fa
-refactor: solo lettura + aggiornamento documentazione.
-
-**Accettazione.** Da mobile, l'utente Fra vede le sue leghe nel selettore e la
-chat si apre senza errore «authentication required» (o, se il fix è rimandato,
-l'ipotesi di causa è documentata con evidenza). Su viewport mobile la chat è
-fullscreen, non flottante. Un utente riceve un segnale visibile per un messaggio
-in arrivo mentre non ha la chat aperta su quel mittente. `PLAN.md` e `README.md`
-riflettono lo stato reale del codice per P1–P9, senza contenuti obsoleti.
-
-**Versioning.** `fix` per B6/B7/B8, `docs` per l'aggiornamento di `PLAN.md`/
-`README.md` → PATCH (o MINOR se B8 introduce un nuovo endpoint).

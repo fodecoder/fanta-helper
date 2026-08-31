@@ -2,159 +2,96 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-08-29 — `v4.6.0`. Fasi 0–7 complete. La **Fase 7 — Multiutente
-> v4** (login 4 utenti, avatar, chat 1-a-1, preferenze per-utente, override
-> valutazioni, tag giocatore, modificatori portiere/difesa nell'engine, score
-> 0–10 per ruolo, SoFIFA in landing/asta) è chiusa: audit di verifica sul codice
-> nella sezione «Fase 7» sotto. In corso la **Fase mobile (P10)**: sessione su
-> mobile (proxy same-origin), chat fullscreen sotto 768px, notifiche di messaggio
-> in arrivo. `PROMPTS.md` contiene i prompt operativi P1–P10; la traccia storica
-> (Fasi ≤6) vive nel `CHANGELOG.md` e nella git history.
+> Stato al 2026-08-31 — `v4.6.0`. Fasi 0–7 e la fase mobile (P10) sono
+> **complete**: scaffolding, MVP, engine di consiglio su valore relativo alla
+> lega, dati storici Serie A, redesign Broadsheet, multiutente (login,
+> personalizzazione, chat), sessione mobile. Dettagli di ognuna nel
+> [CHANGELOG.md](./CHANGELOG.md) e nella git history; l'audit di verifica P1–P9
+> resta più sotto per riferimento.
+>
+> **In corso — Fase 8**: 9 problemi emersi dal primo uso reale dell'app in asta
+> (10 manager, 2026-08-30), verificati sul codice e con ricerca esterna
+> (Fantacalcio.it, fantacalcio.dev, Goal.com). Prompt operativi P11–P15 in
+> [PROMPTS.md](./PROMPTS.md).
 
-## Fase 0 — Scaffolding  *(completa)*
+## Fase 8 — Correzioni post-asta reale  *(in corso)*
 
-- [x] Inizializzazione repo e struttura progetto (frontend SPA + backend sottile)
-- [x] Schema DB su PostgreSQL (Neon): tabelle base e migrazioni
-- [x] Pipeline di deploy: frontend su Cloudflare Pages, backend su Render, DB su Neon *(codice/config pronti; provisioning manuale da eseguire)*
-- [x] Configurazione ambienti e variabili (segreti solo lato backend)
+Trovati usando l'app in un'asta vera a 10. Ognuno verificato sul codice (non
+solo riportato) prima di essere messo in prompt.
 
-## Fase 1 — MVP  *(completa)*
+1. **Palette ruoli sbagliata.** Solo P (giallo) è corretto. `web/src/index.css`
+   righe 51–54: D usa `--color-accent` (arancione), C usa `--color-neutral-700`
+   (grigio), A usa `--color-accent-2` (magenta) — invece di blu/verde/rosso.
+2. **Valutazioni incomplete.** `docs/sample/asta_1000_lega8.json` e
+   `lega10.json` coprono **79 giocatori ciascuno** su un pool di ~550+. Il
+   meccanismo di seed (`POST /leagues` → `seedDefaultValuationsForLeague`)
+   funziona: è la copertura dati a mancare, non il collegamento. Durante
+   l'asta, giocatori chiamati fuori da quei 79 risultano senza valutazione.
+3. **Nessuna vista avversari in asta.** `ManagersPage.tsx` mostra già le rose
+   per manager, ma solo come pagina separata — non è agganciata alla schermata
+   Asta mentre un giocatore viene chiamato. Manca un pannello "cosa hanno già
+   preso gli avversari" (big presi, slot liberi, crediti residui e crediti
+   spendibili sul giocatore in asta).
+4. **FVM non ponderato ai crediti.** Risposta: no. `recommendationEngine.ts`
+   usa FVM come percentile relativo per ruolo (corretto per l'ordinamento), ma
+   la Vista Asta lo mostra anche come proxy di prezzo assoluto senza
+   riscalarlo al budget di lega — a differenza di `valuation`, che ha un
+   riscalaggio esplicito su base 1000 (`valuationScale.ts`). FVM ufficiale è
+   su base standard 500 crediti: con budget di lega diverso il numero mostrato
+   non è comparabile a quanto si spenderà davvero.
+5. **Nuovo formato listone, import incompatibile.** Il file allegato
+   (`Lista-FantaAsta-Fantacalcio.csv`) non ha riga di intestazione: 19 colonne
+   posizionali (Id, Nome, Nome completo, Ruolo, Ruolo Mantra, 4 colonne
+   quotazione — uguali a inizio stagione, Squadra, FVM×2, Piede, Nazionalità,
+   Data di nascita, URL foto, flag, Mv, Fm — **mappatura da confermare
+   leggendo il file, non assunta a scatola chiusa**). L'importer attuale
+   (`playerImport.ts`, `PLAYER_REQUIRED_COLUMNS`) richiede header con nomi
+   esatti (`R`, `Nome`, `Squadra`) e scarta il resto. La UI di import ha anche
+   un nome non parlante, da rinominare "Import Listone".
+6. **Duplicati quando un giocatore cambia squadra.** Bug confermato in
+   `server/src/db/players.ts`, `upsertPlayer`: il vincolo `ON CONFLICT (name,
+   team)` non scatta se il `team` cambia tra un import e l'altro (stesso nome,
+   squadra diversa → nuova riga anziché update della squadra sulla riga
+   esistente).
+7. **Giocatori trappola, concetto assente.** Non esiste oggi. Editorialmente
+   (Fantacalcio.it) sono nomi ad hype che deludono in campo; per l'uso
+   dichiarato ("farli chiamare per far spendere gli avversari") la
+   definizione operativa più solida e già calcolabile con i dati in-app è
+   l'inverso delle "occasioni" già segnalate dall'engine: FVM/prezzo di
+   mercato alto ma `fair_value` del motore basso. Da esporre come lista
+   dedicata, con tag manuale opzionale per i casi editoriali puri.
+8. **Nome completo assente.** `player` non ha un campo `nome_completo`; oggi
+   si mostra solo il nome abbreviato del listone. Il nuovo listone lo fornisce
+   in colonna propria.
+9. **Foto campioncini senza fallback.** `PlayerAvatar.tsx` usa `image_url`
+   senza gestione d'errore: un link scaduto o vietato rompe l'immagine invece
+   di ricadere sul placeholder squadra+ruolo già esistente nel componente.
 
-- [x] CRUD lega con configurazione regole in JSONB (roster, scoring, modificatori)
-- [x] Import giocatori da CSV quotazioni ufficiali nel pool `player`
-- [x] CRUD manager per lega (prerequisito dell'asta: gli acquisti referenziano un manager)
-- [x] Import valutazioni (JSON) con matching nome→ID e revisione manuale degli unmatched
-- [x] Schermata asta live: event-log degli acquisti + stato derivato (residuo, slot)
-- [x] Selettore lega in home
+### Ricerca esterna a supporto (per i prompt su valutazioni ed engine)
 
-## Fase 2 — Rifinitura  *(completa lato codice)*
-
-- [x] Max bid rettificato deterministico (opportunity cost: residuo/bisogni con floor per reparto)
-- [x] Rifinitura UI (design token dalla palette SPEC, coerenza schermate)
-- [x] Miniature giocatori: colore squadra + placeholder per ruolo
-
-## Fase 2.1 — Correzioni pre-release  *(completa lato codice)*
-
-Punti emersi prima del provisioning di Render/Cloudflare.
-
-- [x] Default di lega precompilati: rosa `3/8/8/6`, `n_squadre = 8`, `budget = 1000`
-- [x] Form strutturato per punti (bonus/malus + fasce gol) e modificatori, con
-      set standard Fantagazzetta precaricato (niente più textarea JSON grezze)
-- [x] Auto-creazione manager alla creazione lega: `Io` + `n−1` nomi generati
-- [x] Import quotazioni anche in **xlsx** (oltre al CSV), header tollerante
-- [x] Import **griglia portieri** (CSV/xlsx) come riferimento globale, mostrata
-      in consultazione nell'asta
-- [x] `render.yaml` (Blueprint del backend) alla root
-
-## Fase 4 — Assistenza all'asta e dati Serie A  *(completa)*
-
-Funzionalità che aiutano la decisione durante l'asta e portano dati Serie A nel
-portale. Prompt operativi 19–22 in `PROMPTS.md` (storico).
-
-- [x] **Giocatori desiderati (wishlist)** per-lega: aggiungi/rimuovi obiettivi,
-      evidenziati in asta
-- [x] **Confronto in asta**: al nome uscito, ranking dei disponibili dello stesso
-      ruolo dalle valutazioni in-app; arricchimento opzionale da API stats
-      esterna (API-Football free) via backend, con cache e rate-limit
-- [x] **Probabili formazioni** delle 20 squadre: ingest via upload screenshot con
-      estrazione (Claude vision) e revisione manuale; visualizzazione a tab
-- [x] **Rigoristi e tiratori di punizioni** delle 20 squadre (nella vista
-      formazioni): stessa pipeline di ingest
-
-## Correzioni — Griglia portieri  *(completa)*
-
-- [x] **Griglia portieri rimodellata come matrice di accoppiamenti.** La gerarchia
-      titolare→riserve è stata **sostituita** da `gk_pairing (team_a, team_b,
-      score)`, matrice simmetrica squadra×squadra con punteggio di favorevolezza
-      della coppia (più basso = calendari-casa più complementari; coppie
-      stesso-stadio = 0). Import a sostituzione, vista "Coppie portieri" con
-      display invertibile (alto = più favorevole).
-
-## Fase 3 — v2  *(valutazioni LLM: completa; opzionali: backlog)*
-
-- [x] LLM in-app via API Anthropic: genera/aggiorna valutazioni (path text-only in
-      `claudeExtraction`, chunk per ruolo per i limiti token)
-- [ ] Ricerca news qualitative a supporto delle valutazioni *(opzionale — dipende
-      da fonte news esterna, fragile)*
-- [ ] Foto giocatori reali (backfill `image_url`) *(opzionale — vincolo diritti
-      immagine, non tecnico)*
-
-## Fase UI — Redesign Broadsheet  *(completa)*
-
-- [x] Ristrutturazione del portale nel design system Broadsheet (token in
-      `web/src/index.css`, shell lega-centrica, modalità asta a schermo pieno).
-      Invariante intatta: stato asta derivato dal log `purchase`. `v2.2.0`.
-
-## Fase 5 — Dati storici + Engine  *(completa)*
-
-Eseguita end-to-end (commit `82100fd` → `9e7c747`, fino a `v2.12.1`).
-
-- [x] **Ingest dati a DB**: un solo importer, storico via **seed locale** e corrente
-      via **upload portale**; quotazioni (`quotation`), statistiche
-      (`player_season_stats`, join `fanta_id`) e PDF calci piazzati nel
-      `set_piece_taker` esistente. Repo pubblico: dati grezzi fuori da git.
-- [x] **Engine di consiglio giocatori**: valore relativo alla lega (replacement
-      level, affidabilità=presenze, bonus per ruolo, regole lega, scarsità).
-- [x] **Import JSON valutazioni**: schema + template scaricabile + errori per riga.
-- [x] **Asta — lista "da chiamare"** ordinabile per `FVM` / `Qt.A` / `Qt.I`.
-- [x] **Asta — colonne extra**: media fantavoto, quotazione attuale, FVM (proxy
-      prezzo), sul giocatore in asta e sulle alternative.
-- [x] **Asta — alternative**: ≥10 disponibili stesso ruolo, ordinabili per più
-      valori, con bottone "Dettagli" per le info estese.
-- [x] **Provider SoFIFA** (attributi EA FC) come secondo provider stats opzionale,
-      affiancato ad API-Football (rendimento reale). NB: `api.sofifa.net` è
-      whitelist-only → provider OFF di default, degrada senza dati (`v2.12.1`).
-
-## Fase 6 — Rifiniture v3.0  *(completa)*
-
-Correzioni UX emerse dall'uso reale + import/export rose. Chiusa a `v3.3.0`
-(commit `ea47843` → `d9670c7`). I prompt operativi (ex `PROMPTS.md`) sono tutti
-eseguiti; la traccia vive nel `CHANGELOG.md`.
-
-- [x] **Fix — identità stabile del proprietario**: `is_owner` disaccoppiato dal
-      nome editabile (`v2.13.0`, commit `ea47843`).
-- [x] **Fix — asta: escludere il giocatore in asta dalle alternative libere**
-      (commit `95117af`).
-- [x] **Fix — layout sidebar desktop** sticky, bottone "entra in asta" sempre
-      raggiungibile (commit `6921efd`).
-- [x] **Feat — responsive mobile**: sidebar → nav sticky in fondo, home usabile
-      (commit `bbb6582`).
-- [x] **Feat — warning modificatori** portiere/difesa attivi (commit `95117af`,
-      `ModifierWarning.tsx`).
-- [x] **Feat — export/import rose d'asta** in formato leghe Fantacalcio
-      (commit `aaf06c1`).
-- [x] **Feat — riscalatura valutazioni al budget di lega** (commit `fc82bd3`).
-- [x] **Feat — valutazioni di default per leghe da 8/10 squadre** (commit
-      `d9670c7`).
-- [x] **Feat — suggerimento coppia portieri favorevole dopo un acquisto**
-      (commit `a4bcd76`).
-
-## Fase 7 — Multiutente v4  *(completa — `v4.0.0` → `v4.5.0`)*
-
-Passaggio da app monoutente a app condivisa dai 4 partecipanti, con consigli
-personalizzabili per utente. Decisioni e tradeoff in
-[docs/design-fase7.md](./docs/design-fase7.md); prompt operativi P1–P9 in
-[PROMPTS.md](./PROMPTS.md). **Vincolo invariante rispettato**: lo stato dell'asta
-resta derivato dal log `purchase`; le personalizzazioni sono un layer di override
-(`coalesce`) o di flag, non mutano il valore di base.
-
-- [x] **P1 — modificatore portiere + difesa team-aware nell'engine**
-- [x] **P2 — reliability da titolarità (probable_lineup) + baseline mv**
-- [x] **P3 — tag giocatore derivati** (Rigorista, Titolare da 6, Porta bonus,
-      Difensore da bonus, Scommessa, Da prendere a 1) — modulo puro, badge in
-      consigli e asta
-- [x] **P4 — login 4 utenti** (Andre/Davide/Fra/Paul), sessione cookie firmato,
-      `manager.user_id` con priorità su `is_owner`
-- [x] **P5 — avatar + colore avatar** per utente
-- [x] **P6 — override valutazioni** (`user_valuation_override`, sparsa,
-      `coalesce`) + **preferenze di squadra** (`user_team_pref`, flag +
-      ordinamento secondario, nessuna mutazione score)
-- [x] **P7 — chat 1-a-1** append-only, polling, pannello flottante
-- [x] **P8 — logo + link SoFIFA** in landing e asta
-- [x] **P9 — bugfix UI + score 0–10 per ruolo**: modale profilo con scroll
-      interno, warning squadra da evitare in asta, tooltip sigle + scomposizione
-      formule, tag «Difensore da bonus» ristretto ai difensori, score normalizzato
-      0–10 per ruolo (sola presentazione)
+- **fantacalcio.dev — [Fasce oneste 2026-27](https://fantacalcio.dev/report/fasce-oneste-2026-27):**
+  fasce costruite su 3 stagioni di dati e **backtestate** (non solo
+  pubblicate): confermano un tasso di conferma della fascia top molto diverso
+  per ruolo — centrocampisti 62%, difensori 54%, attaccanti e portieri 33%.
+  Ripartizione budget "corretta per il rischio": portieri 6%, difensori
+  27–28%, centrocampisti 40–43%, attaccanti 25% (contro la ripartizione
+  classica 7-8/12-14/22-25/55-60%). Soglia minima 15 fantavoti per considerare
+  affidabile una fantamedia. Tabella indicativa per debuttanti dall'estero
+  (Premier top → fascia alta diretta, altre grandi leghe → semi-top, Serie B →
+  terza fascia). Prezzo massimo consigliato = (fantamedia giocatore −
+  fantamedia primo sostituto gratuito del ruolo) × presenze convenzionali ×
+  tasso di conferma del ruolo. Metodo compatibile con l'approccio già in
+  `recommendationEngine.ts` (replacement level + affidabilità da presenze):
+  il gap è che oggi l'engine non pesa la fiducia per ruolo né usa un tasso di
+  conferma nella generazione delle valutazioni di default.
+- **Fantacalcio.it — [5 trappole](https://www.fantacalcio.it/consigli-fantacalcio/06_09_2022/consigli-asta-fantacalcio-trappole-429090):**
+  conferma che "trappola" è un giudizio editoriale caso per caso (rischio
+  minutaggio, infortuni, concorrenza interna alla squadra) — non un pattern
+  statistico fisso, altro motivo per trattarlo come tag anche manuale, non
+  solo derivato.
+- Ricerca sul formato esatto del CSV allegato non ha trovato documentazione
+  ufficiale pubblica della colonna-per-colonna: la mappatura in punto 5 resta
+  un'ipotesi da validare sul file reale in fase di implementazione.
 
 ### Audit P1–P9 (verificato sul codice, 2026-08-29)
 
@@ -176,20 +113,6 @@ Aggravante nota (candidata a prompt successivo): dopo `POST /auth/login` il
 client non riverifica `/auth/me` (`web/src/App.tsx`), quindi quando il cookie di
 sessione non persiste si resta «loggati ma tutto 401» invece di tornare al login.
 
-## Fase mobile (P10)  *(in corso — `v4.6.0`)*
-
-- [x] **B6 — sessione su mobile**: le chiamate API passano da `/api` same-origin
-      (proxy Vite in dev, Cloudflare Pages Function `functions/api/[[path]].js`
-      alla root del repo in prod, env `API_ORIGIN`), cookie di sessione
-      first-party con `SameSite=Lax`. Causa: cookie cross-site `SameSite=None`
-      scartato dai browser mobile come cookie di terze parti (SPA su Pages, API
-      su Render = domini diversi).
-- [x] **B7 — chat fullscreen su mobile**: sotto 768px overlay a tutto schermo,
-      niente drag/resize.
-- [x] **B8 — notifica messaggio in arrivo**: endpoint `GET /chat/inbox?since=`,
-      poll globale ogni 10s, toast cliccabile + badge non-letti sul FAB (stato
-      derivato a lettura lato client).
-
 ## Traguardi di rilascio (storico)
 
 - `v1.0.0` — Fase 2 completa + servizi in produzione (Neon + Render + Cloudflare
@@ -199,3 +122,4 @@ sessione non persiste si resta «loggati ma tutto 401» invece di tornare al log
 - `v4.0.0` — Fase 7: modello multiutente (login, identità per-utente,
   personalizzazione consigli) + migrazioni schema associate.
 - `v4.5.0` — Fase 7 chiusa (bugfix UI + score 0–10 per ruolo).
+- `v4.6.0` — Fase mobile (P10): sessione, chat e notifiche su mobile.
