@@ -69,21 +69,35 @@ solo riportato) prima di essere messo in prompt.
 
 ### Ricerca esterna a supporto (per i prompt su valutazioni ed engine)
 
+**Budget per reparto — tre fonti, numeri diversi, verificate una contro
+l'altra dopo una prima versione di questo piano che si appoggiava solo alla
+più anomala delle tre.**
+
+- **Regola tradizionale (20 anni, ripetuta identica da Fantacalcio.it e
+  Fantacalcio Online):** portieri 6-8%, difensori 12-20%, centrocampisti
+  24-30%, attaccanti 42-60% a seconda di modulo/modificatore. È quella che hai
+  trovato tu ed è la convenzione dominante nel settore — **questa è la fonte
+  primaria da usare**, non quella che avevo messo prima.
+- **[Fantacalcio Online — dati reali](https://www.fantacalcio-online.com/it/consigli-fantacalcio/consigli-asta-fantacalcio-come-dividere-il-budget):**
+  non un'opinione, la spesa **effettiva** misurata su 50.175 acquisti reali
+  stagione 2026/27: portieri 6,6%, difensori 21,3%, centrocampisti 34,0%,
+  attaccanti 38,1%. Si scosta dalla regola classica ma nella direzione
+  opposta a quanto avevo scritto prima (più centrocampo, meno attacco, ma
+  l'attacco resta comunque il reparto di spesa maggiore, non un terzo).
+  Con modificatore difesa attivo la quota difesa sale di circa 5-6 punti
+  (dato coerente anche in Fantacalcio.it: 40-80 crediti su 500, cioè 8-16%,
+  contro 40 senza modificatore).
 - **fantacalcio.dev — [Fasce oneste 2026-27](https://fantacalcio.dev/report/fasce-oneste-2026-27):**
-  fasce costruite su 3 stagioni di dati e **backtestate** (non solo
-  pubblicate): confermano un tasso di conferma della fascia top molto diverso
-  per ruolo — centrocampisti 62%, difensori 54%, attaccanti e portieri 33%.
-  Ripartizione budget "corretta per il rischio": portieri 6%, difensori
-  27–28%, centrocampisti 40–43%, attaccanti 25% (contro la ripartizione
-  classica 7-8/12-14/22-25/55-60%). Soglia minima 15 fantavoti per considerare
-  affidabile una fantamedia. Tabella indicativa per debuttanti dall'estero
-  (Premier top → fascia alta diretta, altre grandi leghe → semi-top, Serie B →
-  terza fascia). Prezzo massimo consigliato = (fantamedia giocatore −
-  fantamedia primo sostituto gratuito del ruolo) × presenze convenzionali ×
-  tasso di conferma del ruolo. Metodo compatibile con l'approccio già in
-  `recommendationEngine.ts` (replacement level + affidabilità da presenze):
-  il gap è che oggi l'engine non pesa la fiducia per ruolo né usa un tasso di
-  conferma nella generazione delle valutazioni di default.
+  la fonte che avevo usato per la ripartizione budget nella prima versione di
+  questo piano. Il suo backtest su tasso di conferma per ruolo (centrocampisti
+  62%, difensori 54%, attaccanti/portieri 33%, soglia minima 15 fantavoti per
+  fidarsi di una fantamedia) resta utile e **lo teniamo** per calibrare la
+  `confidence` per riga in P13a. Ma la sua ripartizione budget "corretta per
+  il rischio" (centrocampisti 40-43%, attaccanti 25%) è un modello di **un
+  solo sito, non confermato da nessun'altra fonte** e in contrasto sia con la
+  convenzione sia con i dati reali di spesa sopra — va scartata come
+  riferimento per il budget, non solo corretta: non è "un'altra fascia", è
+  un outlier isolato che avevo trattato come se fosse consenso.
 - **Fantacalcio.it — [5 trappole](https://www.fantacalcio.it/consigli-fantacalcio/06_09_2022/consigli-asta-fantacalcio-trappole-429090):**
   conferma che "trappola" è un giudizio editoriale caso per caso (rischio
   minutaggio, infortuni, concorrenza interna alla squadra) — non un pattern

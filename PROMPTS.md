@@ -183,8 +183,28 @@ obbligatoria — preferisci un generatore deterministico basato sull'engine
 esistente se copre la qualità richiesta, per non introdurre dipendenza da
 costo/token API su un dataset che va rigenerato ogni stagione.
 
-**Metodologia (fonte: [fantacalcio.dev — Fasce oneste 2026-27](https://fantacalcio.dev/report/fasce-oneste-2026-27),
-dati backtestati su 2 stagioni, non solo dichiarati).**
+**Metodologia — due fonti, ruoli diversi, non mescolarle.**
+
+Per il **budget totale allocato a ogni reparto** (quanti crediti tarare in
+totale su P/D/C/A prima di distribuirli tra i singoli giocatori), usa la
+convenzione consolidata **confermata da tre fonti indipendenti** (dettaglio e
+link in `PLAN.md` § Fase 8):
+- Regola tradizionale (Fantacalcio.it, Fantacalcio Online): P 6-8%, D 12-20%,
+  C 24-30%, A 42-60% secondo modulo/modificatore.
+- Dati reali (Fantacalcio Online, 50.175 acquisti stagione 2026/27): P 6,6%,
+  D 21,3%, C 34,0%, A 38,1%.
+- Usa questi due intervalli come riferimento per tarare il totale per reparto
+  (media pesata dei due, non un terzo numero inventato), con lo spostamento
+  verso la difesa (+5-6 punti) quando `modificatori.difesa.enabled` è attivo
+  nella lega.
+- **Non usare** la ripartizione "corretta per il rischio" di fantacalcio.dev
+  (C 40-43%, A 25%): è il modello di un solo sito, isolato rispetto alle
+  altre fonti — una versione precedente di questo piano lo aveva preso come
+  riferimento principale per errore.
+
+Per la **fiducia (`confidence`) sul singolo giocatore**, invece, resta valido
+e utile il backtest di [fantacalcio.dev — Fasce oneste 2026-27](https://fantacalcio.dev/report/fasce-oneste-2026-27)
+(dati su 3 stagioni, testati su 2 aste, non solo dichiarati):
 - Fasce (`tier`) per ruolo su percentili di valore motore, non quote fisse
   uguali per tutti i ruoli.
 - `confidence` per riga derivata dal tasso di conferma per ruolo misurato nel
@@ -195,8 +215,9 @@ dati backtestati su 2 stagioni, non solo dichiarati).**
   stagione di riferimento (soglia di affidabilità minima usata nel report).
 - `max_bid`/`panic_price` calibrati sul concetto di prezzo massimo = (valore
   motore del giocatore − valore del primo sostituto gratuito dello stesso
-  ruolo) — coerente col replacement level già in `recommendationEngine.ts`,
-  non una formula nuova scollegata.
+  ruolo), **con il totale di reparto vincolato al budget per reparto sopra**
+  — coerente col replacement level già in `recommendationEngine.ts`, non una
+  formula nuova scollegata.
 - Debuttanti/neo-arrivati senza storico Serie A: applica l'euristica per
   provenienza del report (Premier top/semi-top → fascia alta diretta, altre
   grandi leghe → semi-top, Serie B/neopromossa → terza fascia) solo se il dato
