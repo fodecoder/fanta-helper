@@ -5,6 +5,40 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.8.0] - 2026-08-31
+
+### Added
+
+- **Import listone posizionale «Lista FantaAsta»**: il nuovo export CSV di
+  Fantacalcio.it non ha riga di header ed è separato da virgola. L'importer
+  rileva il formato (nessuna intestazione riconoscibile) e mappa le colonne per
+  indice (`LISTONE_COLUMN_INDEX` in `server/src/import/fileRows.ts`, origine
+  documentata). I file con header nominati (xlsx quotazioni e relativi CSV)
+  continuano a funzionare invariati. Le righe con colonne mancanti non vengono
+  più scartate in blocco: solo i campi assenti restano non aggiornati.
+- **`player.nome_completo`**: colonna additiva nullable (migrazione
+  `1788307200000_player-nome-completo.sql`). `name` resta il nome breve per
+  matching/ricerca; il nome completo compare nelle schede giocatore in asta,
+  nel dettaglio e nelle liste consigli.
+- **Campo «Stagione»** nella schermata di import (ora «Listone Fantacalcio»,
+  voce di menu «Listone · import»): il listone posizionale ci scrive anche
+  `quotation` (Qt.I/Qt.A/FVM) per la stagione indicata, non ricavabile dal
+  contenuto.
+- Script `db:report:duplicate-players`: segnala (senza cancellare) i duplicati
+  già in `player` da fondere a mano.
+
+### Fixed
+
+- **Duplicati al cambio squadra**: `upsertPlayer` usava `ON CONFLICT
+  (name, team)` e creava una riga nuova quando un giocatore reimportato cambiava
+  squadra. Ora usa `fanta_id` come chiave stabile quando presente e aggiorna la
+  riga esistente (name/team/ruolo), con fallback a `name+team` per le righe
+  senza `fanta_id`. `nome_completo`/`image_url` sono aggiornati dal listone
+  quando forniti, senza mai azzerarli.
+- **Foto giocatore non caricabile**: `PlayerAvatar` intercetta l'errore di
+  caricamento dell'`<img>` e ricade sul placeholder stemma squadra + ruolo, come
+  già faceva per `image_url` assente.
+
 ## [4.7.3] - 2026-08-31
 
 ### Fixed

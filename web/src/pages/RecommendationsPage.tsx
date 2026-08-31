@@ -174,7 +174,7 @@ export function RecommendationsPage({ league, calls }: RecommendationsPageProps)
                 const norm = normById.get(r.player_id);
                 return (
                     <tr key={r.player_id} style={muted ? { opacity: 0.5 } : undefined}>
-                      <td style={{ whiteSpace: "nowrap" }}>{r.name}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>{r.nome_completo ?? r.name}</td>
                       <td>{r.team}</td>
                       <td style={{ color: roleColor(r.ruolo) }}>{r.ruolo}</td>
                       <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>

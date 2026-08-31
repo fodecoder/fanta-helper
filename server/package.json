@@ -16,6 +16,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:users": "tsx src/db/seedUsers.ts",
     "db:seed:sofifa": "tsx src/scripts/seedSofifaIds.ts",
+    "db:report:duplicate-players": "tsx src/scripts/reportDuplicatePlayers.ts",
     "db:seed:historical:quotations": "tsx src/scripts/seedHistoricalQuotations.ts",
     "db:seed:historical:stats": "tsx src/scripts/seedHistoricalStats.ts",
     "db:seed:historical:rigoristi": "tsx src/scripts/seedHistoricalSetPieceTakers.ts",

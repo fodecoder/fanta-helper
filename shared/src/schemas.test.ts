@@ -120,6 +120,17 @@ describe("player", () => {
       fanta_id: null,
       sofifa_id: null,
       name: "X",
+      nome_completo: null,
+      team: "T",
+      ruolo: "A",
+      image_url: null,
+    });
+    playerSchema.parse({
+      id: 1,
+      fanta_id: 1,
+      sofifa_id: null,
+      name: "X",
+      nome_completo: "Xavier Full",
       team: "T",
       ruolo: "A",
       image_url: null,

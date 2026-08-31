@@ -41,11 +41,18 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 // backend distingue in base al Content-Type (testo vs binario). Il nome file
 // viaggia in X-Filename: per un xlsx quotazioni permette al backend di
 // ricavare la stagione (es. Quotazioni_Fantacalcio_Stagione_2025_26.xlsx).
-export async function importPlayersFile(file: File): Promise<PlayerImportReport> {
+// `season` serve solo al listone posizionale (CSV "Lista FantaAsta" senza
+// header, da cui la stagione non è ricavabile): viaggia in X-Season.
+export async function importPlayersFile(file: File, season?: string): Promise<PlayerImportReport> {
   const isXlsx = /\.xlsx?$/i.test(file.name);
+  const headers: Record<string, string> = {
+    "Content-Type": isXlsx ? XLSX_MIME : "text/csv",
+    "X-Filename": file.name,
+  };
+  if (season && season.trim() !== "") headers["X-Season"] = season.trim();
   const res = await apiFetch(`${BASE_URL}/import`, {
     method: "POST",
-    headers: { "Content-Type": isXlsx ? XLSX_MIME : "text/csv", "X-Filename": file.name },
+    headers,
     body: isXlsx ? await file.arrayBuffer() : await file.text(),
   });
   return handle<PlayerImportReport>(res);

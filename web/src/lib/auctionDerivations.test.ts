@@ -21,7 +21,7 @@ import {
 } from "./auctionDerivations";
 
 function player(id: number, name: string, ruolo: Player["ruolo"], team = "Team"): Player {
-  return { id, fanta_id: id, sofifa_id: null, name, team, ruolo, image_url: null };
+  return { id, fanta_id: id, sofifa_id: null, name, nome_completo: null, team, ruolo, image_url: null };
 }
 
 function val(overrides: Partial<ValuationWithPlayer> = {}): ValuationWithPlayer {

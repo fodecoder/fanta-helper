@@ -11,7 +11,7 @@ import type { ProbableLineupEntry } from "./probableLineup";
 import type { SetPieceTakerEntry } from "./setPieceTaker";
 
 function player(id: number, name: string, ruolo: Player["ruolo"], team = "Team"): Player {
-  return { id, fanta_id: id, sofifa_id: null, name, team, ruolo, image_url: null };
+  return { id, fanta_id: id, sofifa_id: null, name, nome_completo: null, team, ruolo, image_url: null };
 }
 
 function stat(playerId: number, overrides: Partial<PlayerSeasonStatsRow> = {}): PlayerSeasonStatsRow {

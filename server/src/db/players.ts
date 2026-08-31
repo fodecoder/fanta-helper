@@ -24,10 +24,10 @@ export async function findPlayersByNameTeam(name: string, team: string): Promise
 
 export async function insertPlayer(input: Omit<PlayerRow, "id">): Promise<PlayerRow> {
   const result = await pool.query<PlayerRow>(
-    `INSERT INTO player (name, team, ruolo, image_url, fanta_id)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO player (name, team, ruolo, image_url, fanta_id, nome_completo)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [input.name, input.team, input.ruolo, input.image_url, input.fanta_id],
+    [input.name, input.team, input.ruolo, input.image_url, input.fanta_id, input.nome_completo],
   );
   const row = result.rows[0];
   if (!row) {
@@ -41,6 +41,8 @@ export interface PlayerUpsertInput {
   team: string;
   ruolo: Role;
   fanta_id?: number | null;
+  nome_completo?: string | null;
+  image_url?: string | null;
 }
 
 export interface PlayerUpsertResult {
@@ -48,29 +50,64 @@ export interface PlayerUpsertResult {
   inserted: boolean;
 }
 
-// image_url is intentionally excluded from the ON CONFLICT update: a
-// quotazioni reimport must never wipe out an image_url backfilled later.
-// fanta_id follows the same principle: on conflict it's only filled in when
-// currently NULL (COALESCE keeps the existing value), so a reimport never
-// overwrites an id already trusted.
+const UPSERT_RETURNING =
+  "id, fanta_id, sofifa_id, name, nome_completo, team, ruolo, image_url, (xmax = 0) AS inserted";
+
+function splitInserted(row: PlayerRow & { inserted: boolean }): PlayerUpsertResult {
+  const { inserted, ...playerRow } = row;
+  return { row: playerRow, inserted };
+}
+
+// fanta_id è la chiave stabile del giocatore (SPEC.md): quando presente,
+// identifica la riga anche se `name`/`team` cambiano tra due import (es.
+// trasferimento). L'upsert su `(name, team)` non lo faceva — stesso giocatore
+// con squadra diversa creava un duplicato. Percorso:
+//  1. se esiste già una riga con quel fanta_id → UPDATE per id (aggiorna anche
+//     name/team);
+//  2. altrimenti INSERT con fallback ON CONFLICT (name, team): adotta una riga
+//     name+team senza fanta_id (backfill) o ne crea una nuova.
+// nome_completo/image_url sono COALESCE(nuovo, esistente): il listone li
+// aggiorna quando li fornisce, senza mai azzerarli se assenti nel file.
 export async function upsertPlayer(
   input: PlayerUpsertInput,
   executor: Queryable = pool,
 ): Promise<PlayerUpsertResult> {
+  const fantaId = input.fanta_id ?? null;
+  const nomeCompleto = input.nome_completo ?? null;
+  const imageUrl = input.image_url ?? null;
+
+  if (fantaId !== null) {
+    const byFantaId = await executor.query<PlayerRow & { inserted: boolean }>(
+      `UPDATE player
+         SET name = $1, team = $2, ruolo = $3,
+             nome_completo = COALESCE($5, nome_completo),
+             image_url = COALESCE($6, image_url)
+       WHERE fanta_id = $4
+       RETURNING ${UPSERT_RETURNING}`,
+      [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl],
+    );
+    const updated = byFantaId.rows[0];
+    if (updated) {
+      return { ...splitInserted(updated), inserted: false };
+    }
+  }
+
   const result = await executor.query<PlayerRow & { inserted: boolean }>(
-    `INSERT INTO player (name, team, ruolo, fanta_id)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO player (name, team, ruolo, fanta_id, nome_completo, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (name, team) DO UPDATE
-       SET ruolo = EXCLUDED.ruolo, fanta_id = COALESCE(player.fanta_id, EXCLUDED.fanta_id)
-     RETURNING id, fanta_id, sofifa_id, name, team, ruolo, image_url, (xmax = 0) AS inserted`,
-    [input.name, input.team, input.ruolo, input.fanta_id ?? null],
+       SET ruolo = EXCLUDED.ruolo,
+           fanta_id = COALESCE(player.fanta_id, EXCLUDED.fanta_id),
+           nome_completo = COALESCE(EXCLUDED.nome_completo, player.nome_completo),
+           image_url = COALESCE(EXCLUDED.image_url, player.image_url)
+     RETURNING ${UPSERT_RETURNING}`,
+    [input.name, input.team, input.ruolo, fantaId, nomeCompleto, imageUrl],
   );
   const row = result.rows[0];
   if (!row) {
     throw new Error("upsertPlayer: upsert returned no row");
   }
-  const { inserted, ...playerRow } = row;
-  return { row: playerRow, inserted };
+  return splitInserted(row);
 }
 
 // Used by the historical quotation import to fill in fanta_id for players

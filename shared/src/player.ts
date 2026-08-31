@@ -7,6 +7,9 @@ export const playerSchema = z.object({
   fanta_id: z.number().int().positive().nullable(),
   sofifa_id: z.number().int().positive().nullable(),
   name: z.string(),
+  // Nome breve usato per il matching/ricerca. `nome_completo` è solo
+  // presentazione (schede giocatore) e può mancare sulle righe pre-listone.
+  nome_completo: z.string().nullable(),
   team: z.string(),
   ruolo: roleSchema,
   image_url: z.string().nullable(),

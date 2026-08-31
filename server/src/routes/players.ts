@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { importPlayersFromCsv } from "../import/playerImport";
+import { importListoneFromCsv } from "../import/listoneImport";
 import { importPlayersAndQuotationsFromXlsx } from "../import/currentSeasonImport";
 import { listPlayers } from "../db/players";
 import { ApiError } from "../http/errors";
@@ -37,7 +37,7 @@ playersRouter.post(
       if (typeof req.body !== "string" || req.body.trim() === "") {
         throw ApiError.badRequest("empty CSV body");
       }
-      res.json(await importPlayersFromCsv(req.body));
+      res.json(await importListoneFromCsv(req.body, req.get("X-Season") ?? null));
     } catch (err) {
       next(err);
     }

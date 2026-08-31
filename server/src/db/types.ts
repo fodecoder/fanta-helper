@@ -15,6 +15,7 @@ export interface PlayerRow {
   fanta_id: number | null;
   sofifa_id: number | null;
   name: string;
+  nome_completo: string | null;
   team: string;
   ruolo: Role;
   image_url: string | null;

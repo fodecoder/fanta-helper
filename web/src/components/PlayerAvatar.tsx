@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Role } from "@fanta-helper/shared";
 
 interface PlayerAvatarProps {
@@ -17,8 +18,6 @@ function getInitials(name: string): string {
   return word.slice(0, 2).toUpperCase();
 }
 
-// Deterministic hash of the team name into a stable hue — stands in for a
-// real crest in MVP without fetching any external asset.
 function teamAccentColor(team: string): string {
   let hash = 0;
   for (let i = 0; i < team.length; i++) {
@@ -30,15 +29,21 @@ function teamAccentColor(team: string): string {
 
 export function PlayerAvatar({ name, team, ruolo, image_url, size = "md" }: PlayerAvatarProps) {
   const sizeClass = size === "sm" ? "player-avatar--sm" : "player-avatar--md";
+  // Una foto non caricabile (URL del listone ormai rotto) ricade sullo stesso
+  // placeholder stemma+ruolo usato quando image_url è assente. `key` sull'img
+  // resetta lo stato quando l'URL cambia.
+  const [failed, setFailed] = useState(false);
 
-  if (image_url) {
+  if (image_url && !failed) {
     return (
       <img
+        key={image_url}
         className={`player-avatar ${sizeClass}`}
         src={image_url}
         alt={name}
         width={size === "sm" ? 28 : 40}
         height={size === "sm" ? 28 : 40}
+        onError={() => setFailed(true)}
       />
     );
   }

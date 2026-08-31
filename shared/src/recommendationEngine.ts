@@ -116,6 +116,7 @@ export interface PlayerRecommendation {
   player_id: number;
   ruolo: Role;
   name: string;
+  nome_completo: string | null;
   team: string;
   image_url: string | null;
   score: number;
@@ -509,6 +510,7 @@ export function computePlayerRecommendations(
       player_id: entry.player.id,
       ruolo: entry.player.ruolo,
       name: entry.player.name,
+      nome_completo: entry.player.nome_completo,
       team: entry.player.team,
       image_url: entry.player.image_url,
       score: scoreById.get(entry.player.id) ?? 0,

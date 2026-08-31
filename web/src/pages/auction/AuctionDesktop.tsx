@@ -146,7 +146,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
                     <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
-                      {p.name}
+                      {p.nome_completo ?? p.name}
                     </span>
                     <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
                       {p.team}
@@ -183,7 +183,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               >
                 <div style={{ minWidth: 0 }}>
                   <span className="bid-kicker">In asta · {ROLE_LABEL[sel.ruolo]}</span>
-                  <h1 className="bid-name">{sel.name}</h1>
+                  <h1 className="bid-name">{sel.nome_completo ?? sel.name}</h1>
+                  {sel.nome_completo && sel.nome_completo !== sel.name && (
+                    <span style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>{sel.name}</span>
+                  )}
                   <span style={{ fontSize: 15, color: "var(--color-neutral-800)" }}>
                     {sel.team}
                     {val &&
@@ -516,7 +519,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                                     cursor: "pointer",
                                   }}
                                 >
-                                  {player.name}
+                                  {player.nome_completo ?? player.name}
                                 </button>
                               </td>
                               <td>

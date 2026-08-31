@@ -157,7 +157,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 {view.verdict.text}
               </span>
             </div>
-            <h1 className="phone-bid-name">{sel.name}</h1>
+            <h1 className="phone-bid-name">{sel.nome_completo ?? sel.name}</h1>
             <div style={{ fontSize: 13, color: "var(--color-neutral-800)" }}>
               {sel.team}
               {val &&
@@ -377,7 +377,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                     />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
                     <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
-                      {p.name}
+                      {p.nome_completo ?? p.name}
                     </span>
                     <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
                       {p.team}

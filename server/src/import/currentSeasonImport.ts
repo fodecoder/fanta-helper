@@ -1,15 +1,10 @@
-import type {
-  PlayerImportReport,
-  QuotationImportReport,
-  QuotationRow,
-  DiscardedReferenceRow,
-} from "@fanta-helper/shared";
+import type { PlayerImportReport, QuotationImportReport } from "@fanta-helper/shared";
 import { pool } from "../db/client";
 import { replaceQuotationsForSeasonTx } from "../db/quotation";
 import { ApiError } from "../http/errors";
-import { cell, parseXlsxRows, rowsToRecords } from "./fileRows";
+import { parseXlsxRows, rowsToRecords } from "./fileRows";
 import { importPlayersFromRecords, PLAYER_REQUIRED_COLUMNS } from "./playerImport";
-import { parseNullableInt } from "./numeric";
+import { quotationRowsFromRecords } from "./quotationRows";
 import { parseSeasonFromFilename } from "./season";
 
 const QUOTATION_COLUMNS = ["Id", "Qt.A", "Qt.I", "FVM"] as const;
@@ -51,39 +46,11 @@ export async function importPlayersAndQuotationsFromXlsx(
 
     let quotation: QuotationImportReport | null = null;
     if (quotationCapable && resolvedSeason !== null) {
-      const quotationRows: QuotationRow[] = [];
-      const discarded: DiscardedReferenceRow[] = [];
-
-      records.forEach((record, i) => {
-        const upsertResult = upsertResults[i];
-        // Riga già scartata al passo player (motivo già nel report player):
-        // esclusa anche dalla quotazione, nessun doppio scarto.
-        if (!upsertResult) return;
-
-        const rowNumber = i + 1;
-        const qtI = parseNullableInt(cell(record["Qt.I"]));
-        const qtA = parseNullableInt(cell(record["Qt.A"]));
-        const fvm = parseNullableInt(cell(record.FVM));
-        if (!qtI.ok || !qtA.ok || !fvm.ok) {
-          discarded.push({
-            row: rowNumber,
-            fanta_id: cell(record.Id) || null,
-            name: cell(record.Nome),
-            team: cell(record.Squadra),
-            reason: "valore non numerico in Qt.I/Qt.A/FVM",
-          });
-          return;
-        }
-
-        quotationRows.push({
-          player_id: upsertResult.row.id,
-          season: resolvedSeason,
-          qt_i: qtI.value,
-          qt_a: qtA.value,
-          fvm: fvm.value,
-        });
-      });
-
+      const { rows: quotationRows, discarded } = quotationRowsFromRecords(
+        records,
+        (i) => upsertResults[i]?.row.id,
+        resolvedSeason,
+      );
       const written = await replaceQuotationsForSeasonTx(client, resolvedSeason, quotationRows);
       quotation = { season: resolvedSeason, written, discarded };
     }

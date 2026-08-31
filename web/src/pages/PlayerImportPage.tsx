@@ -9,8 +9,17 @@ interface PlayerImportPageProps {
   calls: number | null;
 }
 
+// Stagione calcistica corrente in formato "AAAA-AA": la stagione parte a luglio,
+// quindi da luglio in poi è anno-corrente/anno-successivo.
+function currentSeason(now = new Date()): string {
+  const y = now.getFullYear();
+  const startYear = now.getMonth() >= 6 ? y : y - 1;
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+}
+
 export function PlayerImportPage({ calls }: PlayerImportPageProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [season, setSeason] = useState(currentSeason());
   const [report, setReport] = useState<PlayerImportReport | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +34,7 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
     setReport(null);
     setSubmitting(true);
     try {
-      setReport(await playersApi.importPlayersFile(file));
+      setReport(await playersApi.importPlayersFile(file, season));
     } catch (err) {
       setGeneralError(
         err instanceof PlayersApiError
@@ -43,8 +52,8 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
     <>
       <PageMasthead
         kicker="Riferimento globale · listino Fantacalcio"
-        title="Quotazioni"
-        subtitle="Listino ufficiale in CSV o xlsx, indipendente dalle leghe. Le righe già presenti vengono aggiornate; quelle non interpretabili sono scartate e mostrate qui sotto, mai indovinate."
+        title="Listone Fantacalcio"
+        subtitle="Listone ufficiale: CSV «Lista FantaAsta» posizionale o xlsx quotazioni con header, indipendente dalle leghe. Le righe già presenti vengono aggiornate (per fanta_id, anche al cambio squadra); quelle non interpretabili sono scartate e mostrate qui sotto, mai indovinate."
         calls={calls}
       />
 
@@ -69,6 +78,17 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
             type="file"
             accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <div className="field" style={{ width: 120 }}>
+          <label htmlFor="quotes-season">Stagione</label>
+          <input
+            id="quotes-season"
+            className="input"
+            type="text"
+            placeholder="2026-27"
+            value={season}
+            onChange={(e) => setSeason(e.target.value)}
           />
         </div>
         <button type="submit" className="btn btn-primary" disabled={submitting}>

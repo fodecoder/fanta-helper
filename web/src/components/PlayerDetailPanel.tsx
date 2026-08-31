@@ -92,6 +92,9 @@ export function PlayerDetailPanel({
           ))}
         </div>
       )}
+      {player.nome_completo && player.nome_completo !== player.name && (
+        <Stat label="Nome completo" value={player.nome_completo} />
+      )}
       <Stat label="Squadra" value={player.team} />
       <Stat
         label="Ruolo"

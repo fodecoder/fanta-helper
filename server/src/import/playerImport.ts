@@ -69,8 +69,20 @@ export async function importPlayersFromRecords(
     const parsedFantaId = idCell !== undefined ? parseNullableInt(cell(idCell)) : { ok: true as const, value: null };
     const fantaId = parsedFantaId.ok ? parsedFantaId.value : null;
 
+    // Campi opzionali del listone posizionale: assenti sui file a header
+    // esistenti (chiave non presente nel record) → non aggiornati.
+    const nomeCompleto = cell(record["Nome completo"]) || null;
+    const imageUrl = cell(record.image_url) || null;
+
     const result = await upsertPlayer(
-      { name, team, ruolo: ruolo as (typeof ROLES)[number], fanta_id: fantaId },
+      {
+        name,
+        team,
+        ruolo: ruolo as (typeof ROLES)[number],
+        fanta_id: fantaId,
+        nome_completo: nomeCompleto,
+        image_url: imageUrl,
+      },
       executor,
     );
     upsertResults.push(result);

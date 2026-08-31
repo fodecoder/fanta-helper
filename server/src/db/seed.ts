@@ -22,6 +22,7 @@ async function seed(): Promise<void> {
     team: "Demo FC",
     ruolo: "P",
     image_url: null,
+    nome_completo: null,
     fanta_id: null,
     sofifa_id: null,
   });
@@ -30,6 +31,7 @@ async function seed(): Promise<void> {
     team: "Demo FC",
     ruolo: "D",
     image_url: null,
+    nome_completo: null,
     fanta_id: null,
     sofifa_id: null,
   });
@@ -38,6 +40,7 @@ async function seed(): Promise<void> {
     team: "Demo United",
     ruolo: "A",
     image_url: null,
+    nome_completo: null,
     fanta_id: null,
     sofifa_id: null,
   });
