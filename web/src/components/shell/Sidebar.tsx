@@ -5,7 +5,6 @@ export type SetupPage =
   | "panoramica"
   | "manager"
   | "valutazioni"
-  | "consigli"
   | "quotazioni"
   | "portieri"
   | "formazioni"
@@ -16,7 +15,6 @@ export const NAV_ITEMS: { key: SetupPage; label: string }[] = [
   { key: "panoramica", label: "Panoramica" },
   { key: "manager", label: "Manager" },
   { key: "valutazioni", label: "Valutazioni" },
-  { key: "consigli", label: "Consigli" },
   { key: "quotazioni", label: "Listone · import" },
   { key: "portieri", label: "Coppie portieri" },
   { key: "formazioni", label: "Probabili formazioni" },

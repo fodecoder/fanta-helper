@@ -10,7 +10,6 @@ import { LoginPage } from "./pages/LoginPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ManagersPage } from "./pages/ManagersPage";
 import { ValuationsPage } from "./pages/ValuationsPage";
-import { RecommendationsPage } from "./pages/RecommendationsPage";
 import { PlayerImportPage } from "./pages/PlayerImportPage";
 import { GkPairingPage } from "./pages/GkPairingPage";
 import { RosterExchangePage } from "./pages/RosterExchangePage";
@@ -204,8 +203,6 @@ function App() {
           <ManagersPage league={activeLeague} calls={purchaseCount} />
         ) : effectivePage === "valutazioni" ? (
           <ValuationsPage league={activeLeague} calls={purchaseCount} />
-        ) : effectivePage === "consigli" ? (
-          <RecommendationsPage league={activeLeague} calls={purchaseCount} />
         ) : effectivePage === "quotazioni" ? (
           <PlayerImportPage calls={purchaseCount} />
         ) : effectivePage === "portieri" ? (

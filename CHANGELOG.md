@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.12.0] - 2026-08-31
+
+### Changed
+
+- **Pagina unica "Valutazioni"**: le pagine "Consigli" e "Valutazioni" sono
+  fuse in una sola. La spina della tabella è il ranking del motore VORP
+  (`GET /leagues/:id/recommendations`), ordinato per punteggio/fascia e uguale
+  per tutta la lega; accanto a ogni riga compaiono le colonne di listino
+  (`target`, `fair_value`, `max_bid`, `panic_price`, nota) editabili inline come
+  override personale (`user_valuation_override`). `TeamPrefPanel` (squadre
+  desiderate / da evitare), il toggle "Segna trappola", il filtro "Trappole" e
+  il dialog `Dettagli` restano, ora su questa pagina. Import JSON e generazione
+  con Claude sono spostati dietro il bottone "Importa / genera valutazioni" in
+  alto a destra. Rimossa la voce di menu "Consigli"; nessuna modifica a schema,
+  migrazioni, rotte o `shared`.
+  Nuovo `web/src/components/MergedValuationRow.tsx`; rimossi
+  `web/src/pages/RecommendationsPage.tsx` e
+  `web/src/components/ValuationOverrideRow.tsx`.
+
 ## [4.11.0] - 2026-08-31
 
 ### Added
