@@ -1055,13 +1055,20 @@ select.input {
   border-radius: 12px;
   border: 1.5px solid var(--color-divider);
 }
-.player-avatar--xl,
-.photo-box--xl {
-  width: 112px;
-  height: 112px;
-  font-size: 30px;
-  border-radius: 16px;
+/* Slot "hero" del giocatore in asta: carta verticale mostrata intera (niente
+   crop), non un ritaglio quadrato. `contain` lascia la carta completa sul fondo
+   tinta-ruolo. */
+.player-avatar--hero,
+.photo-box--hero {
+  width: 168px;
+  height: 232px;
+  font-size: 34px;
+  border-radius: 14px;
   border: 1.5px solid var(--color-divider);
+}
+.photo-box--hero {
+  background-size: contain;
+  background-position: center;
 }
 .player-avatar--role-P {
   color: var(--role-p);

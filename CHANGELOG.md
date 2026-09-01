@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-09-01
+
+Traguardo di release: la UI "sportsbook" è considerata stabile.
+
+### Fixed
+
+- **Foto giocatore in asta**: la miniatura del giocatore in chiamata (desktop)
+  è ora uno slot verticale a "carta" (168×232) che mostra l'immagine intera con
+  `background-size: contain`, senza più il ritaglio in basso dovuto a
+  `cover` + `center top`. Rimpiazza la taglia `xl` con `hero` in `PlayerAvatar`.
+
 ## [4.14.0] - 2026-09-01
 
 ### Changed

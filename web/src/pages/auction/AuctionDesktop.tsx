@@ -190,7 +190,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   team={sel.team}
                   ruolo={sel.ruolo}
                   image_url={sel.image_url}
-                  size="xl"
+                  size="hero"
                 />
                 <div style={{ minWidth: 0 }}>
                   <span className="bid-kicker">In asta · {ROLE_LABEL[sel.ruolo]}</span>
