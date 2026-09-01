@@ -3,13 +3,6 @@ import type { DiscardedValuationRow, UnmatchedValuation, ValuationImportReport }
 import type { ZodError } from "zod";
 import { findPlayersByNameTeam } from "../db/players";
 import { upsertValuation } from "../db/valuations";
-import type { LeagueRow } from "../db/types";
-import { ApiError } from "../http/errors";
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase();
-}
-
 function stringField(raw: unknown, field: string): string | null {
   if (typeof raw !== "object" || raw === null) return null;
   const value = (raw as Record<string, unknown>)[field];
@@ -29,19 +22,14 @@ function toDiscardedRow(row: number, raw: unknown, error: ZodError): DiscardedVa
   };
 }
 
+// L'import è indipendente dal nome lega: `league_name` resta obbligatorio nello
+// schema (documento ben formato) ma non viene confrontato con la lega target,
+// così lo stesso listino può essere importato in qualsiasi lega.
 export async function importValuationsFromJson(
   leagueId: number,
-  league: LeagueRow,
   body: unknown,
 ): Promise<ValuationImportReport> {
   const envelope = valuationImportEnvelopeSchema.parse(body);
-
-  if (normalize(envelope.league_name) !== normalize(league.name)) {
-    throw ApiError.badRequest(
-      `league_name "${envelope.league_name}" does not match target league "${league.name}"`,
-    );
-  }
-
   return importValuationEntries(leagueId, envelope.players);
 }
 

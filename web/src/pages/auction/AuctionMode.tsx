@@ -556,7 +556,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
 
   const onSelect = useCallback((playerId: number) => {
     setSelectedPlayerId(playerId);
-    setPrice("");
+    // Selezionare un giocatore apre l'asta al minimo rilancio (1 credito).
+    setPrice("1");
     setAssignError(null);
   }, []);
 
@@ -578,7 +579,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
         prezzo: priceNum!,
       });
       setSelectedPlayerId(nextId);
-      setPrice("");
+      setPrice(nextId === null ? "" : "1");
       refresh();
     } catch (err) {
       setAssignError(

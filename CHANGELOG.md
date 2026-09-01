@@ -5,6 +5,41 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.14.0] - 2026-09-01
+
+### Changed
+
+- **Larghezza contenuti**: il corpo pagina (`.main`) passa da 1080px a 1500px di
+  max-width, così tabelle e griglie sfruttano le finestre ampie senza scroll
+  orizzontale prematuro (es. tabella Valutazioni).
+- **Contrasti su fondo scuro**: corretto il nome lega nella sidebar (era nero su
+  sfondo scuro per una regola CSS in conflitto), schiariti meta/note/versione
+  della sidebar e meta/scorciatoie dell'header asta, resi leggibili i testi
+  dell'header asta mobile.
+- **Stato bottoni**: i bottoni disabilitati hanno ora un aspetto dedicato
+  (grigio pieno, `cursor: not-allowed`) invece della sola opacità, per
+  distinguere a colpo d'occhio cliccabile da non cliccabile.
+- **Import valutazioni generico**: l'import JSON non richiede più che
+  `league_name` combaci con la lega attiva; lo stesso listino è importabile in
+  qualunque lega.
+- **Pannello import valutazioni**: la sezione "Formato JSON atteso" parte
+  collassata.
+
+### Added
+
+- **Foto giocatore in asta più grande**: nuova taglia avatar `xl` (112px) per il
+  giocatore in chiamata (desktop); su mobile passa a `lg`.
+- **Asta parte da 1**: selezionare un giocatore (click o frecce) imposta il
+  prezzo di partenza a 1 credito.
+
+### Fixed
+
+- **Lista "Chiamata" in asta**: rimossa la miniatura, nome (abbreviato) su riga
+  propria con la squadra come sottotitolo in piccolo — il nome non viene più
+  troncato.
+- **Colonne laterali asta a tutta altezza**: le colonne "Chiamata" e "Io"
+  coprono l'intera altezza della finestra con scroll interno.
+
 ## [4.13.0] - 2026-09-01
 
 ### Changed

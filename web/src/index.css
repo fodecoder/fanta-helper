@@ -269,12 +269,19 @@ img {
   border-radius: var(--radius-md);
 }
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 1;
   cursor: not-allowed;
+  color: var(--color-neutral-500);
+  background: var(--color-neutral-100);
+  border-color: var(--color-divider);
 }
 .btn-primary {
   background: var(--color-accent);
   color: #fff;
+}
+.btn-primary:disabled {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-600);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-600);
@@ -726,16 +733,16 @@ select.input {
 .sidebar-league select {
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 0;
   padding-left: 0;
   min-height: 32px;
   font: 600 17px/1.2 var(--font-heading);
-  color: var(--color-text);
+  color: #fff;
 }
 .sidebar-meta {
   font-size: 12px;
-  color: var(--color-neutral-700);
+  color: var(--color-neutral-400);
 }
 .sidebar-nav {
   display: flex;
@@ -773,12 +780,12 @@ select.input {
 }
 .sidebar-foot .note {
   font-size: 11px;
-  color: var(--color-neutral-700);
+  color: var(--color-neutral-400);
   line-height: 1.4;
 }
 .sidebar-foot .version {
   font-size: 11px;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-400);
   margin-top: 6px;
 }
 .sidebar-sofifa {
@@ -800,7 +807,7 @@ select.input {
 
 .main {
   padding: 34px 40px 60px;
-  max-width: 1080px;
+  max-width: 1500px;
 }
 
 /* — masthead di pagina — */
@@ -1048,6 +1055,14 @@ select.input {
   border-radius: 12px;
   border: 1.5px solid var(--color-divider);
 }
+.player-avatar--xl,
+.photo-box--xl {
+  width: 112px;
+  height: 112px;
+  font-size: 30px;
+  border-radius: 16px;
+  border: 1.5px solid var(--color-divider);
+}
 .player-avatar--role-P {
   color: var(--role-p);
   border: 1.5px solid color-mix(in srgb, var(--role-p) 40%, transparent);
@@ -1281,12 +1296,22 @@ select.input {
 }
 .auction-meta {
   font-size: 13px;
-  color: var(--color-neutral-500);
+  color: var(--color-neutral-300);
 }
 .auction-keys {
   margin-left: auto;
   font-size: 12px;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-300);
+}
+.auction-head .btn-secondary {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.auction-head .btn-secondary:disabled,
+.phone-top .btn-secondary:disabled {
+  color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 .auction-head .rule-heavy,
 .auction-head .rule-thin {
@@ -1303,7 +1328,7 @@ select.input {
   grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) minmax(210px, 260px);
   gap: 24px;
   padding: 22px 30px 30px;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 1180px) {
   .auction-grid {
@@ -1323,14 +1348,33 @@ select.input {
   background: var(--color-surface);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 .call-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: calc(100vh - 300px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   border-top: 1px solid var(--color-neutral-100);
+}
+.call-name-cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.call-name {
+  font-weight: 600;
+}
+.call-team {
+  font-size: 11px;
+  color: var(--color-neutral-700);
 }
 .call-row {
   display: flex;
@@ -1528,7 +1572,9 @@ select.input {
   background: var(--color-surface);
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
-  max-height: calc(100vh - 130px);
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow-y: auto;
 }
 .io-figures {
@@ -1651,7 +1697,7 @@ select.input {
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-neutral-500);
+  color: var(--color-neutral-300);
   margin-top: 4px;
 }
 .phone-fig-n {

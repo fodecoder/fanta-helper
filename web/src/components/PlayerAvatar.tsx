@@ -5,7 +5,7 @@ interface PlayerAvatarProps {
   team: string;
   ruolo: Role;
   image_url?: string | null;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 function getInitials(name: string): string {

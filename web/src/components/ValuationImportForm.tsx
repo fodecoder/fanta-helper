@@ -126,7 +126,7 @@ export function ValuationImportForm({ leagueId, leagueName, onResolved }: Valuat
     <div>
       {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
 
-      <details open style={{ marginBottom: 14 }}>
+      <details style={{ marginBottom: 14 }}>
         <summary style={{ cursor: "pointer", font: "600 15px/1 var(--font-heading)" }}>
           Formato JSON atteso
         </summary>

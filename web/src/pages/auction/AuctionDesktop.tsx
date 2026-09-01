@@ -149,19 +149,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                       className={on ? "call-mark call-mark--on" : "call-mark"}
                       style={{ background: roleColor(p.ruolo) }}
                     />
-                    <PlayerAvatar
-                      name={p.nome_completo ?? p.name}
-                      team={p.team}
-                      ruolo={p.ruolo}
-                      image_url={p.image_url}
-                      size="sm"
-                    />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
-                    <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
-                      {p.nome_completo ?? p.name}
-                    </span>
-                    <span className="text-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
-                      {p.team}
+                    <span className="call-name-cell">
+                      <span className="call-name ellipsis">{p.name}</span>
+                      <span className="call-team ellipsis">{p.team}</span>
                     </span>
                     <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
                     <span className="call-fv">{view.sortValueFor(p.id) ?? "—"}</span>
@@ -199,7 +190,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   team={sel.team}
                   ruolo={sel.ruolo}
                   image_url={sel.image_url}
-                  size="lg"
+                  size="xl"
                 />
                 <div style={{ minWidth: 0 }}>
                   <span className="bid-kicker">In asta · {ROLE_LABEL[sel.ruolo]}</span>

@@ -76,10 +76,10 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
             <span className="live-dot" style={{ width: 6, height: 6 }} />
             Asta live
           </span>
-          <span style={{ fontSize: 12, color: "var(--color-neutral-500)" }}>
+          <span style={{ fontSize: 12, color: "var(--color-neutral-300)" }}>
             {view.league.name}
           </span>
-          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-500)" }}>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-300)" }}>
             {view.callsLabel}
           </span>
           <button type="button" className="btn btn-secondary phone-exit" onClick={view.onExit}>
@@ -154,7 +154,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 team={sel.team}
                 ruolo={sel.ruolo}
                 image_url={sel.image_url}
-                size="md"
+                size="lg"
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <span
@@ -457,19 +457,12 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                         opacity: on ? 1 : 0.5,
                       }}
                     />
-                    <PlayerAvatar
-                      name={p.nome_completo ?? p.name}
-                      team={p.team}
-                      ruolo={p.ruolo}
-                      image_url={p.image_url}
-                      size="sm"
-                    />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
-                    <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
-                      {p.nome_completo ?? p.name}
-                    </span>
-                    <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                      {p.team}
+                    <span className="call-name-cell">
+                      <span className="call-name ellipsis" style={{ fontSize: 15 }}>
+                        {p.name}
+                      </span>
+                      <span className="call-team ellipsis">{p.team}</span>
                     </span>
                     <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
                     <span className="call-fv" style={{ width: 36 }}>

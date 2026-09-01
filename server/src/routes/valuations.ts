@@ -93,7 +93,7 @@ valuationsRouter.post<LeagueParams>("/import", async (req, res, next) => {
     if (!league) {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
-    const report = await importValuationsFromJson(leagueId, league, req.body);
+    const report = await importValuationsFromJson(leagueId, req.body);
     res.json(report);
   } catch (err) {
     next(err);
