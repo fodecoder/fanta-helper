@@ -323,16 +323,21 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     A chi
                   </span>
                   <div className="chip-group">
-                    {view.managers.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className={view.selectedManagerId === m.id ? "chip chip--on" : "chip"}
-                        onClick={() => view.onSelectManager(m.id)}
-                      >
-                        {m.name}
-                      </button>
-                    ))}
+                    {view.managers.map((m) => {
+                      const full = !view.managerCanBuy(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={view.selectedManagerId === m.id ? "chip chip--on" : "chip"}
+                          disabled={full}
+                          title={full ? "Rosa completa per questo ruolo" : undefined}
+                          onClick={() => view.onSelectManager(m.id)}
+                        >
+                          {m.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <button
@@ -932,6 +937,15 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   >
                     {l.delta === null ? "—" : formatDelta(l.delta)}
                   </span>
+                  <button
+                    type="button"
+                    className="log-del"
+                    title="Annulla questa chiamata"
+                    aria-label={`Annulla la chiamata di ${l.name}`}
+                    onClick={() => view.onDeleteCall(l.playerId)}
+                  >
+                    🗑
+                  </button>
                 </div>
               ))}
             </div>

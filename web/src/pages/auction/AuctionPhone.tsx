@@ -270,17 +270,22 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
             </div>
 
             <div className="phone-chip-scroll">
-              {view.managers.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={view.selectedManagerId === m.id ? "chip chip--on" : "chip"}
-                  style={{ whiteSpace: "nowrap", minHeight: 36 }}
-                  onClick={() => view.onSelectManager(m.id)}
-                >
-                  {m.name}
-                </button>
-              ))}
+              {view.managers.map((m) => {
+                const full = !view.managerCanBuy(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={view.selectedManagerId === m.id ? "chip chip--on" : "chip"}
+                    style={{ whiteSpace: "nowrap", minHeight: 36 }}
+                    disabled={full}
+                    title={full ? "Rosa completa per questo ruolo" : undefined}
+                    onClick={() => view.onSelectManager(m.id)}
+                  >
+                    {m.name}
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -677,6 +682,15 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 >
                   {l.delta === null ? "—" : formatDelta(l.delta)}
                 </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ padding: "6px 8px", fontSize: 15 }}
+                  aria-label={`Annulla la chiamata di ${l.name}`}
+                  onClick={() => view.onDeleteCall(l.playerId)}
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>

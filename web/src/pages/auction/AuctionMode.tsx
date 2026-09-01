@@ -103,6 +103,9 @@ export interface AuctionView {
   strongRoleAlerts: StrongRoleAlert[];
   selectedManagerId: number | null;
   onSelectManager: (id: number) => void;
+  // false quando il manager ha gli slot del ruolo in chiamata già pieni: non
+  // può comprare il giocatore corrente.
+  managerCanBuy: (managerId: number) => boolean;
 
   visiblePlayers: Player[];
   availableCount: number;
@@ -174,6 +177,7 @@ export interface AuctionView {
   onSelect: (playerId: number) => void;
   onToggleWishlist: (playerId: number) => void;
   onUndo: () => void;
+  onDeleteCall: (playerId: number) => void;
 }
 
 export function AuctionMode({ league, onExit }: AuctionModeProps) {
@@ -376,6 +380,24 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const me = statuses?.find((s) => s.isOwner);
   const selectedManagerStatus = statuses?.find((s) => s.managerId === effectiveManagerId);
 
+  const statusByManagerId = useMemo(() => {
+    const map = new Map<number, ManagerAuctionStatus>();
+    for (const s of statuses ?? []) map.set(s.managerId, s);
+    return map;
+  }, [statuses]);
+  // Un manager non può comprare il giocatore in chiamata se ha già riempito gli
+  // slot di quel ruolo. Senza stato caricato o senza giocatore selezionato non
+  // si blocca nulla.
+  const managerCanBuy = useCallback(
+    (managerId: number): boolean => {
+      const status = statusByManagerId.get(managerId);
+      if (!status || !selectedPlayer) return true;
+      const slot = status.slots.find((s) => s.ruolo === selectedPlayer.ruolo);
+      return slot ? slot.free > 0 : true;
+    },
+    [statusByManagerId, selectedPlayer],
+  );
+
   // Squadre dei portieri già presi dal manager owner, in ordine di acquisto:
   // riferimento per il suggerimento di accoppiata (ultimo acquistato = squadra
   // di riferimento).
@@ -569,6 +591,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
 
   const onAssign = useCallback(async () => {
     if (selectedPlayerId === null || effectiveManagerId === null || !validPrice) return;
+    if (!managerCanBuy(effectiveManagerId)) {
+      setAssignError("Il manager selezionato ha gli slot di questo ruolo già pieni.");
+      return;
+    }
     setAssignError(null);
     // Prossimo libero dopo l'assegnazione (escludendo quello appena assegnato).
     const nextId = visiblePlayers.find((p) => p.id !== selectedPlayerId)?.id ?? null;
@@ -586,7 +612,15 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
         err instanceof PurchasesApiError ? err.payload.error.message : "assegnazione fallita",
       );
     }
-  }, [selectedPlayerId, effectiveManagerId, validPrice, priceNum, league.id, visiblePlayers]);
+  }, [
+    selectedPlayerId,
+    effectiveManagerId,
+    validPrice,
+    priceNum,
+    league.id,
+    visiblePlayers,
+    managerCanBuy,
+  ]);
 
   const onToggleWishlist = useCallback(
     async (playerId: number) => {
@@ -620,6 +654,25 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       // ignora: il log resta invariato
     }
   }, [purchases, league.id]);
+
+  const onDeleteCall = useCallback(
+    async (playerId: number) => {
+      if (
+        !window.confirm(
+          "Annullare questa chiamata? Il log è immutabile: usalo solo per correggere un errore.",
+        )
+      ) {
+        return;
+      }
+      try {
+        await purchasesApi.deletePurchase(league.id, playerId);
+        refresh();
+      } catch {
+        // ignora: il log resta invariato
+      }
+    },
+    [league.id],
+  );
 
   // Tastiera: ↑/↓ selezione, Invio assegna, Esc esce.
   useEffect(() => {
@@ -660,6 +713,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     strongRoleAlerts: strongAlerts,
     selectedManagerId: effectiveManagerId,
     onSelectManager: setSelectedManagerId,
+    managerCanBuy,
     visiblePlayers,
     availableCount: (players?.length ?? 0) - purchasedPlayerIds.size,
     callsLabel: `${purchases?.length ?? 0} chiamate`,
@@ -705,11 +759,16 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     logRows,
     wishRows,
     assignError,
-    canAssign: selectedPlayerId !== null && effectiveManagerId !== null && validPrice,
+    canAssign:
+      selectedPlayerId !== null &&
+      effectiveManagerId !== null &&
+      validPrice &&
+      managerCanBuy(effectiveManagerId),
     onAssign: () => void onAssign(),
     onSelect,
     onToggleWishlist: (id) => void onToggleWishlist(id),
     onUndo: () => void onUndo(),
+    onDeleteCall: (id) => void onDeleteCall(id),
   };
 
   return isPhone ? <AuctionPhone view={view} /> : <AuctionDesktop view={view} />;

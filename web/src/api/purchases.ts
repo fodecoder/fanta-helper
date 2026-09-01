@@ -59,3 +59,9 @@ export function deleteLastPurchase(leagueId: number): Promise<Purchase> {
     handle<Purchase>(res),
   );
 }
+
+export function deletePurchase(leagueId: number, playerId: number): Promise<Purchase> {
+  return apiFetch(`${baseUrl(leagueId)}/${playerId}`, { method: "DELETE" }).then((res) =>
+    handle<Purchase>(res),
+  );
+}

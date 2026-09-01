@@ -496,7 +496,7 @@ select.input {
   margin-top: var(--space-2);
 }
 .dialog--wide {
-  width: min(920px, 100%);
+  width: min(1400px, 100%);
 }
 .dialog--wide .dialog-body {
   opacity: 1;
@@ -1559,6 +1559,11 @@ select.input {
   color: #fff;
   font-weight: 700;
 }
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
 .chip-group {
   display: flex;
   flex-wrap: wrap;
@@ -1629,6 +1634,25 @@ select.input {
   gap: 8px;
   padding: 6px 0;
   border-bottom: 1px solid var(--color-neutral-100);
+}
+.log-del {
+  flex: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--color-neutral-500);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.log-row:hover .log-del,
+.log-del:focus-visible {
+  opacity: 1;
+}
+.log-del:hover {
+  color: var(--color-accent-2-700);
 }
 .log-dot {
   display: inline-block;

@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] - 2026-09-01
+
+### Added
+
+- **Manager a rosa completa non selezionabile**: in asta, il chip di un manager
+  che ha già riempito gli slot del ruolo del giocatore in chiamata è
+  disabilitato (barrato), e l'assegnazione a quel manager è bloccata. Deriva da
+  `ManagerAuctionStatus.slots[].free` (`managerCanBuy` in `AuctionMode`).
+- **Annulla qualsiasi chiamata dal log**: ogni riga di "Ultime chiamate" ha un
+  cestino (visibile all'hover su desktop, sempre su mobile) che annulla quella
+  specifica chiamata previa conferma. Nuovo endpoint
+  `DELETE /leagues/:leagueId/purchases/:playerId` — rimozione esplicita per
+  chiave primaria `(league_id, player_id)`, nessuno stato mutabile.
+
+### Changed
+
+- **Dialog "Rose avversari & crediti residui"** più largo: `.dialog--wide` passa
+  da 920px a 1400px per mostrare più card avversario per riga.
+
 ## [5.0.0] - 2026-09-01
 
 Traguardo di release: la UI "sportsbook" è considerata stabile.

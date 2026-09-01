@@ -4,6 +4,7 @@ import {
   listPurchasesWithDetailsByLeague,
   insertPurchase,
   deleteLastPurchase,
+  deletePurchaseByPlayer,
 } from "../db/purchases";
 import { getLeagueById } from "../db/leagues";
 import { getManagerById } from "../db/managers";
@@ -95,3 +96,26 @@ purchasesRouter.delete<LeagueParams>("/last", async (req, res, next) => {
     next(err);
   }
 });
+
+purchasesRouter.delete<LeagueParams & { playerId: string }>(
+  "/:playerId",
+  async (req, res, next) => {
+    try {
+      const leagueId = parseId(req.params.leagueId);
+      const playerId = parseId(req.params.playerId);
+      const league = await getLeagueById(leagueId);
+      if (!league) {
+        throw ApiError.notFound(`league ${leagueId} not found`);
+      }
+      const removed = await deletePurchaseByPlayer(leagueId, playerId);
+      if (!removed) {
+        throw ApiError.notFound(
+          `league ${leagueId} has no purchase for player ${playerId}`,
+        );
+      }
+      res.json(removed);
+    } catch (err) {
+      next(err);
+    }
+  },
+);

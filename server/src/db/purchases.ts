@@ -64,6 +64,21 @@ export async function deleteLastPurchase(leagueId: number): Promise<PurchaseRow 
   return result.rows[0];
 }
 
+// Come `deleteLastPurchase`, ma per una chiamata qualsiasi: correzione
+// esplicita e tracciabile di un errore, identificata dalla chiave primaria
+// (league_id, player_id). Nessun update, nessuna modifica di stato mutabile —
+// residuo/slot restano derivati dal log dopo la rimozione.
+export async function deletePurchaseByPlayer(
+  leagueId: number,
+  playerId: number,
+): Promise<PurchaseRow | undefined> {
+  const result = await pool.query<PurchaseRow>(
+    `DELETE FROM purchase WHERE league_id = $1 AND player_id = $2 RETURNING *`,
+    [leagueId, playerId],
+  );
+  return result.rows[0];
+}
+
 // Proprietario prima, poi id manager stabile, acquisti nell'ordine in cui
 // sono avvenuti: base per l'export CSV rose, che deve produrre blocchi
 // manager in un ordine deterministico.
