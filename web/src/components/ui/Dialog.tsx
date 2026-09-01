@@ -5,12 +5,14 @@ interface DialogProps {
   onClose: () => void;
   children: ReactNode;
   actions?: ReactNode;
+  // Modale largo (griglia di card), es. "Rose avversari & crediti residui".
+  wide?: boolean;
 }
 
 // Shell generica del modale: struttura `.dialog-backdrop / .dialog / …` con
 // chiusura su click backdrop e su Esc. Il body scrolla internamente (vedi CSS
 // `— dialog —`), titolo e azioni restano ancorati.
-export function Dialog({ title, onClose, children, actions }: DialogProps) {
+export function Dialog({ title, onClose, children, actions, wide = false }: DialogProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -22,7 +24,7 @@ export function Dialog({ title, onClose, children, actions }: DialogProps) {
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <div
-        className="dialog"
+        className={wide ? "dialog dialog--wide" : "dialog"}
         role="dialog"
         aria-modal="true"
         aria-label={title}

@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
-import { CmykNum } from "../../components/CmykNum";
 import { GkPairingHint } from "../../components/GkPairingHint";
+import { PlayerAvatar } from "../../components/PlayerAvatar";
+import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { ScoreBreakdownDialog } from "../../components/ScoreBreakdownDialog";
@@ -53,6 +54,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
   const showAttributes = view.enrichment?.attributes.enabled === true;
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const [breakdownPlayerId, setBreakdownPlayerId] = useState<number | null>(null);
+  const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const breakdownRec = breakdownPlayerId === null ? undefined : view.recommendationFor(breakdownPlayerId);
 
   return (
@@ -60,7 +62,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
       <header className="auction-head">
         <div className="auction-head-row">
           <span className="auction-brand">FantaProfeta</span>
-          <span className="auction-live">Asta live</span>
+          <span className="auction-live">
+            <span className="live-dot" />
+            Asta live
+          </span>
           <span className="auction-meta">
             {view.league.name} · {view.callsLabel}
           </span>
@@ -144,6 +149,13 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                       className={on ? "call-mark call-mark--on" : "call-mark"}
                       style={{ background: roleColor(p.ruolo) }}
                     />
+                    <PlayerAvatar
+                      name={p.nome_completo ?? p.name}
+                      team={p.team}
+                      ruolo={p.ruolo}
+                      image_url={p.image_url}
+                      size="sm"
+                    />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
                     <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
                       {p.nome_completo ?? p.name}
@@ -181,6 +193,14 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   flexWrap: "wrap",
                 }}
               >
+                <div style={{ display: "flex", gap: 16, alignItems: "flex-start", minWidth: 0 }}>
+                <PlayerAvatar
+                  name={sel.nome_completo ?? sel.name}
+                  team={sel.team}
+                  ruolo={sel.ruolo}
+                  image_url={sel.image_url}
+                  size="lg"
+                />
                 <div style={{ minWidth: 0 }}>
                   <span className="bid-kicker">In asta · {ROLE_LABEL[sel.ruolo]}</span>
                   <h1 className="bid-name">{sel.nome_completo ?? sel.name}</h1>
@@ -206,20 +226,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     attributes={view.attributesFor(sel.id)}
                   />
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <span
-                    style={{
-                      font: "600 10px/1 var(--font-heading)",
-                      letterSpacing: ".12em",
-                      textTransform: "uppercase",
-                      color: "var(--color-neutral-700)",
-                    }}
-                  >
-                    Verdetto
-                  </span>
-                  <div className="bid-verdict" style={{ color: view.verdict.color }}>
-                    {view.verdict.text}
-                  </div>
+                </div>
+                <div className={`verdict-badge verdict-badge--${view.verdictTone}`}>
+                  <span className="verdict-badge__kicker">Verdetto live</span>
+                  <span className="verdict-badge__text">{view.verdict.text}</span>
                 </div>
               </div>
 
@@ -517,23 +527,32 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                               }
                             >
                               <td style={{ whiteSpace: "nowrap" }}>
-                                <button
-                                  type="button"
-                                  onClick={() => view.onSelect(player.id)}
-                                  style={{
-                                    border: 0,
-                                    background: "transparent",
-                                    padding: 0,
-                                    font: "inherit",
-                                    fontWeight: isCurrent ? 600 : 400,
-                                    color: isCurrent
-                                      ? "var(--color-text)"
-                                      : "var(--color-accent-700)",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  {player.nome_completo ?? player.name}
-                                </button>
+                                <span className="player-name-cell">
+                                  <PlayerAvatar
+                                    name={player.nome_completo ?? player.name}
+                                    team={player.team}
+                                    ruolo={player.ruolo}
+                                    image_url={player.image_url}
+                                    size="sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => view.onSelect(player.id)}
+                                    style={{
+                                      border: 0,
+                                      background: "transparent",
+                                      padding: 0,
+                                      font: "inherit",
+                                      fontWeight: isCurrent ? 600 : 400,
+                                      color: isCurrent
+                                        ? "var(--color-text)"
+                                        : "var(--color-accent-700)",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    {player.nome_completo ?? player.name}
+                                  </button>
+                                </span>
                               </td>
                               <td>
                                 <span
@@ -733,7 +752,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               }}
             />
             <div className="io-maxbid">
-              <CmykNum value={me?.adjustedMaxBid ?? 0} />
+              <div className="io-maxbid__n">{me?.adjustedMaxBid ?? 0}</div>
               <div className="l">Max bid rettificato</div>
             </div>
             <div className="io-figures">
@@ -831,6 +850,40 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                 </span>
               )}
             </div>
+            {view.opponentRosterCards.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setOpponentsDialogOpen(true)}
+                style={{
+                  marginTop: 12,
+                  width: "100%",
+                  padding: 11,
+                  border: 0,
+                  borderRadius: "var(--radius-md)",
+                  background: "#0b0e14",
+                  color: "#fff",
+                  font: "700 13px var(--font-heading)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                Rose avversari &amp; crediti residui
+                <span
+                  className="num"
+                  style={{
+                    fontSize: 11,
+                    background: "var(--color-accent)",
+                    padding: "2px 7px",
+                    borderRadius: 6,
+                  }}
+                >
+                  {view.opponentRosterCards.length}
+                </span>
+              </button>
+            )}
           </div>
 
           <div>
@@ -852,10 +905,16 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                 Annulla ultima
               </button>
             </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className="log-scroll" style={{ display: "flex", flexDirection: "column" }}>
               {view.logRows.map((l) => (
                 <div className="log-row" key={l.key}>
-                  <span className="log-dot" style={{ background: roleColor(l.ruolo) }} />
+                  <PlayerAvatar
+                    name={l.name}
+                    team={l.team}
+                    ruolo={l.ruolo}
+                    image_url={l.imageUrl}
+                    size="sm"
+                  />
                   <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
                     {l.name}
                   </span>
@@ -924,6 +983,15 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           player={breakdownRec}
           normalizedScore={view.normalizedScoreFor(breakdownRec.player_id)}
           onClose={() => setBreakdownPlayerId(null)}
+        />
+      )}
+
+      {opponentsDialogOpen && (
+        <OpponentRosterDialog
+          cards={view.opponentRosterCards}
+          calledRole={sel?.ruolo ?? null}
+          imageUrlFor={view.playerImageFor}
+          onClose={() => setOpponentsDialogOpen(false)}
         />
       )}
     </div>

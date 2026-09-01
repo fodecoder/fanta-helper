@@ -15,6 +15,7 @@ export default tseslint.config(
       // Riferimenti di design (prototipi .dc.html + runtime proprietario): non
       // sono codice di produzione e non vanno lintati.
       "design_handoff_portale/**",
+      "design/**",
     ],
   },
   js.configs.recommended,

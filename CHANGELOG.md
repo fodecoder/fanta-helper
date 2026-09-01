@@ -5,6 +5,39 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.13.0] - 2026-09-01
+
+### Changed
+
+- **Nuovo sistema visivo "sportsbook"**: l'app abbandona il tema broadsheet
+  (serif Source Serif 4, numerali a lastre CMYK, filetti di stampa) per il
+  linguaggio del design handoff auction redesign — Manrope per il testo,
+  Space Mono per ogni numero, palette teal `#0088b0` / near-black `#0b0e14` /
+  verde / rosso, raggi morbidi, sidebar scura con nav attiva teal. Token e
+  classi in `web/src/index.css`; ritirato `CmykNum` (`StatFigure` e la colonna
+  "Io" in asta ora usano numeri Space Mono semplici).
+
+### Added
+
+- **Dialog "Rose avversari & crediti residui"** in modalità asta (bottone nella
+  sidebar desktop e nella sezione "Avversari" su mobile): per ogni avversario
+  residuo, max bid sul giocatore in chiamata, uso degli slot P/D/C/A e rosa
+  acquistata coi prezzi pagati. Tutto derivato da `ManagerAuctionStatus` +
+  `ManagerRoster` (`opponentRosterCards` in `auctionDerivations.ts`), nessuno
+  stato memorizzato.
+- **Log chiamate scrollabile**: "Ultime chiamate" in asta è un contenitore ad
+  altezza fissa con scroll interno, non cresce più la pagina.
+- **Slot foto giocatore**: ogni riga giocatore (lista chiamata, alternative,
+  log, header del giocatore in asta, tabella Valutazioni, obiettivi in
+  panoramica) riserva lo slot foto — `player.image_url` come background-image
+  su un fondo tinta-ruolo, con ripiego a iniziali quando la foto manca (mai
+  l'icona di immagine rotta).
+- **Badge verdetto con glow-pulse** a 3 fasce (affare / giusto / sovrapprezzo)
+  e pallino "asta live" pulsante, entrambi come `@keyframes` CSS.
+
+Nuovi `web/src/pages/auction/OpponentRosterDialog.tsx`; nessuna modifica a
+schema, migrazioni, rotte o `shared`.
+
 ## [4.12.0] - 2026-08-31
 
 ### Changed

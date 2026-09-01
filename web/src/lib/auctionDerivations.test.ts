@@ -16,12 +16,14 @@ import {
   ladderModel,
   lineupStatusFor,
   maxSpendableOn,
+  opponentRosterCards,
   opponentSummaries,
   rankSameRole,
   roleColor,
   setPieceRanksFor,
   strongRoleAlerts,
   verdict,
+  verdictTone,
 } from "./auctionDerivations";
 
 function player(id: number, name: string, ruolo: Player["ruolo"], team = "Team"): Player {
@@ -154,17 +156,17 @@ describe("roleColor", () => {
     expect(roleColor("A")).toBe("var(--role-a)");
   });
 
-  it("ties each --role-* var to the expected color in index.css (P giallo, D blu, C verde, A rosso)", () => {
+  it("ties each --role-* var to the expected color in index.css (P ambra, D blu, C verde, A rosso)", () => {
     // Guards against a silent palette rename/edit in index.css: this asserts
-    // the actual hex values, not just the var names above.
+    // the actual hex values, not just the var names above. Palette "sportsbook"
+    // dal design handoff auction redesign.
     const css = readFileSync(join(import.meta.dirname, "../index.css"), "utf-8");
 
-    expect(css).toContain("--color-process-yellow: #edbb00;");
-    expect(css).toContain("--color-role-blue: #144f89;");
-    expect(css).toContain("--color-role-green: #077449;");
-    expect(css).toContain("--color-role-red: #c0392b;");
+    expect(css).toContain("--color-role-blue: #2f6fed;");
+    expect(css).toContain("--color-role-green: #12b76a;");
+    expect(css).toContain("--color-role-red: #d92d20;");
 
-    expect(css).toContain("--role-p: var(--color-process-yellow);");
+    expect(css).toContain("--role-p: #f2ac1c;");
     expect(css).toContain("--role-d: var(--color-role-blue);");
     expect(css).toContain("--role-c: var(--color-role-green);");
     expect(css).toContain("--role-a: var(--color-role-red);");
@@ -194,6 +196,62 @@ describe("verdict", () => {
     expect(verdict(25, v).text).toBe("Sopra il fair value");
     expect(verdict(35, v).text).toBe("Zona panic");
     expect(verdict(45, v).text).toBe("Fuori mercato");
+  });
+});
+
+describe("verdictTone", () => {
+  it("is 'wait' without a price or a valuation", () => {
+    expect(verdictTone(null, val())).toBe("wait");
+    expect(verdictTone(10, undefined)).toBe("wait");
+  });
+  it("buckets into good / fair / over on target and max bid", () => {
+    const v = val({ target: 10, fair_value: 20, max_bid: 30, panic_price: 40 });
+    expect(verdictTone(10, v)).toBe("good");
+    expect(verdictTone(11, v)).toBe("fair");
+    expect(verdictTone(30, v)).toBe("fair");
+    expect(verdictTone(31, v)).toBe("over");
+  });
+});
+
+describe("opponentRosterCards", () => {
+  it("joins status + roster per non-owner, sorts roster by price desc", () => {
+    const statuses: ManagerAuctionStatus[] = [
+      status({ managerId: 1, managerName: "Io", isOwner: true }),
+      status({
+        managerId: 2,
+        managerName: "Rivale",
+        isOwner: false,
+        residuo: 120,
+        adjustedMaxBid: 90,
+        slots: [
+          { ruolo: "P", total: 3, used: 1, free: 2 },
+          { ruolo: "A", total: 6, used: 6, free: 0 },
+        ],
+      }),
+    ];
+    const rosters: ManagerRoster[] = [
+      roster({
+        managerId: 2,
+        managerName: "Rivale",
+        players: [
+          { player_id: 5, name: "Cheap", ruolo: "P", prezzo: 8, tier: "X", tags: [] },
+          { player_id: 6, name: "Star", ruolo: "A", prezzo: 70, tier: "Top", tags: [] },
+        ],
+      }),
+    ];
+    const cards = opponentRosterCards(statuses, rosters, "A");
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.name).toBe("Rivale");
+    expect(cards[0]!.residuo).toBe(120);
+    expect(cards[0]!.maxOnCurrent).toBe(0); // A slots full
+    expect(cards[0]!.roster.map((p) => p.name)).toEqual(["Star", "Cheap"]);
+    expect(cards[0]!.slots.find((s) => s.ruolo === "P")).toMatchObject({ used: 1, total: 3 });
+  });
+  it("returns an empty roster when the manager has no purchases", () => {
+    const statuses = [status({ managerId: 2, isOwner: false })];
+    const cards = opponentRosterCards(statuses, [], null);
+    expect(cards[0]!.roster).toEqual([]);
+    expect(cards[0]!.maxOnCurrent).toBe(100);
   });
 });
 

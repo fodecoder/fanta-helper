@@ -3,6 +3,7 @@ import type { PlayerRecommendationWithTags, ValuationWithPlayer } from "@fanta-h
 import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import { roleColor } from "../lib/auctionDerivations";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 type AmountField = "target" | "fair_value" | "max_bid" | "panic_price";
 
@@ -138,7 +139,18 @@ export function MergedValuationRow({
 
   return (
     <tr style={muted ? { opacity: 0.5 } : undefined}>
-      <td style={{ whiteSpace: "nowrap" }}>{r.nome_completo ?? r.name}</td>
+      <td style={{ whiteSpace: "nowrap" }}>
+        <span className="player-name-cell">
+          <PlayerAvatar
+            name={r.nome_completo ?? r.name}
+            team={r.team}
+            ruolo={r.ruolo}
+            image_url={r.image_url}
+            size="sm"
+          />
+          {r.nome_completo ?? r.name}
+        </span>
+      </td>
       <td>{r.team}</td>
       <td style={{ color: roleColor(r.ruolo) }}>{r.ruolo}</td>
       <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>

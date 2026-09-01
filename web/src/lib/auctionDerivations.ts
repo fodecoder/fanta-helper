@@ -78,6 +78,22 @@ export function verdict(price: number | null, val: ValuationWithPlayer | undefin
   return { text: "Affare", color: COLOR_GOOD };
 }
 
+export type VerdictTone = "good" | "fair" | "over" | "wait";
+
+// Fascia a 3 stati per il badge "verdetto live" del redesign (handoff
+// § Interactions): ≤ target → affare (verde), ≤ max bid → giusto (teal),
+// oltre → sovrapprezzo (rosso). `wait` finché manca il prezzo. Il testo
+// resta quello sfumato di `verdict()`; qui si sceglie solo colore + glow.
+export function verdictTone(
+  price: number | null,
+  val: ValuationWithPlayer | undefined,
+): VerdictTone {
+  if (val === undefined || price === null) return "wait";
+  if (price <= val.target) return "good";
+  if (price <= val.max_bid) return "fair";
+  return "over";
+}
+
 export interface LadderTick {
   key: string;
   label: string;
@@ -248,6 +264,55 @@ export function opponentSummaries(
       residuo: s.residuo,
       freeSlots: s.slots,
       maxOnCurrent: ruolo === null ? s.adjustedMaxBid : maxSpendableOn(s, ruolo),
+    }));
+}
+
+export interface OpponentRosterSlot {
+  ruolo: Role;
+  used: number;
+  total: number;
+}
+
+export interface OpponentRosterCard {
+  managerId: number;
+  name: string;
+  residuo: number;
+  maxOnCurrent: number;
+  slots: OpponentRosterSlot[];
+  roster: { player_id: number; name: string; ruolo: Role; prezzo: number }[];
+}
+
+// Stato completo di ogni avversario per il dialog "Rose avversari & crediti
+// residui" (handoff § 3). Puro join tra `ManagerAuctionStatus` (residuo,
+// max bid rettificato, slot) e `ManagerRoster` (giocatori acquistati con
+// prezzo pagato) — entrambi derivati dal log `purchase` lato server.
+export function opponentRosterCards(
+  statuses: ManagerAuctionStatus[] | null,
+  rosters: ManagerRoster[] | null,
+  ruolo: Role | null,
+): OpponentRosterCard[] {
+  const rosterByManager = new Map((rosters ?? []).map((r) => [r.managerId, r]));
+  return (statuses ?? [])
+    .filter((s) => !s.isOwner)
+    .map((s) => ({
+      managerId: s.managerId,
+      name: s.managerName,
+      residuo: s.residuo,
+      maxOnCurrent: ruolo === null ? s.adjustedMaxBid : maxSpendableOn(s, ruolo),
+      slots: s.slots.map((slot) => ({
+        ruolo: slot.ruolo,
+        used: slot.used,
+        total: slot.total,
+      })),
+      roster: (rosterByManager.get(s.managerId)?.players ?? [])
+        .slice()
+        .sort((a, b) => b.prezzo - a.prezzo)
+        .map((p) => ({
+          player_id: p.player_id,
+          name: p.name,
+          ruolo: p.ruolo,
+          prezzo: p.prezzo,
+        })),
     }));
 }
 

@@ -44,15 +44,19 @@ import {
   gkPairingSuggestionFor,
   impact as computeImpact,
   ladderModel,
+  opponentRosterCards,
   opponentSummaries,
   rankSameRole,
   strongRoleAlerts,
   verdict as computeVerdict,
+  verdictTone as computeVerdictTone,
   type CompareSortKey,
   type GkPairingSuggestion,
+  type OpponentRosterCard,
   type OpponentSummary,
   type RankRow,
   type StrongRoleAlert,
+  type VerdictTone,
 } from "../../lib/auctionDerivations";
 import { AuctionDesktop } from "./AuctionDesktop";
 import { AuctionPhone } from "./AuctionPhone";
@@ -94,6 +98,8 @@ export interface AuctionView {
   statuses: ManagerAuctionStatus[] | null;
   me: ManagerAuctionStatus | undefined;
   opponents: OpponentSummary[];
+  opponentRosterCards: OpponentRosterCard[];
+  playerImageFor: (playerId: number) => string | null;
   strongRoleAlerts: StrongRoleAlert[];
   selectedManagerId: number | null;
   onSelectManager: (id: number) => void;
@@ -125,6 +131,7 @@ export interface AuctionView {
   onPrice: (v: string) => void;
   onBump: (delta: number) => void;
   verdict: ReturnType<typeof computeVerdict>;
+  verdictTone: VerdictTone;
   ladder: ReturnType<typeof ladderModel>;
   impact: ReturnType<typeof computeImpact>;
 
@@ -142,7 +149,10 @@ export interface AuctionView {
 
   logRows: {
     key: string;
+    playerId: number;
     name: string;
+    team: string;
+    imageUrl: string | null;
     manager: string;
     prezzo: number;
     delta: number | null;
@@ -151,6 +161,8 @@ export interface AuctionView {
   wishRows: {
     player_id: number;
     name: string;
+    team: string;
+    imageUrl: string | null;
     ruolo: Role;
     tier: string | null;
     fv: number | null;
@@ -253,6 +265,15 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const purchasedPlayerIds = useMemo(
     () => new Set((purchases ?? []).map((p) => p.player_id)),
     [purchases],
+  );
+  const playersById = useMemo(() => {
+    const map = new Map<number, Player>();
+    for (const p of players ?? []) map.set(p.id, p);
+    return map;
+  }, [players]);
+  const playerImageFor = useCallback(
+    (playerId: number): string | null => playersById.get(playerId)?.image_url ?? null,
+    [playersById],
   );
   const wishlistPlayerIds = useMemo(
     () => new Set((wishlist ?? []).map((e) => e.player_id)),
@@ -381,12 +402,17 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     () => opponentSummaries(statuses, selectedPlayer?.ruolo ?? null),
     [statuses, selectedPlayer?.ruolo],
   );
+  const opponentRosterCardsView = useMemo(
+    () => opponentRosterCards(statuses, managerRosters, selectedPlayer?.ruolo ?? null),
+    [statuses, managerRosters, selectedPlayer?.ruolo],
+  );
   const strongAlerts = useMemo(
     () => strongRoleAlerts(managerRosters, selectedPlayer?.ruolo ?? null),
     [managerRosters, selectedPlayer?.ruolo],
   );
 
   const verdict = computeVerdict(priceNum, selectedValuation);
+  const verdictTone = computeVerdictTone(priceNum, selectedValuation);
   const ladder = ladderModel(selectedValuation, priceNum);
   const impact = selectedPlayer
     ? computeImpact(priceNum, selectedManagerStatus, selectedPlayer.ruolo)
@@ -497,12 +523,15 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const logRows = (purchases ?? [])
     .slice()
     .reverse()
-    .slice(0, 7)
+    .slice(0, 30)
     .map((p) => {
       const val = valuationById.get(p.player_id);
       return {
         key: `${p.league_id}-${p.player_id}`,
+        playerId: p.player_id,
         name: p.player_name,
+        team: p.player_team,
+        imageUrl: p.player_image_url ?? playerImageFor(p.player_id),
         manager: p.manager_name,
         prezzo: p.prezzo,
         delta: val ? p.prezzo - val.fair_value : null,
@@ -517,6 +546,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
       return {
         player_id: e.player_id,
         name: e.name,
+        team: e.team,
+        imageUrl: playerImageFor(e.player_id),
         ruolo: e.ruolo,
         tier: val?.tier ?? null,
         fv: val?.fair_value ?? null,
@@ -623,6 +654,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     statuses,
     me,
     opponents,
+    opponentRosterCards: opponentRosterCardsView,
+    playerImageFor,
     strongRoleAlerts: strongAlerts,
     selectedManagerId: effectiveManagerId,
     onSelectManager: setSelectedManagerId,
@@ -654,6 +687,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     },
     onBump,
     verdict,
+    verdictTone,
     ladder,
     impact,
     compareRows,

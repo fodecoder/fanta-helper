@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
+import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
+import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import {
   deltaColor,
   formatDelta,
@@ -60,6 +62,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const [opponentsOpen, setOpponentsOpen] = useState(false);
+  const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const selectedManagerName =
@@ -70,12 +73,13 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
       <div className="phone-top">
         <div className="phone-top-row">
           <span className="auction-live" style={{ fontSize: 9 }}>
+            <span className="live-dot" style={{ width: 6, height: 6 }} />
             Asta live
           </span>
-          <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+          <span style={{ fontSize: 12, color: "var(--color-neutral-500)" }}>
             {view.league.name}
           </span>
-          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-700)" }}>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--color-neutral-500)" }}>
             {view.callsLabel}
           </span>
           <button type="button" className="btn btn-secondary phone-exit" onClick={view.onExit}>
@@ -144,22 +148,30 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
       <div className="phone-bid">
         {sel ? (
           <>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span className="auction-live" style={{ color: "var(--color-accent)", fontSize: 9 }}>
-                In asta
-              </span>
-              <span
-                style={{
-                  marginLeft: "auto",
-                  font: "600 13px/1 var(--font-heading)",
-                  color: view.verdict.color,
-                }}
-              >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <PlayerAvatar
+                name={sel.nome_completo ?? sel.name}
+                team={sel.team}
+                ruolo={sel.ruolo}
+                image_url={sel.image_url}
+                size="md"
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span
+                  className="auction-live"
+                  style={{ color: "var(--color-accent)", fontSize: 9 }}
+                >
+                  In asta
+                </span>
+                <h1 className="phone-bid-name" style={{ margin: "2px 0 0" }}>
+                  {sel.nome_completo ?? sel.name}
+                </h1>
+              </div>
+              <span className={`verdict-pill verdict-pill--${view.verdictTone}`}>
                 {view.verdict.text}
               </span>
             </div>
-            <h1 className="phone-bid-name">{sel.nome_completo ?? sel.name}</h1>
-            <div style={{ fontSize: 13, color: "var(--color-neutral-800)" }}>
+            <div style={{ fontSize: 13, color: "var(--color-neutral-800)", marginTop: 4 }}>
               {sel.team}
               {val &&
                 ` · tier ${val.tier} · fv ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
@@ -346,6 +358,16 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                       Nessun avversario.
                     </span>
                   )}
+                  {view.opponentRosterCards.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-block"
+                      style={{ minHeight: 40 }}
+                      onClick={() => setOpponentsDialogOpen(true)}
+                    >
+                      Vedi rose complete &amp; crediti
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -434,6 +456,13 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                         background: on ? "var(--color-accent)" : roleColor(p.ruolo),
                         opacity: on ? 1 : 0.5,
                       }}
+                    />
+                    <PlayerAvatar
+                      name={p.nome_completo ?? p.name}
+                      team={p.team}
+                      ruolo={p.ruolo}
+                      image_url={p.image_url}
+                      size="sm"
                     />
                     <span className="call-tier">{pv?.tier ?? ""}</span>
                     <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
@@ -624,13 +653,19 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 key={l.key}
                 style={{
                   display: "flex",
-                  alignItems: "baseline",
+                  alignItems: "center",
                   gap: 9,
                   padding: "11px 16px",
-                  borderBottom: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+                  borderBottom: "1px solid var(--color-neutral-100)",
                 }}
               >
-                <span className="log-dot" style={{ background: roleColor(l.ruolo) }} />
+                <PlayerAvatar
+                  name={l.name}
+                  team={l.team}
+                  ruolo={l.ruolo}
+                  image_url={l.imageUrl}
+                  size="sm"
+                />
                 <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
                   {l.name}
                 </span>
@@ -654,6 +689,15 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
           </div>
         )}
       </div>
+
+      {opponentsDialogOpen && (
+        <OpponentRosterDialog
+          cards={view.opponentRosterCards}
+          calledRole={sel?.ruolo ?? null}
+          imageUrlFor={view.playerImageFor}
+          onClose={() => setOpponentsDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import * as wishlistApi from "../api/wishlist";
 import { ModifierWarning } from "../components/ModifierWarning";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { UserAvatar } from "../components/UserAvatar";
+import { PlayerAvatar } from "../components/PlayerAvatar";
 import { StatFigure } from "../components/StatFigure";
 import { StatusMessage } from "../components/StatusMessage";
 import { deltaColor, formatDelta, roleColor } from "../lib/auctionDerivations";
@@ -232,9 +233,14 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                   {wishRows.map((w) => (
                     <tr key={w.player_id}>
                       <td className="ellipsis">
-                        {w.name}{" "}
-                        <span className="text-muted" style={{ fontSize: 12 }}>
-                          {w.team}
+                        <span className="player-name-cell">
+                          <PlayerAvatar name={w.name} team={w.team} ruolo={w.ruolo} size="sm" />
+                          <span className="ellipsis">
+                            {w.name}{" "}
+                            <span className="text-muted" style={{ fontSize: 12 }}>
+                              {w.team}
+                            </span>
+                          </span>
                         </span>
                       </td>
                       <td style={{ color: roleColor(w.ruolo) }}>{w.ruolo}</td>
