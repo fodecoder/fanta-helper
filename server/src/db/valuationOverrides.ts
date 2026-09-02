@@ -90,6 +90,22 @@ export async function upsertValuationOverride(
   return { kind: "set", row };
 }
 
+// Azzera in blocco gli override dell'utente per i giocatori indicati: usata
+// dall'import valutazioni quando l'utente conferma di voler sovrascrivere le
+// proprie modifiche col nuovo listino. Ritorna quante righe sono state tolte.
+export async function deleteValuationOverridesForPlayers(
+  userId: number,
+  leagueId: number,
+  playerIds: number[],
+): Promise<number> {
+  if (playerIds.length === 0) return 0;
+  const result = await pool.query(
+    "DELETE FROM user_valuation_override WHERE user_id = $1 AND league_id = $2 AND player_id = ANY($3)",
+    [userId, leagueId, playerIds],
+  );
+  return result.rowCount ?? 0;
+}
+
 export async function deleteValuationOverride(
   userId: number,
   leagueId: number,

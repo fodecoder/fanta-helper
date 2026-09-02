@@ -42,8 +42,10 @@ export function listValuations(
 export function importValuationsJson(
   leagueId: number,
   doc: unknown,
+  opts?: { overwriteOverrides?: boolean },
 ): Promise<ValuationImportReport> {
-  return apiFetch(`${baseUrl(leagueId)}/import`, {
+  const qs = opts?.overwriteOverrides ? "?overwriteOverrides=1" : "";
+  return apiFetch(`${baseUrl(leagueId)}/import${qs}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(doc),

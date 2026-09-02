@@ -213,7 +213,12 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         >
           <ValuationGenerateForm leagueId={league.id} onResolved={refresh} />
           <div style={{ height: 24 }} />
-          <ValuationImportForm leagueId={league.id} leagueName={league.name} onResolved={refresh} />
+          <ValuationImportForm
+            leagueId={league.id}
+            leagueName={league.name}
+            overrideCount={(valuations ?? []).filter((v) => v.override != null).length}
+            onResolved={refresh}
+          />
         </div>
       )}
 

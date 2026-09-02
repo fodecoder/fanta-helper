@@ -59,6 +59,9 @@ export const valuationImportReportSchema = z.object({
   updated: z.number().int().nonnegative(),
   unmatched: z.array(unmatchedValuationSchema),
   discarded: z.array(discardedValuationRowSchema),
+  // Numero di override personali azzerati perché l'import ha sovrascritto le
+  // modifiche dell'utente (0 se non richiesto o se non ne aveva).
+  overridesCleared: z.number().int().nonnegative().default(0),
 });
 export type ValuationImportReport = z.infer<typeof valuationImportReportSchema>;
 

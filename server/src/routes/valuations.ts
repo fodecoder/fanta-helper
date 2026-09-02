@@ -90,11 +90,15 @@ valuationsRouter.delete<ValuationParams>("/overrides/:playerId", async (req, res
 valuationsRouter.post<LeagueParams>("/import", async (req, res, next) => {
   try {
     const leagueId = parseId(req.params.leagueId);
+    const userId = requireUserId(req);
     const league = await getLeagueById(leagueId);
     if (!league) {
       throw ApiError.notFound(`league ${leagueId} not found`);
     }
-    const report = await importValuationsFromJson(leagueId, req.body);
+    const report = await importValuationsFromJson(leagueId, req.body, {
+      userId,
+      overwriteOverrides: req.query.overwriteOverrides === "1",
+    });
     res.json(report);
   } catch (err) {
     next(err);

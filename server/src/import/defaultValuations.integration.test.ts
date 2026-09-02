@@ -12,13 +12,17 @@ import {
 } from "@fanta-helper/shared";
 import { ROLES } from "@fanta-helper/shared";
 
-const { findPlayersByNameTeam, upsertValuation } = vi.hoisted(() => ({
-  findPlayersByNameTeam: vi.fn(),
-  upsertValuation: vi.fn(),
-}));
+const { findPlayersByNameTeam, upsertValuation, deleteValuationOverridesForPlayers } = vi.hoisted(
+  () => ({
+    findPlayersByNameTeam: vi.fn(),
+    upsertValuation: vi.fn(),
+    deleteValuationOverridesForPlayers: vi.fn(),
+  }),
+);
 
 vi.mock("../db/players", () => ({ findPlayersByNameTeam }));
 vi.mock("../db/valuations", () => ({ upsertValuation }));
+vi.mock("../db/valuationOverrides", () => ({ deleteValuationOverridesForPlayers }));
 
 import { importValuationEntries } from "./valuationJson";
 
@@ -85,6 +89,7 @@ function buildPool() {
 beforeEach(() => {
   vi.clearAllMocks();
   upsertValuation.mockResolvedValue({ inserted: true });
+  deleteValuationOverridesForPlayers.mockResolvedValue(2);
 });
 
 describe("generateDefaultValuations → importValuationEntries", () => {
@@ -114,4 +119,22 @@ describe("generateDefaultValuations → importValuationEntries", () => {
       expect(upsertValuation).toHaveBeenCalledTimes(players.length);
     });
   }
+
+  it("azzera gli override solo con overwriteOverrides + userId, per i soli abbinati", async () => {
+    findPlayersByNameTeam.mockImplementation(async (name: string) =>
+      name === "Ghost" ? [] : [{ id: name === "A" ? 10 : 20 }],
+    );
+    const entries = [
+      { name: "A", team: "T", ruolo: "P", tier: "A", target: 1, fair_value: 1, max_bid: 1, panic_price: 1, confidence: "low" },
+      { name: "B", team: "T", ruolo: "D", tier: "A", target: 1, fair_value: 1, max_bid: 1, panic_price: 1, confidence: "low" },
+      { name: "Ghost", team: "T", ruolo: "A", tier: "A", target: 1, fair_value: 1, max_bid: 1, panic_price: 1, confidence: "low" },
+    ];
+
+    await importValuationEntries(1, entries);
+    expect(deleteValuationOverridesForPlayers).not.toHaveBeenCalled();
+
+    const report = await importValuationEntries(1, entries, { userId: 7, overwriteOverrides: true });
+    expect(deleteValuationOverridesForPlayers).toHaveBeenCalledWith(7, 1, [10, 20]);
+    expect(report.overridesCleared).toBe(2);
+  });
 });

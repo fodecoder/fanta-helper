@@ -16,6 +16,9 @@ import { UnmatchedValuationRow } from "./UnmatchedValuationRow";
 interface ValuationImportFormProps {
   leagueId: number;
   leagueName: string;
+  // Quante valutazioni ha modificato l'utente in questa lega (override): se
+  // > 0, l'import chiede se sovrascriverle.
+  overrideCount: number;
   onResolved: () => void;
 }
 
@@ -79,7 +82,12 @@ function downloadTemplate(leagueName: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ValuationImportForm({ leagueId, leagueName, onResolved }: ValuationImportFormProps) {
+export function ValuationImportForm({
+  leagueId,
+  leagueName,
+  overrideCount,
+  onResolved,
+}: ValuationImportFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [report, setReport] = useState<ValuationImportReport | null>(null);
   const [unmatched, setUnmatched] = useState<UnmatchedValuation[]>([]);
@@ -117,7 +125,13 @@ export function ValuationImportForm({ leagueId, leagueName, onResolved }: Valuat
         setGeneralError("il file non è un JSON valido");
         return;
       }
-      const result = await valuationsApi.importValuationsJson(leagueId, doc);
+      let overwriteOverrides = false;
+      if (overrideCount > 0) {
+        overwriteOverrides = window.confirm(
+          `Hai ${overrideCount} valutazioni modificate in questa lega. Sovrascriverle con il file importato?`,
+        );
+      }
+      const result = await valuationsApi.importValuationsJson(leagueId, doc, { overwriteOverrides });
       setReport(result);
       setUnmatched(result.unmatched);
       onResolved();
@@ -208,6 +222,7 @@ export function ValuationImportForm({ leagueId, leagueName, onResolved }: Valuat
         <p className="text-muted" style={{ fontSize: 13, marginTop: 10 }}>
           Importate: {report.imported} · Aggiornate: {report.updated} · Scartate:{" "}
           {report.discarded.length} · Unmatched: {unmatched.length}
+          {report.overridesCleared > 0 && ` · Modifiche azzerate: ${report.overridesCleared}`}
         </p>
       )}
 
