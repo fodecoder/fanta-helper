@@ -10,7 +10,7 @@ import type {
   SetPieceTakerEntry,
   ValuationWithPlayer,
 } from "@fanta-helper/shared";
-import { isSamePlayer } from "@fanta-helper/shared";
+import { isSamePlayer, ROLE_BUDGET_APPROACH_THRESHOLD } from "@fanta-helper/shared";
 
 // Colori semantici del verdetto/impatto (token del design system).
 export const COLOR_MUTED = "var(--color-neutral-700)";
@@ -196,6 +196,32 @@ export function impact(
     text: `${status.managerName} resterebbe con ${residuoAfter} crediti per ${freeAfter} slot — ${avg} di media.`,
     color: COLOR_MUTED,
   };
+}
+
+// Avviso contestuale sul budget di reparto del proprietario ("Io"): confronta
+// la spesa proiettata (già spesa nel reparto + prezzo in chiamata) con la
+// quota obiettivo del reparto, derivata dal log `purchase` in `spentByRole`.
+export function roleBudgetImpact(
+  status: ManagerAuctionStatus,
+  ruolo: Role,
+  price: number,
+): { text: string; level: "warn" | "info" } | null {
+  const rb = status.spentByRole.find((r) => r.ruolo === ruolo);
+  if (!rb) return null;
+  const projected = rb.spent + price;
+  if (projected > rb.targetCredits) {
+    return {
+      text: `Oltre la quota obiettivo del reparto ${ruolo} (${rb.targetCredits} cr)`,
+      level: "warn",
+    };
+  }
+  if (projected >= ROLE_BUDGET_APPROACH_THRESHOLD * rb.targetCredits && rb.targetCredits > 0) {
+    return {
+      text: `Reparto ${ruolo}: resterebbero ${rb.targetCredits - projected} cr sulla quota obiettivo`,
+      level: "warn",
+    };
+  }
+  return null;
 }
 
 export interface GkPairingSuggestion {

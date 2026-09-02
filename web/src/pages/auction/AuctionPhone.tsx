@@ -308,6 +308,13 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
             >
               {view.assignError ?? view.impact.text}
             </div>
+            {view.roleBudgetImpact && (
+              <div
+                style={{ fontSize: 12, color: "var(--color-accent-2-700)", lineHeight: 1.35 }}
+              >
+                {view.roleBudgetImpact.text}
+              </div>
+            )}
             {view.strongRoleAlerts.map((a) => (
               <div
                 key={a.managerId}

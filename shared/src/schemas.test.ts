@@ -28,6 +28,7 @@ import {
   purchaseSchema,
   purchaseWithDetailsSchema,
   roleSlotStatusSchema,
+  roleBudgetStatusSchema,
   managerAuctionStatusSchema,
 } from "./purchase";
 import { quotationRowSchema, quotationImportReportSchema } from "./quotation";
@@ -198,6 +199,14 @@ describe("purchase", () => {
       manager_name: "Io",
     });
     roleSlotStatusSchema.parse({ ruolo: "P", total: 3, used: 1, free: 2 });
+    roleBudgetStatusSchema.parse({
+      ruolo: "A",
+      spent: 0,
+      targetPercent: 48,
+      targetCredits: 240,
+      residuo: 240,
+      state: "ok",
+    });
     managerAuctionStatusSchema.parse({
       managerId: 1,
       managerName: "Io",
@@ -206,6 +215,9 @@ describe("purchase", () => {
       spent: 0,
       residuo: 500,
       slots: [{ ruolo: "P", total: 3, used: 0, free: 3 }],
+      spentByRole: [
+        { ruolo: "P", spent: 0, targetPercent: 8, targetCredits: 40, residuo: 40, state: "ok" },
+      ],
       adjustedMaxBid: 498,
     });
     expect(() => createPurchaseSchema.parse({ player_id: 1, manager_id: 1, prezzo: -1 })).toThrow();

@@ -1,4 +1,11 @@
-import type { Role, Confidence, RosterConfig, ScoringConfig, ModifiersConfig } from "@fanta-helper/shared";
+import type {
+  Role,
+  Confidence,
+  RosterConfig,
+  ScoringConfig,
+  ModifiersConfig,
+  BudgetTargetByRole,
+} from "@fanta-helper/shared";
 
 export interface LeagueRow {
   id: number;
@@ -8,6 +15,7 @@ export interface LeagueRow {
   roster_config: RosterConfig;
   scoring: ScoringConfig;
   modificatori: ModifiersConfig;
+  budget_target_by_role: BudgetTargetByRole;
 }
 
 export interface PlayerRow {

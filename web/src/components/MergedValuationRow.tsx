@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { PlayerRecommendationWithTags, ValuationWithPlayer } from "@fanta-helper/shared";
+import { budgetPercentToCredits, creditsToBudgetPercent } from "@fanta-helper/shared";
 import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import { roleColor } from "../lib/auctionDerivations";
@@ -15,6 +16,7 @@ interface MergedValuationRowProps {
   // in quel caso le colonne di listino restano sola lettura.
   valuation: ValuationWithPlayer | null;
   factor: number;
+  leagueBudget: number;
   normalizedScore: number | undefined;
   purchased: boolean;
   isTrap: boolean;
@@ -41,6 +43,7 @@ export function MergedValuationRow({
   rec: r,
   valuation: v,
   factor,
+  leagueBudget,
   normalizedScore,
   purchased,
   isTrap,
@@ -86,6 +89,21 @@ export function MergedValuationRow({
     }
     if (parsed === current) return;
     void save({ [field]: toBase(parsed, factor) });
+  }
+
+  function commitMaxBidPercent(raw: string) {
+    if (!v) return;
+    const trimmed = raw.trim();
+    if (trimmed === "") return;
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+      setError("percentuale non valida");
+      return;
+    }
+    const creditsDisplay = budgetPercentToCredits(parsed, leagueBudget);
+    const base = toBase(creditsDisplay, factor);
+    if (base === v.max_bid) return;
+    void save({ max_bid: base });
   }
 
   function commitNote(raw: string) {
@@ -211,7 +229,47 @@ export function MergedValuationRow({
           </span>
         )}
       </td>
-      <td style={{ textAlign: "right" }}>{cellInput("max_bid")}</td>
+      <td style={{ textAlign: "right" }}>
+        <span style={{ whiteSpace: "nowrap" }}>
+          {cellInput("max_bid")}
+          {v && (
+            <>
+              <input
+                key={`max_bid-pct-${rev}`}
+                className="input"
+                inputMode="numeric"
+                style={{
+                  width: 44,
+                  textAlign: "right",
+                  marginLeft: 6,
+                  ...(isOverridden("max_bid")
+                    ? { borderColor: "var(--color-accent-700)", fontWeight: 600 }
+                    : undefined),
+                }}
+                // toDisplay(base, factor) / leagueBudget == base / DEFAULT_BUDGET,
+                // dato che factor = leagueBudget / DEFAULT_BUDGET.
+                defaultValue={
+                  v && v.max_bid
+                    ? String(
+                        Math.round(
+                          creditsToBudgetPercent(toDisplay(v.max_bid, factor), leagueBudget),
+                        ),
+                      )
+                    : ""
+                }
+                disabled={busy || !leagueBudget}
+                onBlur={(e) => commitMaxBidPercent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+              />
+              <span className="text-muted" style={{ fontSize: 11, marginLeft: 2 }}>
+                %
+              </span>
+            </>
+          )}
+        </span>
+      </td>
       <td style={{ textAlign: "right" }}>{cellInput("panic_price")}</td>
       <td>
         {v ? (

@@ -26,6 +26,15 @@ export function scaleFvm(fvm: number, factor: number): number {
   return Math.round(fvm * factor);
 }
 
+// La percentuale è solo un modo di inserimento del max bid: il valore
+// persistito resta in crediti. Arrotondamento esplicito con Math.round.
+export function budgetPercentToCredits(percent: number, leagueBudget: number): number {
+  return Math.round((percent / 100) * leagueBudget);
+}
+export function creditsToBudgetPercent(credits: number, leagueBudget: number): number {
+  return (credits / leagueBudget) * 100;
+}
+
 export interface ScalableValuationAmounts {
   target: number;
   fair_value: number;

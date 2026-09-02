@@ -3,6 +3,7 @@ import {
   createLeagueSchema,
   updateLeagueSchema,
   defaultRosterConfig,
+  defaultBudgetTargetByRole,
   defaultScoring,
   defaultModificatori,
   DEFAULT_N_SQUADRE,
@@ -27,6 +28,13 @@ const ROSTER_FIELDS: { key: "P" | "D" | "C" | "A"; label: string }[] = [
   { key: "D", label: "Difensori" },
   { key: "C", label: "Centrocampisti" },
   { key: "A", label: "Attaccanti" },
+];
+
+const BUDGET_TARGET_FIELDS: { key: "P" | "D" | "C" | "A"; label: string }[] = [
+  { key: "P", label: "Portieri %" },
+  { key: "D", label: "Difensori %" },
+  { key: "C", label: "Centrocampisti %" },
+  { key: "A", label: "Attaccanti %" },
 ];
 
 const SCORING_FIELDS: { key: keyof Omit<ScoringConfig, "fasce_gol">; label: string }[] = [
@@ -63,6 +71,12 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
     D: String(initial?.roster_config.D ?? defaultRosterConfig.D),
     C: String(initial?.roster_config.C ?? defaultRosterConfig.C),
     A: String(initial?.roster_config.A ?? defaultRosterConfig.A),
+  });
+  const [budgetTarget, setBudgetTarget] = useState<Record<"P" | "D" | "C" | "A", string>>({
+    P: String(initial?.budget_target_by_role.P ?? defaultBudgetTargetByRole.P),
+    D: String(initial?.budget_target_by_role.D ?? defaultBudgetTargetByRole.D),
+    C: String(initial?.budget_target_by_role.C ?? defaultBudgetTargetByRole.C),
+    A: String(initial?.budget_target_by_role.A ?? defaultBudgetTargetByRole.A),
   });
   const [scoring, setScoring] = useState<ScoringConfig>(clone(initial?.scoring ?? defaultScoring));
   const [fasceText, setFasceText] = useState(
@@ -120,6 +134,12 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
       },
       scoring: { ...scoring, fasce_gol },
       modificatori,
+      budget_target_by_role: {
+        P: Number(budgetTarget.P),
+        D: Number(budgetTarget.D),
+        C: Number(budgetTarget.C),
+        A: Number(budgetTarget.A),
+      },
     };
 
     const schema = initial ? updateLeagueSchema : createLeagueSchema;
@@ -220,6 +240,39 @@ export function LeagueForm({ initial, onSaved, onCancel }: LeagueFormProps) {
         ))}
       </div>
       {errorsFor("roster_config").map(([key, message]) => (
+        <p key={key} style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>
+          {key}: {message}
+        </p>
+      ))}
+
+      <h4 style={{ margin: "0 0 12px" }}>Budget obiettivo per reparto</h4>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 12 }}>
+        {BUDGET_TARGET_FIELDS.map(({ key, label }) => (
+          <div className="field" style={{ width: 130 }} key={key}>
+            <label htmlFor={`lf-budget-target-${key}`}>{label}</label>
+            <input
+              id={`lf-budget-target-${key}`}
+              className="input"
+              type="number"
+              value={budgetTarget[key]}
+              onChange={(e) => setBudgetTarget((b) => ({ ...b, [key]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      {(() => {
+        const sum =
+          Number(budgetTarget.P) +
+          Number(budgetTarget.D) +
+          Number(budgetTarget.C) +
+          Number(budgetTarget.A);
+        return sum !== 100 ? (
+          <p style={{ color: "var(--color-accent-2-700)", fontSize: 12, marginBottom: 22 }}>
+            La somma delle percentuali è {sum}, non 100.
+          </p>
+        ) : null;
+      })()}
+      {errorsFor("budget_target_by_role").map(([key, message]) => (
         <p key={key} style={{ color: "var(--color-accent-2-700)", fontSize: 12 }}>
           {key}: {message}
         </p>

@@ -47,6 +47,7 @@ import {
   opponentRosterCards,
   opponentSummaries,
   rankSameRole,
+  roleBudgetImpact,
   strongRoleAlerts,
   verdict as computeVerdict,
   verdictTone as computeVerdictTone,
@@ -137,6 +138,7 @@ export interface AuctionView {
   verdictTone: VerdictTone;
   ladder: ReturnType<typeof ladderModel>;
   impact: ReturnType<typeof computeImpact>;
+  roleBudgetImpact: ReturnType<typeof roleBudgetImpact>;
 
   compareRows: CompareRow[];
   compareMaxFv: number;
@@ -439,6 +441,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const impact = selectedPlayer
     ? computeImpact(priceNum, selectedManagerStatus, selectedPlayer.ruolo)
     : { text: "", color: "var(--color-neutral-700)" };
+  const roleBudgetWarn =
+    selectedPlayer && selectedManagerStatus && priceNum !== null
+      ? roleBudgetImpact(selectedManagerStatus, selectedPlayer.ruolo, priceNum)
+      : null;
 
   const seasonStatsById = useMemo(() => {
     const map = new Map<number, PlayerLatestSeasonStats>();
@@ -745,6 +751,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     verdictTone,
     ladder,
     impact,
+    roleBudgetImpact: roleBudgetWarn,
     compareRows,
     compareMaxFv,
     compareSortKey,

@@ -18,8 +18,8 @@ export async function getLeagueByName(name: string): Promise<LeagueRow | undefin
 
 export async function insertLeague(input: Omit<LeagueRow, "id">): Promise<LeagueRow> {
   const result = await pool.query<LeagueRow>(
-    `INSERT INTO league (name, n_squadre, budget, roster_config, scoring, modificatori)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO league (name, n_squadre, budget, roster_config, scoring, modificatori, budget_target_by_role)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       input.name,
@@ -28,6 +28,7 @@ export async function insertLeague(input: Omit<LeagueRow, "id">): Promise<League
       input.roster_config,
       input.scoring,
       input.modificatori,
+      input.budget_target_by_role,
     ],
   );
   const row = result.rows[0];
@@ -43,7 +44,8 @@ export async function updateLeague(
 ): Promise<LeagueRow | undefined> {
   const result = await pool.query<LeagueRow>(
     `UPDATE league
-     SET name = $2, n_squadre = $3, budget = $4, roster_config = $5, scoring = $6, modificatori = $7
+     SET name = $2, n_squadre = $3, budget = $4, roster_config = $5, scoring = $6, modificatori = $7,
+         budget_target_by_role = $8
      WHERE id = $1
      RETURNING *`,
     [
@@ -54,6 +56,7 @@ export async function updateLeague(
       input.roster_config,
       input.scoring,
       input.modificatori,
+      input.budget_target_by_role,
     ],
   );
   return result.rows[0];

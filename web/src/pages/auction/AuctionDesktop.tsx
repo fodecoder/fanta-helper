@@ -358,6 +358,11 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               >
                 {view.assignError ?? view.impact.text}
               </div>
+              {view.roleBudgetImpact && (
+                <div style={{ fontSize: 12, color: "var(--color-accent-2-700)" }}>
+                  {view.roleBudgetImpact.text}
+                </div>
+              )}
               {view.strongRoleAlerts.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   {view.strongRoleAlerts.map((a) => (

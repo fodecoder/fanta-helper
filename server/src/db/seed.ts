@@ -1,4 +1,10 @@
-import { defaultScoring, defaultModificatori, defaultRosterConfig, DEFAULT_BUDGET } from "@fanta-helper/shared";
+import {
+  defaultScoring,
+  defaultModificatori,
+  defaultRosterConfig,
+  defaultBudgetTargetByRole,
+  DEFAULT_BUDGET,
+} from "@fanta-helper/shared";
 import { pool } from "./client";
 import { insertLeague } from "./leagues";
 import { insertPlayer } from "./players";
@@ -15,6 +21,7 @@ async function seed(): Promise<void> {
     roster_config: defaultRosterConfig,
     scoring: defaultScoring,
     modificatori: defaultModificatori,
+    budget_target_by_role: defaultBudgetTargetByRole,
   });
 
   const goalkeeper = await insertPlayer({

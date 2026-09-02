@@ -19,6 +19,7 @@ import {
   opponentRosterCards,
   opponentSummaries,
   rankSameRole,
+  roleBudgetImpact,
   roleColor,
   setPieceRanksFor,
   strongRoleAlerts,
@@ -61,6 +62,12 @@ function status(overrides: Partial<ManagerAuctionStatus> = {}): ManagerAuctionSt
     slots: [
       { ruolo: "P", total: 3, used: 0, free: 3 },
       { ruolo: "A", total: 6, used: 0, free: 6 },
+    ],
+    spentByRole: [
+      { ruolo: "P", spent: 0, targetPercent: 8, targetCredits: 40, residuo: 40, state: "ok" },
+      { ruolo: "D", spent: 0, targetPercent: 16, targetCredits: 80, residuo: 80, state: "ok" },
+      { ruolo: "C", spent: 0, targetPercent: 28, targetCredits: 140, residuo: 140, state: "ok" },
+      { ruolo: "A", spent: 0, targetPercent: 48, targetCredits: 240, residuo: 240, state: "ok" },
     ],
     ...overrides,
   };
@@ -287,6 +294,38 @@ describe("impact", () => {
   it("otherwise reports the leftover budget per remaining slot", () => {
     const s = status({ residuo: 100, adjustedMaxBid: 100, slots: [{ ruolo: "A", total: 3, used: 0, free: 3 }] });
     expect(impact(10, s, "A").text).toContain("90 crediti per 2 slot");
+  });
+});
+
+describe("roleBudgetImpact", () => {
+  const withRole = (over: Partial<{ spent: number; targetCredits: number }>) =>
+    status({
+      spentByRole: [
+        {
+          ruolo: "A",
+          spent: over.spent ?? 0,
+          targetPercent: 48,
+          targetCredits: over.targetCredits ?? 240,
+          residuo: (over.targetCredits ?? 240) - (over.spent ?? 0),
+          state: "ok",
+        },
+      ],
+    });
+
+  it("returns null below 90% of the role target", () => {
+    expect(roleBudgetImpact(withRole({ spent: 100 }), "A", 50)).toBeNull();
+  });
+  it("warns with the remaining credits between 90% and 100%", () => {
+    const r = roleBudgetImpact(withRole({ spent: 200, targetCredits: 240 }), "A", 20);
+    expect(r).toEqual({ text: "Reparto A: resterebbero 20 cr sulla quota obiettivo", level: "warn" });
+  });
+  it("warns 'Oltre la quota' above the role target", () => {
+    const r = roleBudgetImpact(withRole({ spent: 200, targetCredits: 240 }), "A", 60);
+    expect(r?.level).toBe("warn");
+    expect(r?.text).toContain("Oltre la quota obiettivo del reparto A");
+  });
+  it("returns null when the role is absent from spentByRole", () => {
+    expect(roleBudgetImpact(withRole({}), "P", 10)).toBeNull();
   });
 });
 

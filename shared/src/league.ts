@@ -42,6 +42,22 @@ export const modificatoriConfigSchema = z
   })
   .strict();
 
+export const budgetTargetByRoleSchema = z
+  .object({
+    P: z.number().min(0).max(100),
+    D: z.number().min(0).max(100),
+    C: z.number().min(0).max(100),
+    A: z.number().min(0).max(100),
+  })
+  .strict()
+  // Somma libera entro tolleranza per non ostacolare l'editing progressivo;
+  // l'avviso "somma != 100" è mostrato in UI, non blocca il salvataggio.
+  .refine((v) => {
+    const s = v.P + v.D + v.C + v.A;
+    return s >= 90 && s <= 110;
+  }, "la somma delle percentuali per ruolo deve essere circa 100");
+export type BudgetTargetByRole = z.infer<typeof budgetTargetByRoleSchema>;
+
 export type RosterConfig = z.infer<typeof rosterConfigSchema>;
 export type ScoringConfig = z.infer<typeof scoringConfigSchema>;
 export type ModifiersConfig = z.infer<typeof modificatoriConfigSchema>;
@@ -56,6 +72,10 @@ export const DEFAULT_N_SQUADRE = 8;
 export const DEFAULT_BUDGET = 1000;
 
 export const defaultRosterConfig: RosterConfig = { P: 3, D: 8, C: 8, A: 6 };
+
+// Valori = punti medi delle bande verificate in PLAN.md Fase 8
+// (P 6-8 / D 12-20 / C 24-30 / A 42-60; somma 100).
+export const defaultBudgetTargetByRole: BudgetTargetByRole = { P: 8, D: 16, C: 28, A: 48 };
 
 export const defaultScoring: ScoringConfig = {
   gol: 3,
@@ -93,6 +113,7 @@ export const createLeagueSchema = z.object({
   roster_config: rosterConfigSchema,
   scoring: scoringConfigSchema,
   modificatori: modificatoriConfigSchema,
+  budget_target_by_role: budgetTargetByRoleSchema,
 });
 export type CreateLeagueInput = z.infer<typeof createLeagueSchema>;
 

@@ -32,6 +32,16 @@ export const roleSlotStatusSchema = z.object({
 });
 export type RoleSlotStatus = z.infer<typeof roleSlotStatusSchema>;
 
+export const roleBudgetStatusSchema = z.object({
+  ruolo: roleSchema,
+  spent: z.number().int(),
+  targetPercent: z.number(),
+  targetCredits: z.number().int(),
+  residuo: z.number().int(),
+  state: z.enum(["ok", "approaching", "over"]),
+});
+export type RoleBudgetStatusRow = z.infer<typeof roleBudgetStatusSchema>;
+
 export const managerAuctionStatusSchema = z.object({
   managerId: z.number().int().positive(),
   managerName: z.string(),
@@ -40,6 +50,7 @@ export const managerAuctionStatusSchema = z.object({
   spent: z.number().int().nonnegative(),
   residuo: z.number().int(),
   slots: z.array(roleSlotStatusSchema),
+  spentByRole: z.array(roleBudgetStatusSchema),
   adjustedMaxBid: z.number().int().nonnegative(),
   // Identità dell'utente collegato al manager (via manager.user_id), quando
   // presente: usata solo per mostrare l'avatar in panoramica.

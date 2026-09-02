@@ -167,6 +167,7 @@ export function generateDefaultValuations(
     spent: 0,
     residuo: GENERATOR_BUDGET,
     adjustedMaxBid: GENERATOR_BUDGET,
+    spentByRole: [],
     slots: ROLES.map((role) => ({
       ruolo: role,
       total: rules.rosterConfig[role],

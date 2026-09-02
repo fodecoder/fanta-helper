@@ -1,6 +1,11 @@
 import { pool } from "./client";
-import { ROLES, computeAdjustedMaxBid } from "@fanta-helper/shared";
-import type { ManagerAuctionStatus, RoleSlotStatus, RosterConfig } from "@fanta-helper/shared";
+import { ROLES, computeAdjustedMaxBid, computeRoleBudget } from "@fanta-helper/shared";
+import type {
+  BudgetTargetByRole,
+  ManagerAuctionStatus,
+  RoleSlotStatus,
+  RosterConfig,
+} from "@fanta-helper/shared";
 
 // Budget, spesa e slot per reparto non sono mai memorizzati: sono sempre
 // ricavati dalla lega (budget, roster_config) e dalla somma/conteggio delle
@@ -15,11 +20,16 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
     user_avatar_color: string | null;
     budget: number;
     roster_config: RosterConfig;
+    budget_target_by_role: BudgetTargetByRole;
     spent: string;
     used_p: string;
     used_d: string;
     used_c: string;
     used_a: string;
+    spent_p: string;
+    spent_d: string;
+    spent_c: string;
+    spent_a: string;
   }>(
     `SELECT
        manager.id AS manager_id,
@@ -30,11 +40,16 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
        app_user.avatar_color AS user_avatar_color,
        league.budget AS budget,
        league.roster_config AS roster_config,
+       league.budget_target_by_role AS budget_target_by_role,
        COALESCE(SUM(purchase.prezzo), 0) AS spent,
        COUNT(*) FILTER (WHERE player.ruolo = 'P') AS used_p,
        COUNT(*) FILTER (WHERE player.ruolo = 'D') AS used_d,
        COUNT(*) FILTER (WHERE player.ruolo = 'C') AS used_c,
-       COUNT(*) FILTER (WHERE player.ruolo = 'A') AS used_a
+       COUNT(*) FILTER (WHERE player.ruolo = 'A') AS used_a,
+       COALESCE(SUM(purchase.prezzo) FILTER (WHERE player.ruolo = 'P'), 0) AS spent_p,
+       COALESCE(SUM(purchase.prezzo) FILTER (WHERE player.ruolo = 'D'), 0) AS spent_d,
+       COALESCE(SUM(purchase.prezzo) FILTER (WHERE player.ruolo = 'C'), 0) AS spent_c,
+       COALESCE(SUM(purchase.prezzo) FILTER (WHERE player.ruolo = 'A'), 0) AS spent_a
      FROM manager
      JOIN league ON league.id = manager.league_id
      LEFT JOIN app_user ON app_user.id = manager.user_id
@@ -42,7 +57,8 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
      LEFT JOIN player ON player.id = purchase.player_id
      WHERE manager.league_id = $1
      GROUP BY manager.id, manager.name, manager.is_owner, app_user.username,
-       app_user.avatar, app_user.avatar_color, league.budget, league.roster_config
+       app_user.avatar, app_user.avatar_color, league.budget, league.roster_config,
+       league.budget_target_by_role
      ORDER BY manager.name`,
     [leagueId],
   );
@@ -64,6 +80,13 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
 
     const residuo = row.budget - spent;
 
+    const spentByRole = computeRoleBudget(row.budget, row.budget_target_by_role, {
+      P: Number(row.spent_p),
+      D: Number(row.spent_d),
+      C: Number(row.spent_c),
+      A: Number(row.spent_a),
+    });
+
     return {
       managerId: row.manager_id,
       managerName: row.manager_name,
@@ -75,6 +98,7 @@ export async function getManagerAuctionStatuses(leagueId: number): Promise<Manag
       spent,
       residuo,
       slots,
+      spentByRole,
       adjustedMaxBid: computeAdjustedMaxBid({ residuo, slots }),
     };
   });

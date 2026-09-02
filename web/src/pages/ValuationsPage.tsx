@@ -246,6 +246,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
                   rec={r}
                   valuation={valuationByPlayer.get(r.player_id) ?? null}
                   factor={valuationScale}
+                  leagueBudget={league.budget}
                   normalizedScore={normById.get(r.player_id)}
                   purchased={purchasedIds.has(r.player_id)}
                   isTrap={trapTagIds.has(r.player_id)}

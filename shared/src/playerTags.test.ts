@@ -65,6 +65,7 @@ function ioStatus(slots: { ruolo: Player["ruolo"]; free: number }[]): ManagerAuc
     spent: 0,
     residuo: 1000,
     adjustedMaxBid: 1000,
+    spentByRole: [],
     slots: slots.map((s) => ({ ruolo: s.ruolo, total: s.free, used: 0, free: s.free })),
   };
 }

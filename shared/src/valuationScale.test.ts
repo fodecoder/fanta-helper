@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  budgetPercentToCredits,
+  creditsToBudgetPercent,
   fvmScaleFactor,
   scaleFvm,
   scaleValuationAmounts,
@@ -39,6 +41,39 @@ describe("valuationScaleFactor", () => {
 
   it("scales proportionally for a larger league budget", () => {
     expect(valuationScaleFactor(1500)).toBe(1.5);
+  });
+});
+
+describe("budgetPercentToCredits", () => {
+  it("maps 0% to 0 credits", () => {
+    expect(budgetPercentToCredits(0, 500)).toBe(0);
+  });
+
+  it("maps 100% to the full budget", () => {
+    expect(budgetPercentToCredits(100, 500)).toBe(500);
+    expect(budgetPercentToCredits(100, 1000)).toBe(1000);
+  });
+
+  it("rounds the credit amount", () => {
+    expect(budgetPercentToCredits(33, 500)).toBe(165);
+  });
+
+  it("scales with the league budget", () => {
+    expect(budgetPercentToCredits(25, 1000)).toBe(250);
+    expect(budgetPercentToCredits(25, 500)).toBe(125);
+  });
+});
+
+describe("creditsToBudgetPercent", () => {
+  it("is the inverse of budgetPercentToCredits", () => {
+    expect(creditsToBudgetPercent(250, 1000)).toBe(25);
+    expect(creditsToBudgetPercent(0, 500)).toBe(0);
+    expect(creditsToBudgetPercent(500, 500)).toBe(100);
+  });
+
+  it("round-trips through budgetPercentToCredits for round values", () => {
+    const credits = budgetPercentToCredits(40, 500);
+    expect(Math.round(creditsToBudgetPercent(credits, 500))).toBe(40);
   });
 });
 

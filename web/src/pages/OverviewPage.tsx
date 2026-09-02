@@ -213,6 +213,51 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
         </div>
       )}
 
+      {me && me.spentByRole.length > 0 && (
+        <>
+          <h3 style={{ margin: "0 0 10px" }}>Budget obiettivo per reparto</h3>
+          <div className="table-scroll" style={{ marginBottom: 44 }}>
+            <table className="table" style={{ maxWidth: 520 }}>
+              <thead>
+                <tr>
+                  <th>Reparto</th>
+                  <th style={{ textAlign: "right" }}>Speso / obiettivo</th>
+                  <th style={{ textAlign: "right" }}>Residuo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {me.spentByRole.map((rb) => {
+                  const warn = rb.state !== "ok";
+                  return (
+                    <tr key={rb.ruolo}>
+                      <td style={{ fontWeight: 600, color: roleColor(rb.ruolo) }}>{rb.ruolo}</td>
+                      <td
+                        className="num"
+                        style={{
+                          textAlign: "right",
+                          color: warn ? "var(--color-accent-2-700)" : undefined,
+                        }}
+                      >
+                        {rb.spent} / {rb.targetCredits}
+                      </td>
+                      <td
+                        className="num"
+                        style={{
+                          textAlign: "right",
+                          color: warn ? "var(--color-accent-2-700)" : undefined,
+                        }}
+                      >
+                        {rb.residuo}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       <div className="two-col">
         <div>
           <h3 style={{ margin: "0 0 10px" }}>Obiettivi ancora liberi</h3>

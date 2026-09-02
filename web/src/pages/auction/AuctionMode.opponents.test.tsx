@@ -8,7 +8,12 @@ import type {
   ManagerRoster,
   Player,
 } from "@fanta-helper/shared";
-import { defaultModificatori, defaultRosterConfig, defaultScoring } from "@fanta-helper/shared";
+import {
+  defaultBudgetTargetByRole,
+  defaultModificatori,
+  defaultRosterConfig,
+  defaultScoring,
+} from "@fanta-helper/shared";
 import { AuctionMode } from "./AuctionMode";
 import * as purchasesApi from "../../api/purchases";
 import * as wishlistApi from "../../api/wishlist";
@@ -70,6 +75,7 @@ const statuses: ManagerAuctionStatus[] = [
     spent: 0,
     residuo: 500,
     slots: slots(6),
+    spentByRole: [],
     adjustedMaxBid: 480,
   },
   {
@@ -80,6 +86,7 @@ const statuses: ManagerAuctionStatus[] = [
     spent: 200,
     residuo: 300,
     slots: slots(4),
+    spentByRole: [],
     adjustedMaxBid: 280,
   },
 ];
@@ -91,6 +98,7 @@ function league(): League {
     n_squadre: 8,
     budget: 500,
     roster_config: defaultRosterConfig,
+    budget_target_by_role: defaultBudgetTargetByRole,
     scoring: defaultScoring,
     modificatori: defaultModificatori,
   };

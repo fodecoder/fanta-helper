@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { League } from "@fanta-helper/shared";
-import { defaultModificatori, defaultRosterConfig, defaultScoring } from "@fanta-helper/shared";
+import { defaultBudgetTargetByRole, defaultModificatori, defaultRosterConfig, defaultScoring } from "@fanta-helper/shared";
 import { LeaguesPage } from "./LeaguesPage";
 import * as leaguesApi from "../api/leagues";
 
@@ -17,6 +17,7 @@ function league(id: number, name: string): League {
     n_squadre: 8,
     budget: 500,
     roster_config: defaultRosterConfig,
+    budget_target_by_role: defaultBudgetTargetByRole,
     scoring: defaultScoring,
     modificatori: defaultModificatori,
   };

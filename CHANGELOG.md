@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.3.0] - 2026-09-02
+
+### Added
+
+- **Valutazioni — max bid da percentuale di budget**: accanto all'input del
+  max bid in crediti c'è ora un input percentuale. Al blur, `max_bid =
+  Math.round(percentuale / 100 * budget di lega)` viene scritto nello stesso
+  override esistente (`user_valuation_override`); la percentuale è solo un
+  modo di inserimento, il dato persistito resta in crediti. Conversione pura
+  in `budgetPercentToCredits` / `creditsToBudgetPercent`
+  (`shared/src/valuationScale.ts`). L'input percentuale è disabilitato finché
+  il budget di lega non è noto.
+- **Budget obiettivo per reparto (P19b)**: nuovo campo di lega
+  `budget_target_by_role` (percentuali P/D/C/A, default P8/D16/C28/A48 dalle
+  bande di mercato verificate, somma accettata tra 90 e 110 con avviso in UI
+  se ≠ 100). Migrazione additiva sulla tabella `league`. Nuovo derivato
+  server-side `spentByRole` in `ManagerAuctionStatus`, calcolato a ogni
+  richiesta sommando `purchase.prezzo` per manager e ruolo del giocatore
+  acquistato (nessun campo di stato memorizzato). In Overview il residuo di
+  budget per reparto del proprietario è sempre visibile; in asta compare un
+  avviso contestuale quando la spesa proiettata sul reparto del giocatore in
+  chiamata si avvicina (≥90%) o supera la quota obiettivo.
+
 ## [5.2.0] - 2026-09-02
 
 ### Changed
