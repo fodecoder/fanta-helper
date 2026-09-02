@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.0] - 2026-09-02
+
+### Added
+
+- **Listone — disattivazione dei giocatori svincolati**: al re-import del listone,
+  i giocatori non più presenti nel file vengono marcati `player.active = false`
+  (nuova colonna, migrazione additiva) e spariscono da ranking, valutazioni e
+  ricerca in asta; restano visibili nelle rose di chi li ha già acquistati e
+  vengono riattivati se rientrano in un import successivo. Se l'import ne
+  disattiverebbe oltre soglia (max 25 o 15% del pool attivo) il server risponde
+  `409 PRUNE_CONFIRMATION_REQUIRED` con un'anteprima e la pagina Listone chiede
+  conferma esplicita prima di procedere. Il report d'import mostra i conteggi
+  "Disattivati" / "Riattivati".
+
 ## [5.5.0] - 2026-09-02
 
 ### Added

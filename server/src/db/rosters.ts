@@ -62,10 +62,15 @@ export async function getManagerRosters(league: LeagueRow): Promise<ManagerRoste
     modificatori: league.modificatori,
   };
 
+  // Come in getPlayerRecommendations: gli svincolati escono, ma quelli già in
+  // rosa restano per non perderne tier/tag.
+  const purchasedIds = new Set(purchases.map((p) => p.player_id));
+  const activePlayers = players.filter((p) => p.active || purchasedIds.has(p.id));
+
   const recommendations = computePlayerRecommendations({
     rules,
     nSquadre: league.n_squadre,
-    players,
+    players: activePlayers,
     quotations,
     stats,
     purchasedPlayerIds: new Set(),
@@ -74,7 +79,7 @@ export async function getManagerRosters(league: LeagueRow): Promise<ManagerRoste
   });
 
   const tagsByPlayerId = computePlayerTags({
-    players,
+    players: activePlayers,
     stats,
     quotations,
     setPieceTaker,

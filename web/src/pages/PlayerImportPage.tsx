@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { PlayerImportReport } from "@fanta-helper/shared";
 import * as playersApi from "../api/players";
-import { PlayersApiError } from "../api/players";
+import { PlayersApiError, type PruneConfirmationDetails } from "../api/players";
 import { PageMasthead } from "../components/shell/PageMasthead";
 import { StatusMessage } from "../components/StatusMessage";
 
@@ -23,19 +23,27 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
   const [report, setReport] = useState<PlayerImportReport | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [prunePrompt, setPrunePrompt] = useState<PruneConfirmationDetails | null>(null);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function runImport(confirmPrune: boolean) {
     if (!file) {
       setGeneralError("seleziona un file CSV o xlsx");
       return;
     }
     setGeneralError(null);
     setReport(null);
+    setPrunePrompt(null);
     setSubmitting(true);
     try {
-      setReport(await playersApi.importPlayersFile(file, season));
+      setReport(await playersApi.importPlayersFile(file, season, confirmPrune));
     } catch (err) {
+      if (
+        err instanceof PlayersApiError &&
+        err.payload.error.code === "PRUNE_CONFIRMATION_REQUIRED"
+      ) {
+        setPrunePrompt(err.payload.error.details as PruneConfirmationDetails);
+        return;
+      }
       setGeneralError(
         err instanceof PlayersApiError
           ? err.payload.error.message
@@ -48,6 +56,11 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
     }
   }
 
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    void runImport(false);
+  }
+
   return (
     <>
       <PageMasthead
@@ -58,6 +71,46 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
       />
 
       {generalError && <StatusMessage kind="error">{generalError}</StatusMessage>}
+
+      {prunePrompt && (
+        <div
+          style={{
+            border: "1px solid var(--color-accent-2-700)",
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 24,
+          }}
+        >
+          <p style={{ margin: "0 0 8px", fontWeight: 600 }}>
+            Questo import disattiverà {prunePrompt.pendingDeactivation} giocatori non più
+            presenti nel listone (su {prunePrompt.totalActive} attivi).
+          </p>
+          <p className="text-muted" style={{ fontSize: 13, margin: "0 0 10px" }}>
+            Verranno tolti da ranking, valutazioni e ricerca in asta; restano visibili nelle
+            rose di chi li ha già acquistati. Esempi:{" "}
+            {prunePrompt.sample.map((p) => `${p.name} (${p.team})`).join(", ")}
+            {prunePrompt.pendingDeactivation > prunePrompt.sample.length ? ", …" : ""}
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={submitting}
+              onClick={() => void runImport(true)}
+            >
+              Conferma e disattiva
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={submitting}
+              onClick={() => setPrunePrompt(null)}
+            >
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -102,6 +155,14 @@ export function PlayerImportPage({ calls }: PlayerImportPageProps) {
             <ReportFigure label="Importate" value={report.inserted} />
             <ReportFigure label="Aggiornate" value={report.updated} />
             <ReportFigure label="Scartate" value={report.discarded.length} warn />
+            {report.pruned && (
+              <>
+                <ReportFigure label="Disattivati" value={report.pruned.deactivated} warn />
+                {report.pruned.reactivated > 0 && (
+                  <ReportFigure label="Riattivati" value={report.pruned.reactivated} />
+                )}
+              </>
+            )}
           </div>
           {report.discarded.length > 0 && (
             <table className="table" style={{ maxWidth: 720 }}>

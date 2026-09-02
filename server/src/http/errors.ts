@@ -4,6 +4,9 @@ export class ApiError extends Error {
     public readonly code: string,
     message: string,
     public readonly fields?: Record<string, string[]>,
+    // Payload strutturato specifico dell'errore (es. anteprima di un'operazione
+    // che richiede conferma), serializzato in `error.details`.
+    public readonly details?: unknown,
   ) {
     super(message);
   }

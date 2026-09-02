@@ -109,7 +109,7 @@ export async function listValuationsWithPlayerByLeagueForUser(
      JOIN player p ON p.id = v.player_id
      LEFT JOIN user_valuation_override o
        ON o.user_id = $2 AND o.league_id = v.league_id AND o.player_id = v.player_id
-     WHERE v.league_id = $1
+     WHERE v.league_id = $1 AND p.active
      ORDER BY p.name`,
     [leagueId, userId],
   );

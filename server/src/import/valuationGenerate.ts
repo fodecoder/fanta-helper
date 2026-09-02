@@ -2,7 +2,7 @@ import type { Role, ValuationGenerationResponse, DiscardedExtractionRow } from "
 import { ROLES, valuationEntrySchema, unmatchedValuationSchema } from "@fanta-helper/shared";
 import { getClaudeExtractionConfig } from "../claudeExtraction/config";
 import { requestTextExtraction } from "../claudeExtraction/client";
-import { listPlayers, findPlayersByNameTeam } from "../db/players";
+import { listActivePlayers, findPlayersByNameTeam } from "../db/players";
 import type { LeagueRow, PlayerRow } from "../db/types";
 import { ApiError } from "../http/errors";
 
@@ -63,7 +63,7 @@ export async function generateValuationsForLeague(
   league: LeagueRow,
 ): Promise<ValuationGenerationResponse> {
   const config = getClaudeExtractionConfig();
-  const allPlayers = await listPlayers();
+  const allPlayers = await listActivePlayers();
 
   const matched: ValuationGenerationResponse["matched"] = [];
   const unmatched: ValuationGenerationResponse["unmatched"] = [];

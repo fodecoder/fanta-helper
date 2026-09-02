@@ -7,9 +7,9 @@ import { ApiError, isUniqueViolation } from "./errors";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ApiError) {
-    res
-      .status(err.status)
-      .json({ error: { code: err.code, message: err.message, fields: err.fields } });
+    res.status(err.status).json({
+      error: { code: err.code, message: err.message, fields: err.fields, details: err.details },
+    });
     return;
   }
   if (err instanceof ZodError) {

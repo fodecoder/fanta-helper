@@ -27,6 +27,7 @@ export interface PlayerRow {
   team: string;
   ruolo: Role;
   image_url: string | null;
+  active: boolean;
 }
 
 export interface QuotationRow {

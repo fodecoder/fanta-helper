@@ -8,6 +8,16 @@ export async function listPlayers(): Promise<PlayerRow[]> {
   return result.rows;
 }
 
+// Solo i giocatori ancora nel listone corrente: usata dalle viste dei
+// disponibili (pool, motore di consiglio, generazione valutazioni). Gli
+// helper di matching/manutenzione restano su `listPlayers()`.
+export async function listActivePlayers(): Promise<PlayerRow[]> {
+  const result = await pool.query<PlayerRow>(
+    "SELECT * FROM player WHERE active ORDER BY name",
+  );
+  return result.rows;
+}
+
 export async function getPlayerById(id: number): Promise<PlayerRow | undefined> {
   const result = await pool.query<PlayerRow>("SELECT * FROM player WHERE id = $1", [id]);
   return result.rows[0];
@@ -22,7 +32,7 @@ export async function findPlayersByNameTeam(name: string, team: string): Promise
   return result.rows;
 }
 
-export async function insertPlayer(input: Omit<PlayerRow, "id">): Promise<PlayerRow> {
+export async function insertPlayer(input: Omit<PlayerRow, "id" | "active">): Promise<PlayerRow> {
   const result = await pool.query<PlayerRow>(
     `INSERT INTO player (name, team, ruolo, image_url, fanta_id, nome_completo)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -50,7 +60,8 @@ export interface PlayerUpsertResult {
   inserted: boolean;
 }
 
-const PLAYER_COLUMNS = "id, fanta_id, sofifa_id, name, nome_completo, team, ruolo, image_url";
+const PLAYER_COLUMNS =
+  "id, fanta_id, sofifa_id, name, nome_completo, team, ruolo, image_url, active";
 const PLAYER_COLUMNS_P = PLAYER_COLUMNS.split(", ")
   .map((c) => `p.${c}`)
   .join(", ");
@@ -420,6 +431,80 @@ export async function batchUpsertPlayers(
   }
 
   return outcomes;
+}
+
+export interface PrunePreviewRow {
+  id: number;
+  name: string;
+  team: string;
+}
+
+export interface PruneOutcome {
+  deactivated: number;
+  reactivated: number;
+}
+
+// Soglia oltre cui il pruning richiede conferma esplicita: un file parziale o
+// sbagliato non deve azzerare le liste per errore.
+export const PRUNE_CONFIRM_MIN = 25;
+export const PRUNE_CONFIRM_FRACTION = 0.15;
+
+export class PruneConfirmationRequired extends Error {
+  constructor(
+    public readonly pendingDeactivation: number,
+    public readonly totalActive: number,
+    public readonly sample: PrunePreviewRow[],
+  ) {
+    super(
+      `il re-import disattiverebbe ${pendingDeactivation} giocatori non più nel listone`,
+    );
+  }
+}
+
+// Allinea `player.active` all'insieme di id presenti nel file appena importato:
+// i presenti tornano attivi (riattivazione di uno svincolato rientrato), gli
+// assenti diventano inattivi. Lancia `PruneConfirmationRequired` (senza
+// scrivere nulla) se disattiverebbe troppi giocatori e `confirmed` è false —
+// il chiamante deve fare ROLLBACK e ripresentare l'import con conferma.
+export async function prunePlayers(
+  executor: Queryable,
+  presentIds: number[],
+  confirmed: boolean,
+): Promise<PruneOutcome> {
+  const present = new Set(presentIds);
+  const all = (
+    await executor.query<{ id: number; name: string; team: string; active: boolean }>(
+      "SELECT id, name, team, active FROM player",
+    )
+  ).rows;
+
+  const toDeactivate = all.filter((r) => r.active && !present.has(r.id));
+  const toReactivate = all.filter((r) => !r.active && present.has(r.id));
+  const totalActive = all.filter((r) => r.active).length;
+
+  if (
+    !confirmed &&
+    toDeactivate.length > Math.max(PRUNE_CONFIRM_MIN, PRUNE_CONFIRM_FRACTION * totalActive)
+  ) {
+    throw new PruneConfirmationRequired(
+      toDeactivate.length,
+      totalActive,
+      toDeactivate.slice(0, 10).map((r) => ({ id: r.id, name: r.name, team: r.team })),
+    );
+  }
+
+  if (toDeactivate.length > 0) {
+    await executor.query("UPDATE player SET active = false WHERE id = ANY($1)", [
+      toDeactivate.map((r) => r.id),
+    ]);
+  }
+  if (toReactivate.length > 0) {
+    await executor.query("UPDATE player SET active = true WHERE id = ANY($1)", [
+      toReactivate.map((r) => r.id),
+    ]);
+  }
+
+  return { deactivated: toDeactivate.length, reactivated: toReactivate.length };
 }
 
 // Used by the historical quotation import to fill in fanta_id for players

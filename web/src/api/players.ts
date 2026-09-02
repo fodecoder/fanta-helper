@@ -3,8 +3,19 @@ import { apiFetch } from "./http";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/players`;
 
+export interface PruneConfirmationDetails {
+  pendingDeactivation: number;
+  totalActive: number;
+  sample: { id: number; name: string; team: string }[];
+}
+
 export interface ApiErrorPayload {
-  error: { code: string; message: string; fields?: Record<string, string[]> };
+  error: {
+    code: string;
+    message: string;
+    fields?: Record<string, string[]>;
+    details?: unknown;
+  };
 }
 
 export class PlayersApiError extends Error {
@@ -43,13 +54,18 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 // ricavare la stagione (es. Quotazioni_Fantacalcio_Stagione_2025_26.xlsx).
 // `season` serve solo al listone posizionale (CSV "Lista FantaAsta" senza
 // header, da cui la stagione non è ricavabile): viaggia in X-Season.
-export async function importPlayersFile(file: File, season?: string): Promise<PlayerImportReport> {
+export async function importPlayersFile(
+  file: File,
+  season?: string,
+  confirmPrune = false,
+): Promise<PlayerImportReport> {
   const isXlsx = /\.xlsx?$/i.test(file.name);
   const headers: Record<string, string> = {
     "Content-Type": isXlsx ? XLSX_MIME : "text/csv",
     "X-Filename": file.name,
   };
   if (season && season.trim() !== "") headers["X-Season"] = season.trim();
+  if (confirmPrune) headers["X-Confirm-Prune"] = "1";
   const res = await apiFetch(`${BASE_URL}/import`, {
     method: "POST",
     headers,

@@ -16,6 +16,7 @@ const h = vi.hoisted(() => {
     team: string;
     ruolo: string;
     image_url: string | null;
+    active: boolean;
   }
   const table: Row[] = [];
   const quotations: { player_id: unknown; season: unknown }[] = [];
@@ -34,6 +35,24 @@ const h = vi.hoisted(() => {
         rowCount: table.length,
       };
     }
+    if (t.startsWith("SELECT id, name, team, active FROM player")) {
+      return {
+        rows: table.map((r) => ({ id: r.id, name: r.name, team: r.team, active: r.active })),
+        rowCount: table.length,
+      };
+    }
+    if (t.startsWith("UPDATE player SET active = false WHERE id = ANY($1)")) {
+      const ids = new Set(params[0] as number[]);
+      const hit = table.filter((r) => ids.has(r.id));
+      for (const r of hit) r.active = false;
+      return { rows: [], rowCount: hit.length };
+    }
+    if (t.startsWith("UPDATE player SET active = true WHERE id = ANY($1)")) {
+      const ids = new Set(params[0] as number[]);
+      const hit = table.filter((r) => ids.has(r.id));
+      for (const r of hit) r.active = true;
+      return { rows: [], rowCount: hit.length };
+    }
     if (t.startsWith("INSERT INTO player")) {
       const out: Row[] = [];
       for (let i = 0; i < params.length; i += 6) {
@@ -46,6 +65,7 @@ const h = vi.hoisted(() => {
           nome_completo: (params[i + 4] as string | null) ?? null,
           image_url: (params[i + 5] as string | null) ?? null,
           sofifa_id: null,
+          active: true,
         };
         table.push(row);
         out.push({ ...row });
@@ -93,6 +113,7 @@ const h = vi.hoisted(() => {
         nome_completo: null,
         ruolo: "P",
         image_url: null,
+        active: true,
         ...row,
       });
     },
@@ -201,6 +222,42 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
 
     expect(h.table).toHaveLength(1);
     expect(h.table[0]).toMatchObject({ fanta_id: 4431, team: "Juventus" });
+  });
+});
+
+describe("importListoneFromCsv — pruning giocatori assenti", () => {
+  const line = (id: number, name: string, team: string) =>
+    `${id},${name},${name} Full,P,Por,1,1,1,1,${team},1,1`;
+
+  it("disattiva un giocatore non più nel listone e riattiva chi rientra", async () => {
+    const first = [line(1, "Aaa", "Inter"), line(2, "Bbb", "Como"), line(3, "Ccc", "Roma")].join(
+      "\n",
+    );
+    await importListoneFromCsv(first, "2026-27");
+
+    const second = [line(1, "Aaa", "Inter"), line(2, "Bbb", "Como")].join("\n");
+    const report = await importListoneFromCsv(second, "2026-27");
+
+    expect(report.pruned).toEqual({ deactivated: 1, reactivated: 0 });
+    expect(h.table.find((r) => r.name === "Ccc")!.active).toBe(false);
+
+    const third = [line(1, "Aaa", "Inter"), line(3, "Ccc", "Roma")].join("\n");
+    const back = await importListoneFromCsv(third, "2026-27");
+    expect(back.pruned).toEqual({ deactivated: 1, reactivated: 1 });
+    expect(h.table.find((r) => r.name === "Ccc")!.active).toBe(true);
+    expect(h.table.find((r) => r.name === "Bbb")!.active).toBe(false);
+  });
+
+  it("oltre soglia richiede conferma e non scrive nulla", async () => {
+    const many = Array.from({ length: 40 }, (_, i) => line(i + 1, `P${i}`, "Inter")).join("\n");
+    await importListoneFromCsv(many, "2026-27");
+
+    const tiny = [line(1, "P0", "Inter")].join("\n");
+    await expect(importListoneFromCsv(tiny, "2026-27")).rejects.toThrow(/disattiverebbe/i);
+    expect(h.table.every((r) => r.active)).toBe(true);
+
+    const confirmed = await importListoneFromCsv(tiny, "2026-27", true);
+    expect(confirmed.pruned!.deactivated).toBe(39);
   });
 });
 

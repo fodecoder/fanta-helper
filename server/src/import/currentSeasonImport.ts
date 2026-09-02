@@ -24,6 +24,7 @@ function hasQuotationColumns(record: Record<string, string> | undefined): boolea
 export async function importPlayersAndQuotationsFromXlsx(
   buffer: Buffer,
   filename: string | null,
+  confirmed = false,
 ): Promise<PlayerImportReport> {
   const records = rowsToRecords(parseXlsxRows(buffer), PLAYER_REQUIRED_COLUMNS);
   const quotationCapable = hasQuotationColumns(records[0]);
@@ -42,7 +43,9 @@ export async function importPlayersAndQuotationsFromXlsx(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const { report, upsertResults } = await importPlayersFromRecords(records, client);
+    const { report, upsertResults } = await importPlayersFromRecords(records, client, {
+      prune: { confirmed },
+    });
 
     let quotation: QuotationImportReport | null = null;
     if (quotationCapable && resolvedSeason !== null) {

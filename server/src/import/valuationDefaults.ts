@@ -1,7 +1,7 @@
 import { generateDefaultValuations, type LeagueRulesConfig } from "@fanta-helper/shared";
 import type { ValuationImportReport } from "@fanta-helper/shared";
 import type { LeagueRow } from "../db/types";
-import { listPlayers } from "../db/players";
+import { listActivePlayers } from "../db/players";
 import { getLatestQuotationSeason, listQuotationsBySeason } from "../db/quotation";
 import { getLatestStatsSeason, listPlayerSeasonStatsBySeason } from "../db/playerSeasonStats";
 import { importValuationEntries } from "./valuationJson";
@@ -14,7 +14,7 @@ export async function generateDefaultValuationsForLeague(
   league: LeagueRow,
 ): Promise<ValuationImportReport> {
   const [players, quotationSeason, statsSeason] = await Promise.all([
-    listPlayers(),
+    listActivePlayers(),
     getLatestQuotationSeason(),
     getLatestStatsSeason(),
   ]);

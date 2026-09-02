@@ -2,7 +2,7 @@ import { ROLES } from "@fanta-helper/shared";
 import type { PlayerImportReport, DiscardedPlayerRow } from "@fanta-helper/shared";
 import { pool } from "../db/client";
 import type { Queryable } from "../db/client";
-import { batchUpsertPlayers } from "../db/players";
+import { batchUpsertPlayers, prunePlayers } from "../db/players";
 import type { PlayerUpsertInput, PlayerUpsertResult } from "../db/players";
 import { ApiError } from "../http/errors";
 import { cell, parseCsvRows, parseXlsxRows, rowsToRecords } from "./fileRows";
@@ -21,9 +21,17 @@ export interface PlayerRecordImportOutcome {
 // executor lets a caller (e.g. the combined player+quotation portal import)
 // run this inside its own open transaction instead of each upsert opening
 // one implicitly on the shared pool.
+export interface ImportPlayersOptions {
+  // Quando presente, dopo l'upsert allinea `player.active` all'insieme di
+  // giocatori nel file (soft-delete degli assenti). Solo per gli import di
+  // listone completo, non per gli import parziali.
+  prune?: { confirmed: boolean };
+}
+
 export async function importPlayersFromRecords(
   records: Record<string, string>[],
   executor?: Queryable,
+  options?: ImportPlayersOptions,
 ): Promise<PlayerRecordImportOutcome> {
   if (records.length === 0) {
     throw ApiError.badRequest("file has no data rows");
@@ -115,7 +123,15 @@ export async function importPlayersFromRecords(
     }
   });
 
-  return { report: { inserted, updated, discarded, quotation: null }, upsertResults };
+  let pruned: PlayerImportReport["pruned"] = null;
+  if (options?.prune) {
+    const presentIds = upsertResults
+      .filter((r): r is PlayerUpsertResult => r !== undefined)
+      .map((r) => r.row.id);
+    pruned = await prunePlayers(executor ?? pool, presentIds, options.prune.confirmed);
+  }
+
+  return { report: { inserted, updated, discarded, quotation: null, pruned }, upsertResults };
 }
 
 export async function importPlayersFromCsv(raw: string): Promise<PlayerImportReport> {

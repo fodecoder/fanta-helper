@@ -68,19 +68,25 @@ export async function getPlayerRecommendations(
     modificatori: league.modificatori,
   };
 
+  // Gli svincolati/ceduti (player.active = false) escono da tutte le viste
+  // derivate — ranking, valutazioni, ricerca in asta — tranne quando già
+  // acquistati in questa lega, per non perderne tier/tag nella rosa.
+  const purchasedIds = new Set(purchases.map((p) => p.player_id));
+  const activePlayers = players.filter((p) => p.active || purchasedIds.has(p.id));
+
   const recommendations = computePlayerRecommendations({
     rules,
     nSquadre: league.n_squadre,
-    players,
+    players: activePlayers,
     quotations,
     stats,
-    purchasedPlayerIds: new Set(purchases.map((p) => p.player_id)),
+    purchasedPlayerIds: purchasedIds,
     ioStatus,
     probableLineup,
   });
 
   const tagsByPlayerId = computePlayerTags({
-    players,
+    players: activePlayers,
     stats,
     quotations,
     setPieceTaker,

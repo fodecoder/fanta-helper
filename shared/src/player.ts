@@ -33,5 +33,14 @@ export const playerImportReportSchema = z.object({
   updated: z.number().int().nonnegative(),
   discarded: z.array(discardedPlayerRowSchema),
   quotation: quotationImportReportSchema.nullable(),
+  // Esito del pruning (soft-delete dei giocatori non più nel listone). null
+  // quando l'import non fa pruning (es. import legacy player-only).
+  pruned: z
+    .object({
+      deactivated: z.number().int().nonnegative(),
+      reactivated: z.number().int().nonnegative(),
+    })
+    .nullable()
+    .default(null),
 });
 export type PlayerImportReport = z.infer<typeof playerImportReportSchema>;
