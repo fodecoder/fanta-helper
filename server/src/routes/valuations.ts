@@ -12,6 +12,7 @@ import {
 } from "../db/valuationOverrides";
 import { importValuationsFromJson } from "../import/valuationJson";
 import { generateValuationsForLeague } from "../import/valuationGenerate";
+import { generateDefaultValuationsForLeague } from "../import/valuationDefaults";
 import { ApiError } from "../http/errors";
 
 export const valuationsRouter = Router({ mergeParams: true });
@@ -109,6 +110,19 @@ valuationsRouter.post<LeagueParams>("/generate", async (req, res, next) => {
     }
     const report = await generateValuationsForLeague(league);
     res.json(report);
+  } catch (err) {
+    next(err);
+  }
+});
+
+valuationsRouter.post<LeagueParams>("/generate-default", async (req, res, next) => {
+  try {
+    const leagueId = parseId(req.params.leagueId);
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+      throw ApiError.notFound(`league ${leagueId} not found`);
+    }
+    res.json(await generateDefaultValuationsForLeague(league));
   } catch (err) {
     next(err);
   }

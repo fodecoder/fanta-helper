@@ -37,6 +37,27 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
   const [discarded, setDiscarded] = useState<DiscardedExtractionRow[]>([]);
   const [players, setPlayers] = useState<Player[] | null>(null);
   const [savingAll, setSavingAll] = useState(false);
+  const [defaultBusy, setDefaultBusy] = useState(false);
+  const [defaultReport, setDefaultReport] = useState<string | null>(null);
+
+  async function handleGenerateDefault() {
+    setGeneralError(null);
+    setDefaultReport(null);
+    setDefaultBusy(true);
+    try {
+      const report = await valuationsApi.generateDefaultValuations(leagueId);
+      setDefaultReport(
+        `Importate: ${report.imported} · Aggiornate: ${report.updated} · Scartate: ${report.discarded.length} · Non abbinate: ${report.unmatched.length}`,
+      );
+      onResolved();
+    } catch (err) {
+      setGeneralError(
+        err instanceof ValuationsApiError ? err.payload.error.message : "generazione base fallita",
+      );
+    } finally {
+      setDefaultBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (unmatched.length === 0 || players !== null) return;
@@ -141,6 +162,34 @@ export function ValuationGenerateForm({ leagueId, onResolved }: ValuationGenerat
           La generazione chiama Claude per ruolo: qualche decina di secondi.
         </span>
       </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => void handleGenerateDefault()}
+          disabled={defaultBusy}
+        >
+          {defaultBusy ? "Generazione base…" : "Genera listino di base (offline)"}
+        </button>
+        <span className="text-muted" style={{ fontSize: 12 }}>
+          Motore deterministico, senza Claude: crea una valutazione per ogni giocatore, da
+          modificare poi come override.
+        </span>
+      </div>
+      {defaultReport && (
+        <p className="text-muted" style={{ fontSize: 13, marginBottom: 8 }}>
+          {defaultReport}
+        </p>
+      )}
 
       {matched.length > 0 && (
         <>

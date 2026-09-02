@@ -28,6 +28,23 @@ interface ValuationsPageProps {
 
 type RoleFilter = "tutti" | Role | "trappole";
 
+type SortKey =
+  | "name"
+  | "team"
+  | "ruolo"
+  | "score"
+  | "tier"
+  | "fm"
+  | "reliability"
+  | "qt_a"
+  | "fvm"
+  | "target"
+  | "fair_value"
+  | "max_bid"
+  | "panic_price";
+
+const STRING_SORT_KEYS: ReadonlySet<SortKey> = new Set(["name", "team", "ruolo", "tier"]);
+
 export function ValuationsPage({ league, calls }: ValuationsPageProps) {
   const [recommendations, setRecommendations] = useState<PlayerRecommendationWithTags[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
@@ -40,6 +57,14 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+
+  const toggleSort = (key: SortKey) =>
+    setSort((prev) =>
+      prev?.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: STRING_SORT_KEYS.has(key) ? "asc" : "desc" },
+    );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,6 +140,48 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         (r) => q === "" || r.name.toLowerCase().includes(q) || r.team.toLowerCase().includes(q),
       );
   }, [recommendations, query, roleFilter]);
+
+  const sorted = useMemo(() => {
+    if (!sort) return filtered;
+    const { key, dir } = sort;
+    const value = (r: PlayerRecommendationWithTags): string | number | null => {
+      switch (key) {
+        case "name":
+          return r.name;
+        case "team":
+          return r.team;
+        case "ruolo":
+          return r.ruolo;
+        case "score":
+          return normById.get(r.player_id) ?? null;
+        case "tier":
+          return r.tier;
+        case "fm":
+          return r.components.fmScorsaStagione;
+        case "reliability":
+          return r.components.reliability;
+        case "qt_a":
+          return r.price.qt_a ?? null;
+        case "fvm":
+          return r.price.fvm ?? null;
+        default: {
+          const v = valuationByPlayer.get(r.player_id);
+          return v ? v[key] : null;
+        }
+      }
+    };
+    return [...filtered].sort((a, b) => {
+      const av = value(a);
+      const bv = value(b);
+      if (av === null || av === undefined) return bv === null || bv === undefined ? 0 : 1;
+      if (bv === null || bv === undefined) return -1;
+      const cmp =
+        typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv) : Number(av) - Number(bv);
+      return dir === "asc" ? cmp : -cmp;
+    });
+  }, [filtered, sort, normById, valuationByPlayer]);
+
+  const sortArrow = (key: SortKey) => (sort?.key === key ? (sort.dir === "asc" ? " ▲" : " ▼") : "");
 
   const detailPlayer =
     detailPlayerId === null
@@ -209,37 +276,72 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
           <table className="table" style={{ minWidth: 1240 }}>
             <thead>
               <tr>
-                <th>Nome</th>
-                <th>Squadra</th>
-                <th>Ruolo</th>
-                <th style={{ textAlign: "right" }}>
+                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("name")}>
+                  Nome{sortArrow("name")}
+                </th>
+                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("team")}>
+                  Squadra{sortArrow("team")}
+                </th>
+                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("ruolo")}>
+                  Ruolo{sortArrow("ruolo")}
+                </th>
+                <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("score")}>
                   <InfoLabel {...COLUMN_GLOSSARY.score} />
+                  {sortArrow("score")}
                 </th>
-                <th>
+                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("tier")}>
                   <InfoLabel {...COLUMN_GLOSSARY.tier} />
+                  {sortArrow("tier")}
                 </th>
-                <th style={{ textAlign: "right" }}>
+                <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("fm")}>
                   <InfoLabel {...COLUMN_GLOSSARY.fm} />
+                  {sortArrow("fm")}
                 </th>
-                <th style={{ textAlign: "right" }}>
+                <th
+                  style={{ textAlign: "right", cursor: "pointer" }}
+                  onClick={() => toggleSort("reliability")}
+                >
                   <InfoLabel {...COLUMN_GLOSSARY.reliability} />
+                  {sortArrow("reliability")}
                 </th>
-                <th style={{ textAlign: "right" }}>
+                <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("qt_a")}>
                   <InfoLabel {...COLUMN_GLOSSARY.qtA} />
+                  {sortArrow("qt_a")}
                 </th>
-                <th style={{ textAlign: "right" }}>
+                <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("fvm")}>
                   <InfoLabel {...COLUMN_GLOSSARY.fvm} />
+                  {sortArrow("fvm")}
                 </th>
-                <th style={{ textAlign: "right" }}>Target</th>
-                <th style={{ textAlign: "right" }}>Fair value</th>
-                <th style={{ textAlign: "right" }}>Max bid</th>
-                <th style={{ textAlign: "right" }}>Panic price</th>
+                <th
+                  style={{ textAlign: "right", cursor: "pointer" }}
+                  onClick={() => toggleSort("target")}
+                >
+                  Target{sortArrow("target")}
+                </th>
+                <th
+                  style={{ textAlign: "right", cursor: "pointer" }}
+                  onClick={() => toggleSort("fair_value")}
+                >
+                  Fair value{sortArrow("fair_value")}
+                </th>
+                <th
+                  style={{ textAlign: "right", cursor: "pointer" }}
+                  onClick={() => toggleSort("max_bid")}
+                >
+                  Max bid{sortArrow("max_bid")}
+                </th>
+                <th
+                  style={{ textAlign: "right", cursor: "pointer" }}
+                  onClick={() => toggleSort("panic_price")}
+                >
+                  Panic price{sortArrow("panic_price")}
+                </th>
                 <th>Nota</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {sorted.map((r) => (
                 <MergedValuationRow
                   key={r.player_id}
                   leagueId={league.id}

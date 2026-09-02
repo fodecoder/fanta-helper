@@ -9,15 +9,24 @@ export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 // crediti (indipendentemente dal budget reale della lega): il valore SALVATO
 // resta quello importato/generato, invariato. Le viste che lo mostrano
 // riscalano a lettura per il budget della lega — vedi valuationScale.ts.
+// I quattro importi di listino sono su base 1000 crediti e trattati come
+// interi in tutto il sistema (colonne INTEGER, input non frazionabili). I
+// listini generati fuori da qui (es. Claude) possono emettere decimali: li
+// arrotondiamo in ingresso invece di scartare l'intera riga.
+const creditAmount = z
+  .number()
+  .nonnegative()
+  .transform((v) => Math.round(v));
+
 export const valuationEntrySchema = z.object({
   name: z.string().trim().min(1),
   team: z.string().trim().min(1),
   ruolo: roleSchema,
   tier: z.string().trim().min(1),
-  target: z.number().int().nonnegative(),
-  fair_value: z.number().int().nonnegative(),
-  max_bid: z.number().int().nonnegative(),
-  panic_price: z.number().int().nonnegative(),
+  target: creditAmount,
+  fair_value: creditAmount,
+  max_bid: creditAmount,
+  panic_price: creditAmount,
   confidence: z.enum(CONFIDENCE_LEVELS),
   note: z.string().nullable().optional(),
 });

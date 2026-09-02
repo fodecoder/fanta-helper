@@ -59,6 +59,15 @@ export function generateValuations(
   );
 }
 
+// Genera e persiste un listino di base (motore deterministico, senza Claude)
+// a copertura totale del pool. Utile per iniziare a modificare le valutazioni
+// quando non si ha un JSON pronto.
+export function generateDefaultValuations(leagueId: number): Promise<ValuationImportReport> {
+  return apiFetch(`${baseUrl(leagueId)}/generate-default`, { method: "POST" }).then((res) =>
+    handle<ValuationImportReport>(res),
+  );
+}
+
 export function upsertValuation(
   leagueId: number,
   playerId: number,

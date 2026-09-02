@@ -5,6 +5,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.4.0] - 2026-09-02
+
+### Added
+
+- **Valutazioni — generazione listino di base offline**: nuovo bottone "Genera
+  listino di base (offline)" nel pannello Importa / genera. Usa il motore
+  deterministico `generateDefaultValuations` (nessuna chiamata a Claude) per
+  creare una `valuation` per ogni giocatore del pool, persistita con la stessa
+  pipeline dell'import JSON (`importValuationEntries`). Serve a poter partire — e
+  quindi modificare le valutazioni come override — senza avere un JSON pronto.
+  Nuova route `POST /leagues/:leagueId/valuations/generate-default`
+  (`server/src/import/valuationDefaults.ts`).
+- **Valutazioni — colonne ordinabili**: gli header della tabella "Ranking
+  disponibili" sono cliccabili e ordinano per nome, squadra, ruolo, score, tier,
+  FM, affidabilità, Qt.A, FVM, target, fair value, max bid, panic price (secondo
+  click inverte la direzione; righe senza valore sempre in fondo). Ordinamento di
+  sessione, non persistito.
+
+### Fixed
+
+- **Import valutazioni — importi decimali**: i listini generati fuori dall'app
+  (es. da Claude) possono emettere `target` / `fair_value` / `max_bid` /
+  `panic_price` con decimali; lo schema li arrotonda in ingresso invece di
+  scartare l'intera riga (`shared/src/valuation.ts`). Gli importi restano interi
+  a valle (colonne `INTEGER`).
+
 ## [5.3.0] - 2026-09-02
 
 ### Added
