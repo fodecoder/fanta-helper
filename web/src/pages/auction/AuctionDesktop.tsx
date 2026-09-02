@@ -806,6 +806,49 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
             </div>
           </div>
 
+          {me && me.spentByRole.length > 0 && (
+            <div>
+              <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
+                Budget per reparto
+              </h6>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                {me.spentByRole.map((rb) => {
+                  const warn = rb.state !== "ok";
+                  const over = rb.state === "over";
+                  return (
+                    <div
+                      key={rb.ruolo}
+                      style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 13 }}
+                    >
+                      <span
+                        className="role-tag"
+                        style={{ width: 18, color: roleColor(rb.ruolo) }}
+                      >
+                        {rb.ruolo}
+                      </span>
+                      <span
+                        className="num"
+                        style={{ flex: 1, color: "var(--color-neutral-800)" }}
+                        title="speso / obiettivo di reparto"
+                      >
+                        {rb.spent}/{rb.targetCredits}
+                      </span>
+                      <span
+                        className="num"
+                        style={{
+                          fontWeight: 600,
+                          color: warn ? "var(--color-accent-2-700)" : undefined,
+                        }}
+                      >
+                        {over ? `overbudget ${rb.residuo}` : `res ${rb.residuo}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
               Avversari{sel ? ` · max su ${sel.nome_completo ?? sel.name}` : ""}

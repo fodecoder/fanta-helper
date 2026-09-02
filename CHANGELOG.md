@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.5.0] - 2026-09-02
+
+### Added
+
+- **Asta — budget obiettivo per reparto sempre visibile**: nella colonna "Io"
+  della vista asta (e in una fascia compatta nella vista telefono) compare per
+  ogni reparto P/D/C/A la spesa sull'obiettivo (`speso / obiettivo`) e il
+  residuo, con evidenza in rosso quando ci si avvicina alla quota e la dicitura
+  "overbudget" con residuo negativo quando la si supera. Dato derivato da
+  `ManagerAuctionStatus.spentByRole` (nessun nuovo stato memorizzato); le quote
+  si impostano da Leghe → Modifica → "Budget obiettivo per reparto".
+
 ## [5.4.0] - 2026-09-02
 
 ### Added

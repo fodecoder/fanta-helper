@@ -145,6 +145,39 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
         </div>
       </div>
 
+      {me && me.spentByRole.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            padding: "6px 12px",
+            fontSize: 12,
+          }}
+        >
+          {me.spentByRole.map((rb) => (
+            <span
+              key={rb.ruolo}
+              style={{
+                display: "flex",
+                gap: 4,
+                color: rb.state !== "ok" ? "var(--color-accent-2-700)" : undefined,
+              }}
+            >
+              <span className="role-tag" style={{ color: roleColor(rb.ruolo) }}>
+                {rb.ruolo}
+              </span>
+              <span className="num">
+                {rb.spent}/{rb.targetCredits}
+              </span>
+              <span className="num" style={{ fontWeight: 600 }}>
+                {rb.state === "over" ? `(over ${rb.residuo})` : `(${rb.residuo})`}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="phone-bid">
         {sel ? (
           <>
