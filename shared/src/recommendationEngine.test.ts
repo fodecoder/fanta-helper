@@ -96,6 +96,23 @@ describe("computePlayerRecommendations", () => {
     expect(result[0]!.components.dataMissing).toBe(true);
     expect(result[0]!.components.reliability).toBe(0);
     expect(result[0]!.components.leagueAdjustedFm).toBeNull();
+    expect(result[0]!.components.fmScorsaStagione).toBeNull();
+  });
+
+  it("propagates the imported previous-season fm as fmScorsaStagione without recomputing it", () => {
+    const p1 = player(1, "Con storico", "A");
+    const p2 = player(2, "Debuttante", "A");
+    const result = computePlayerRecommendations(
+      baseInput({ players: [p1, p2], stats: [stat(1, { fm: 7.23, gf: 5 }), stat(2, { fm: null })] }),
+    );
+
+    const withHistory = result.find((r) => r.player_id === 1)!;
+    const debut = result.find((r) => r.player_id === 2)!;
+    expect(withHistory.components.fmScorsaStagione).toBe(7.23);
+    expect(withHistory.components.fmScorsaStagione).not.toBe(
+      withHistory.components.leagueAdjustedFm,
+    );
+    expect(debut.components.fmScorsaStagione).toBeNull();
   });
 
   it("excludes already-purchased players from the output", () => {

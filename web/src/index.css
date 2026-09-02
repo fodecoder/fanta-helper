@@ -1066,6 +1066,12 @@ select.input {
   border-radius: 14px;
   border: 1.5px solid var(--color-divider);
 }
+/* Il campioncino Fantacalcio è verticale: in un riquadro quasi quadrato
+   `cover` + `center top` inquadra solo la testa e taglia stemma/numero/busto.
+   `contain` mostra l'immagine intera sul fondo tinta-ruolo, senza crop. */
+.photo-box--sm,
+.photo-box--md,
+.photo-box--lg,
 .photo-box--hero {
   background-size: contain;
   background-position: center;

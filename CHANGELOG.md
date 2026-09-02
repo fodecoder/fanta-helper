@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0] - 2026-09-02
+
+### Changed
+
+- **Vista Valutazioni — colonna "Fm regolata" → "Fm scorsa stagione"**: la
+  colonna mostra ora la Fantamedia reale importata dell'ultima stagione
+  (`stat.fm`, propagata come `fmScorsaStagione` in
+  `PlayerRecommendationComponents`), non più il valore ricostruito dalle
+  regole di lega (`leagueAdjustedFm`). Quest'ultimo resta usato per lo score
+  e visibile nella scomposizione del modale "Dettagli". `—` per i giocatori
+  senza statistiche della stagione precedente (debuttanti/neopromossi).
+
+### Fixed
+
+- **Foto calciatori tagliate in Valutazioni**: le taglie `sm`/`md`/`lg` di
+  `.photo-box` usano ora `background-size: contain` come già fatto per
+  `hero` in `v5.0.0` — il campioncino verticale entra intero nel riquadro
+  sul fondo tinta-ruolo, senza il ritaglio in basso di `cover` + `center
+  top`.
+
 ## [5.1.2] - 2026-09-02
 
 ### Fixed

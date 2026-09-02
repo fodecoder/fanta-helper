@@ -29,7 +29,7 @@ export const COLUMN_GLOSSARY = {
       "Quota di presenze sulla stagione, oppure il peso dello stato in formazione probabile se più alto.",
   },
   fm: {
-    label: "Fm",
+    label: "Fm scorsa stagione",
     tooltip: "Fantamedia importata dell'ultima stagione: voto medio con bonus/malus reali.",
   },
   qtA: { label: "Qt.A", tooltip: "Quotazione attuale di listino, in crediti." },

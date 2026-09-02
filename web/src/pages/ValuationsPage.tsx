@@ -219,7 +219,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
                   <InfoLabel {...COLUMN_GLOSSARY.tier} />
                 </th>
                 <th style={{ textAlign: "right" }}>
-                  <InfoLabel {...COLUMN_GLOSSARY.leagueAdjustedFm} />
+                  <InfoLabel {...COLUMN_GLOSSARY.fm} />
                 </th>
                 <th style={{ textAlign: "right" }}>
                   <InfoLabel {...COLUMN_GLOSSARY.reliability} />

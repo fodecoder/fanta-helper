@@ -187,7 +187,7 @@ export function MergedValuationRow({
         ))}
       </td>
       <td className="num" style={{ textAlign: "right" }}>
-        {r.components.leagueAdjustedFm !== null ? r.components.leagueAdjustedFm.toFixed(2) : "—"}
+        {r.components.fmScorsaStagione !== null ? r.components.fmScorsaStagione.toFixed(2) : "—"}
       </td>
       <td className="num" style={{ textAlign: "right" }}>
         {pct(r.components.reliability)}

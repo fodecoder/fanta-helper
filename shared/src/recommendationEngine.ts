@@ -95,6 +95,7 @@ export interface ScoreBreakdown {
 export interface PlayerRecommendationComponents {
   reliability: number;
   leagueAdjustedFm: number | null;
+  fmScorsaStagione: number | null;
   rawValue: number;
   scarcityMultiplier: number;
   replacementValue: number;
@@ -276,6 +277,7 @@ interface ScoredEntry {
   scarcityMultiplier: number;
   rawValue: number;
   leagueAdjustedFm: number | null;
+  fmScorsaStagione: number | null;
   reliability: number;
   dataMissing: boolean;
   // Popolata nella closure per i giocatori con dati; i campi che dipendono dal
@@ -373,6 +375,7 @@ export function computePlayerRecommendations(
         scarcityMultiplier,
         rawValue: 0,
         leagueAdjustedFm: null,
+        fmScorsaStagione: stat?.fm ?? null,
         reliability: 0,
         dataMissing: true,
         breakdown: null,
@@ -406,6 +409,7 @@ export function computePlayerRecommendations(
       scarcityMultiplier,
       rawValue,
       leagueAdjustedFm,
+      fmScorsaStagione: stat.fm,
       reliability,
       dataMissing: false,
       breakdown: {
@@ -518,6 +522,7 @@ export function computePlayerRecommendations(
       components: {
         reliability: entry.reliability,
         leagueAdjustedFm: entry.leagueAdjustedFm,
+        fmScorsaStagione: entry.fmScorsaStagione,
         rawValue: entry.rawValue,
         scarcityMultiplier: entry.scarcityMultiplier,
         replacementValue: replacementValueById.get(entry.player.id) ?? 0,
