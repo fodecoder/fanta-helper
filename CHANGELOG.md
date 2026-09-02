@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.2] - 2026-09-02
+
+### Fixed
+
+- **Import listone in batch**: l'upsert dell'anagrafica
+  (`importPlayersFromRecords`) e la scrittura delle quotazioni
+  (`replaceQuotationsForSeasonTx`) non fanno più un round-trip per riga verso
+  il DB — ~587 righe erano ~1200 query sequenziali dentro un'unica
+  transazione. Ora: un solo `SELECT` di lettura, risoluzione dei conflitti
+  d'identità in memoria (`decidePlayerUpsert`, condivisa con `upsertPlayer`) e
+  `INSERT`/`UPDATE` in batch a chunk da 200 righe. L'import di un listone
+  completo resta entro il timeout edge di Cloudflare anche con Render a
+  freddo, senza errore 524.
+
 ## [5.1.1] - 2026-09-02
 
 ### Fixed

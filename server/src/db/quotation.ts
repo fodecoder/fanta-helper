@@ -5,16 +5,28 @@ import type { QuotationRow } from "./types";
 // Sostituzione per stagione in transazione: mai upsert riga-per-riga, così
 // un reimport riflette esattamente l'ultimo file per quella stagione. Stesso
 // spirito di replaceSetPieceTakersForTeam, ma chiavato per season.
+// Chunk da 200 righe (1000 parametri): un import listone completo scrive
+// ~600 quotazioni e non deve fare un round-trip per riga (rischio 524
+// gateway timeout quando la richiesta passa dal proxy edge).
+const QUOTATION_BATCH_ROWS = 200;
+
 export async function replaceQuotationsForSeasonTx(
   client: Queryable,
   season: string,
   rows: QuotationRow[],
 ): Promise<number> {
   await client.query("DELETE FROM quotation WHERE season = $1", [season]);
-  for (const row of rows) {
+  for (let i = 0; i < rows.length; i += QUOTATION_BATCH_ROWS) {
+    const batch = rows.slice(i, i + QUOTATION_BATCH_ROWS);
+    const params: unknown[] = [];
+    const tuples = batch.map((row, j) => {
+      const b = j * 5;
+      params.push(row.player_id, season, row.qt_i, row.qt_a, row.fvm);
+      return `($${b + 1}, $${b + 2}, $${b + 3}, $${b + 4}, $${b + 5})`;
+    });
     await client.query(
-      `INSERT INTO quotation (player_id, season, qt_i, qt_a, fvm) VALUES ($1, $2, $3, $4, $5)`,
-      [row.player_id, season, row.qt_i, row.qt_a, row.fvm],
+      `INSERT INTO quotation (player_id, season, qt_i, qt_a, fvm) VALUES ${tuples.join(", ")}`,
+      params,
     );
   }
   return rows.length;

@@ -1,8 +1,9 @@
 import { ROLES } from "@fanta-helper/shared";
 import type { PlayerImportReport, DiscardedPlayerRow } from "@fanta-helper/shared";
+import { pool } from "../db/client";
 import type { Queryable } from "../db/client";
-import { upsertPlayer, PlayerUpsertConflict } from "../db/players";
-import type { PlayerUpsertResult } from "../db/players";
+import { batchUpsertPlayers } from "../db/players";
+import type { PlayerUpsertInput, PlayerUpsertResult } from "../db/players";
 import { ApiError } from "../http/errors";
 import { cell, parseCsvRows, parseXlsxRows, rowsToRecords } from "./fileRows";
 import { parseNullableInt } from "./numeric";
@@ -31,7 +32,12 @@ export async function importPlayersFromRecords(
   let inserted = 0;
   let updated = 0;
   const discarded: DiscardedPlayerRow[] = [];
-  const upsertResults: (PlayerUpsertResult | undefined)[] = [];
+  const upsertResults: (PlayerUpsertResult | undefined)[] = new Array(records.length);
+
+  // Prima passata: validazione per riga (invariata). Le righe valide vanno in
+  // un solo upsert in batch — 587 righe non devono più fare 587 round-trip
+  // sequenziali verso il DB (rischio 524 gateway timeout dal proxy edge).
+  const pending: { index: number; rowNumber: number; name: string; team: string; ruolo: string; input: PlayerUpsertInput }[] = [];
 
   for (const [index, record] of records.entries()) {
     const rowNumber = index + 1;
@@ -41,12 +47,10 @@ export async function importPlayersFromRecords(
 
     if (name === "") {
       discarded.push({ row: rowNumber, name, team, ruolo, reason: "nome mancante" });
-      upsertResults.push(undefined);
       continue;
     }
     if (team === "") {
       discarded.push({ row: rowNumber, name, team, ruolo, reason: "squadra mancante" });
-      upsertResults.push(undefined);
       continue;
     }
     if (!(ROLES as readonly string[]).includes(ruolo)) {
@@ -57,7 +61,6 @@ export async function importPlayersFromRecords(
         ruolo,
         reason: `ruolo non valido: '${ruolo}'`,
       });
-      upsertResults.push(undefined);
       continue;
     }
 
@@ -74,36 +77,43 @@ export async function importPlayersFromRecords(
     const nomeCompleto = cell(record["Nome completo"]) || null;
     const imageUrl = cell(record.image_url) || null;
 
-    let result: PlayerUpsertResult;
-    try {
-      result = await upsertPlayer(
-        {
-          name,
-          team,
-          ruolo: ruolo as (typeof ROLES)[number],
-          fanta_id: fantaId,
-          nome_completo: nomeCompleto,
-          image_url: imageUrl,
-        },
-        executor,
-      );
-    } catch (err) {
+    pending.push({
+      index,
+      rowNumber,
+      name,
+      team,
+      ruolo,
+      input: {
+        name,
+        team,
+        ruolo: ruolo as (typeof ROLES)[number],
+        fanta_id: fantaId,
+        nome_completo: nomeCompleto,
+        image_url: imageUrl,
+      },
+    });
+  }
+
+  const outcomes = await batchUpsertPlayers(
+    pending.map((p) => p.input),
+    executor ?? pool,
+  );
+
+  pending.forEach((p, i) => {
+    const outcome = outcomes[i]!;
+    if (!outcome.ok) {
       // Conflitto d'identità già in DB (duplicato da fondere): la riga non
       // aggiorna nulla e finisce nel report, senza abortire l'import.
-      if (err instanceof PlayerUpsertConflict) {
-        discarded.push({ row: rowNumber, name, team, ruolo, reason: err.message });
-        upsertResults.push(undefined);
-        continue;
-      }
-      throw err;
+      discarded.push({ row: p.rowNumber, name: p.name, team: p.team, ruolo: p.ruolo, reason: outcome.message });
+      return;
     }
-    upsertResults.push(result);
-    if (result.inserted) {
+    upsertResults[p.index] = outcome.result;
+    if (outcome.result.inserted) {
       inserted += 1;
     } else {
       updated += 1;
     }
-  }
+  });
 
   return { report: { inserted, updated, discarded, quotation: null }, upsertResults };
 }

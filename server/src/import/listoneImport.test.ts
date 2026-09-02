@@ -2,18 +2,118 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { upsertPlayer, replaceQuotationsForSeasonTx } = vi.hoisted(() => ({
-  upsertPlayer: vi.fn(),
-  replaceQuotationsForSeasonTx: vi.fn(),
-}));
+// Fake DB in memoria: implementa il minimo SQL toccato dall'import (SELECT
+// anagrafica, INSERT/UPDATE batch player, DELETE/INSERT batch quotation) così
+// il test verifica il comportamento reale di `batchUpsertPlayers` /
+// `replaceQuotationsForSeasonTx` e può contare i round-trip verso il client.
+const h = vi.hoisted(() => {
+  interface Row {
+    id: number;
+    fanta_id: number | null;
+    sofifa_id: number | null;
+    name: string;
+    nome_completo: string | null;
+    team: string;
+    ruolo: string;
+    image_url: string | null;
+  }
+  const table: Row[] = [];
+  const quotations: { player_id: unknown; season: unknown }[] = [];
+  let nextId = 1;
 
-vi.mock("../db/players", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../db/players")>()),
-  upsertPlayer,
-}));
-vi.mock("../db/quotation", () => ({ replaceQuotationsForSeasonTx }));
+  function run(text: string, params: unknown[] = []) {
+    const t = text.replace(/\s+/g, " ").trim();
+    if (/^(BEGIN|COMMIT|ROLLBACK)/.test(t)) return { rows: [], rowCount: 0 };
+    if (t.startsWith("DELETE FROM quotation")) {
+      quotations.length = 0;
+      return { rows: [], rowCount: 0 };
+    }
+    if (t.startsWith("SELECT id, fanta_id, name, team FROM player")) {
+      return {
+        rows: table.map((r) => ({ id: r.id, fanta_id: r.fanta_id, name: r.name, team: r.team })),
+        rowCount: table.length,
+      };
+    }
+    if (t.startsWith("INSERT INTO player")) {
+      const out: Row[] = [];
+      for (let i = 0; i < params.length; i += 6) {
+        const row: Row = {
+          id: nextId++,
+          name: params[i] as string,
+          team: params[i + 1] as string,
+          ruolo: params[i + 2] as string,
+          fanta_id: (params[i + 3] as number | null) ?? null,
+          nome_completo: (params[i + 4] as string | null) ?? null,
+          image_url: (params[i + 5] as string | null) ?? null,
+          sofifa_id: null,
+        };
+        table.push(row);
+        out.push({ ...row });
+      }
+      return { rows: out, rowCount: out.length };
+    }
+    if (t.startsWith("UPDATE player AS p")) {
+      const out: Row[] = [];
+      for (let i = 0; i < params.length; i += 7) {
+        const row = table.find((r) => r.id === params[i]);
+        if (!row) continue;
+        row.name = params[i + 1] as string;
+        row.team = params[i + 2] as string;
+        row.ruolo = params[i + 3] as string;
+        row.fanta_id = row.fanta_id ?? ((params[i + 4] as number | null) ?? null);
+        row.nome_completo = (params[i + 5] as string | null) ?? row.nome_completo;
+        row.image_url = (params[i + 6] as string | null) ?? row.image_url;
+        out.push({ ...row });
+      }
+      return { rows: out, rowCount: out.length };
+    }
+    if (t.startsWith("INSERT INTO quotation")) {
+      for (let i = 0; i < params.length; i += 5) {
+        quotations.push({ player_id: params[i], season: params[i + 1] });
+      }
+      return { rows: [], rowCount: params.length / 5 };
+    }
+    throw new Error(`fake db: unhandled query: ${t.slice(0, 90)}`);
+  }
+
+  const clientRef: { current: { query: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn> } | null } = {
+    current: null,
+  };
+
+  return {
+    table,
+    quotations,
+    run,
+    clientRef,
+    seed(row: Partial<Row> & Pick<Row, "name" | "team">) {
+      table.push({
+        id: nextId++,
+        fanta_id: null,
+        sofifa_id: null,
+        nome_completo: null,
+        ruolo: "P",
+        image_url: null,
+        ...row,
+      });
+    },
+    reset() {
+      table.length = 0;
+      quotations.length = 0;
+      nextId = 1;
+      clientRef.current = null;
+    },
+  };
+});
+
 vi.mock("../db/client", () => ({
-  pool: { connect: async () => ({ query: vi.fn(), release: vi.fn() }) },
+  pool: {
+    query: (t: string, p: unknown[]) => h.run(t, p),
+    connect: async () => {
+      const client = { query: vi.fn((t: string, p: unknown[]) => h.run(t, p)), release: vi.fn() };
+      h.clientRef.current = client;
+      return client;
+    },
+  },
 }));
 
 import { importListoneFromCsv } from "./listoneImport";
@@ -23,16 +123,11 @@ const FIXTURE = readFileSync(
   "utf8",
 );
 
-let nextId = 1;
+const rowByFantaId = (id: number) => h.table.find((r) => r.fanta_id === id);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  nextId = 1;
-  upsertPlayer.mockImplementation(async (input: { name: string; team: string }) => ({
-    row: { id: nextId++, name: input.name, team: input.team },
-    inserted: true,
-  }));
-  replaceQuotationsForSeasonTx.mockImplementation(async (_c: unknown, _s: string, rows: unknown[]) => rows.length);
+  h.reset();
 });
 
 describe("importListoneFromCsv — positional Lista FantaAsta", () => {
@@ -43,6 +138,16 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     expect(report.discarded.length).toBeLessThan(5);
     expect(report.quotation?.season).toBe("2026-27");
     expect(report.quotation!.written).toBeGreaterThan(500);
+    expect(h.quotations.length).toBeGreaterThan(500);
+  });
+
+  it("runs the whole import in a few dozen DB round-trips, not hundreds", async () => {
+    await importListoneFromCsv(FIXTURE, "2026-27");
+
+    // ~587 righe: BEGIN + 1 SELECT + ~3 INSERT player + DELETE quotation +
+    // ~3 INSERT quotation + COMMIT. Il regressione da guardare è il ritorno
+    // al ciclo riga-per-riga (centinaia di chiamate).
+    expect(h.clientRef.current!.query.mock.calls.length).toBeLessThan(30);
   });
 
   it("parses the real file with quoted nicknames in unquoted fields", async () => {
@@ -50,22 +155,18 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     expect(report.inserted).toBeGreaterThan(580);
     expect(report.discarded.length).toBeLessThan(5);
 
-    const goncalves = upsertPlayer.mock.calls
-      .map((c) => c[0])
-      .find((input: { fanta_id?: number }) => input.fanta_id === 7625);
-    expect(goncalves).toMatchObject({ nome_completo: 'Goncalves "Pote" Pedro' });
+    expect(rowByFantaId(7625)).toMatchObject({ nome_completo: 'Goncalves "Pote" Pedro' });
   });
 
-  it("passes nome_completo and image_url to the upsert", async () => {
+  it("passes nome_completo and image_url through to the written row", async () => {
     await importListoneFromCsv(FIXTURE, "2026-27");
-    const first = upsertPlayer.mock.calls[0]![0];
-    expect(first).toMatchObject({
+    const carnesecchi = rowByFantaId(4431)!;
+    expect(carnesecchi).toMatchObject({
       name: "Carnesecchi",
       nome_completo: "Marco Carnesecchi",
       team: "Atalanta",
-      fanta_id: 4431,
     });
-    expect(first.image_url).toContain("4431.png");
+    expect(carnesecchi.image_url).toContain("4431.png");
   });
 
   it("requires a season for the positional file", async () => {
@@ -77,19 +178,11 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     const report = await importListoneFromCsv(csv, "2026-27");
     expect(report.discarded).toHaveLength(0);
     expect(report.inserted).toBe(1);
-    expect(upsertPlayer.mock.calls[0]![0]).toMatchObject({ name: "Sportiello", team: "Atalanta" });
+    expect(h.table[0]).toMatchObject({ name: "Sportiello", team: "Atalanta" });
   });
 
-  it("turns a PlayerUpsertConflict into a discard instead of aborting the import", async () => {
-    const { PlayerUpsertConflict } = await import("../db/players");
-    upsertPlayer
-      .mockImplementationOnce(() => {
-        throw new PlayerUpsertConflict("duplicato in DB da fondere");
-      })
-      .mockImplementation(async (input: { name: string; team: string }) => ({
-        row: { id: nextId++, name: input.name, team: input.team },
-        inserted: true,
-      }));
+  it("turns an identity conflict into a discard instead of aborting the import", async () => {
+    h.seed({ name: "Tizio", team: "Inter", fanta_id: 999 });
 
     const csv = [
       "1,Tizio,Tizio Uno,P,Por,1,1,1,1,Inter,1,1",
@@ -98,7 +191,7 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     const report = await importListoneFromCsv(csv, "2026-27");
 
     expect(report.discarded).toHaveLength(1);
-    expect(report.discarded[0]).toMatchObject({ name: "Tizio", reason: /fondere/ });
+    expect(report.discarded[0]).toMatchObject({ name: "Tizio", reason: /fanta_id/ });
     expect(report.inserted).toBe(1);
   });
 
@@ -106,9 +199,8 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     await importListoneFromCsv("4431,Carnesecchi,Marco C.,P,Por,16,16,16,16,Atalanta,52,52", "2026-27");
     await importListoneFromCsv("4431,Carnesecchi,Marco C.,P,Por,16,16,16,16,Juventus,52,52", "2026-27");
 
-    const teams = upsertPlayer.mock.calls.map((c) => c[0]);
-    expect(teams[0]).toMatchObject({ fanta_id: 4431, team: "Atalanta" });
-    expect(teams[1]).toMatchObject({ fanta_id: 4431, team: "Juventus" });
+    expect(h.table).toHaveLength(1);
+    expect(h.table[0]).toMatchObject({ fanta_id: 4431, team: "Juventus" });
   });
 });
 
@@ -118,6 +210,6 @@ describe("importListoneFromCsv — header CSV (no regression)", () => {
     const report = await importListoneFromCsv(csv, "2026-27");
     expect(report.inserted).toBe(2);
     expect(report.quotation).toBeNull();
-    expect(replaceQuotationsForSeasonTx).not.toHaveBeenCalled();
+    expect(h.quotations).toHaveLength(0);
   });
 });
