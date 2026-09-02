@@ -30,6 +30,11 @@ export function parseCsvRows(raw: string, delimiter?: string): unknown[][] {
     bom: true,
     relax_column_count: true,
     skip_empty_lines: true,
+    // Il listone ufficiale Fantacalcio.it mette i soprannomi tra virgolette
+    // dentro campi non quotati (es. `Goncalves "Pote" Pedro` nel Nome completo),
+    // che RFC4180 non prevede. Senza questo, csv-parse lancia "Invalid Opening
+    // Quote" e aborta l'intero import.
+    relax_quotes: true,
   }) as unknown[][];
 }
 

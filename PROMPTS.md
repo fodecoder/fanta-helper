@@ -1,8 +1,8 @@
-# PROMPTS.md — Fase 8 (correzioni post-asta reale)
+# PROMPTS.md — Fase 9 (nuovo listone 2026/27 e Valutazioni)
 
-Prompt operativi per Claude Code, **in plan mode**. La Fase 7 (P1–P9) e la fase
-mobile (P10) sono chiuse: la loro traccia vive nel `CHANGELOG.md` e nella git
-history, non più qui.
+Prompt operativi per Claude Code, **in plan mode**. La Fase 7 (P1–P9), la fase
+mobile (P10) e la Fase 8 (P11–P15, sotto in questo file) sono chiuse: la loro
+traccia vive nel `CHANGELOG.md` e nella git history.
 
 Regole valide per tutti (da `CLAUDE.md`): Conventional Commits in inglese,
 nessun riferimento ad AI/attribuzioni, commenti solo dove la logica non è
@@ -15,11 +15,21 @@ prompt include **test** (unit sui moduli puri condivisi, integrazione dove
 tocca DB/route) a verifica dell'implementazione, non solo del codice che
 compila.
 
-**Ordine consigliato:** P11 → P12 → P13 (due agenti paralleli) → P14 → P15.
-P12 tocca schema/import del pool giocatori: va chiuso prima di P13, che genera
-valutazioni sull'intero pool. P15 dipende dal `fair_value` prodotto da P13.
+**Ordine storico Fase 8 (chiusa):** P11 → P12 → P13 (due agenti paralleli) →
+P14 → P15. P12 tocca schema/import del pool giocatori: va chiuso prima di
+P13, che genera valutazioni sull'intero pool. P15 dipende dal `fair_value`
+prodotto da P13.
+
+**Ordine Fase 9 (corrente):** P16 (due agenti paralleli) → **P17 e P18 in un
+solo prompt, due agenti paralleli** (file disgiunti: P17 tocca solo
+`index.css`, P18 tocca `recommendationEngine.ts`/`MergedValuationRow.tsx`/
+`columnGlossary.ts`) → **P19 (due agenti paralleli)**, dopo P18 perché P19a
+tocca di nuovo `MergedValuationRow.tsx`. Nessuna dipendenza di dati fra P16 e
+il resto: può partire per prima o in parallelo a P17/P18.
 
 ---
+
+## Fase 8 — correzioni post-asta reale *(chiusa, riferimento storico)*
 
 ## P11 — Fix palette colori ruolo
 
@@ -359,3 +369,344 @@ direzione "costoso ma scarso", consultabile prima e durante l'asta, con
 badge visibile nella schermata Asta come gli altri tag giocatore.
 
 **Versioning.** `feat` → MINOR.
+
+---
+
+## Fase 9 — nuovo listone 2026/27 e Valutazioni *(in corso)*
+
+## P16 — Import Listone: virgolette non escapate + timeout su import di massa
+
+**Due bug distinti sullo stesso percorso (import listone), su file diversi,
+riprodotti separatamente: due agenti paralleli.** L'utente li ha incontrati in
+sequenza (aggirando il primo con un find&replace manuale ha scoperto il
+secondo), ma non sono la stessa causa — non risolverli insieme rischia di
+lasciarne uno a metà.
+
+### P16a — Fix parsing CSV con virgolette non escapate (agente 1)
+
+**Obiettivo.** Il file allegato più recente
+(`Lista-FantaAsta-Fantacalcio (1).csv`, 586 righe dati) non si importa:
+`parseCsvRows` lancia un errore e abortisce prima di leggere una sola riga.
+
+**Contesto — riprodotto.** `server/src/import/fileRows.ts`, `parseCsvRows`
+usa `csv-parse/sync` senza `relax_quotes`. Riga 585 del file:
+`7625,Goncalves P.,Goncalves "Pote" Pedro,C,W;T,...` — il campo `Nome
+completo` contiene un soprannome tra virgolette **dentro un campo non
+quotato**, che RFC4180 non prevede: `csv-parse` lancia `Invalid Opening
+Quote: a quote is found on field 2 at line 585`. Verificato in locale che
+aggiungendo `relax_quotes: true` alle opzioni di `parse(...)` il file si
+legge correttamente (587 righe, incluso quel record con `Nome completo`
+=`Goncalves "Pote" Pedro` preservato intatto). Non è un problema del file:
+Fantacalcio.it usa correntemente virgolette per i soprannomi nei nomi
+completi, quindi il caso si ripresenterà a ogni aggiornamento stagionale del
+listone.
+
+**Lavoro.**
+- Aggiungi `relax_quotes: true` alle opzioni di `parse(...)` in
+  `parseCsvRows` (`fileRows.ts`), con un commento che spiega il motivo
+  (soprannomi tra virgolette nei campi non quotati del listone ufficiale) per
+  non farlo sembrare un'opzione a caso.
+- Verifica che `sniffDelimiter` non sia influenzato (la funzione conta le
+  virgolette per tracciare `inQuotes` sulla prima riga: la riga 585 non è la
+  prima riga, quindi il sniffing non cambia comportamento — conferma con un
+  test, non solo a occhio).
+
+**Test.** Aggiungi il file allegato come fixture reale sotto
+`server/src/test/fixtures/` (nome esplicito, es.
+`listone-2026-27-virgolette.csv`, o riusa la fixture di P12 se già presente
+e integra la riga problematica se mancante) e un test che verifica: (a) il
+parsing non lancia, (b) il numero di righe è quello atteso, (c) il record con
+virgolette nel nome completo produce il valore corretto (`Goncalves "Pote"
+Pedro`, non troncato). Aggiungi anche un test dedicato con un CSV minimo
+sintetico (2-3 righe) che isola il caso, per non dipendere solo dalla
+fixture grande.
+
+**Accettazione.** Il file allegato si importa senza errori di parsing.
+
+**Versioning.** `fix` → PATCH.
+
+### P16b — Import listone in batch invece che riga per riga (agente 2)
+
+**Obiettivo.** Anche con P16a risolto, un import di ~587 righe rischia il
+timeout (524 Cloudflare Gateway Timeout) quando passa dal proxy same-origin.
+
+**Contesto — causa isolata, non solo ipotizzata.**
+`importPlayersFromRecords` (`server/src/import/playerImport.ts`) fa `await
+upsertPlayer(...)` **una riga alla volta, in sequenza**, dentro l'unica
+transazione aperta da `importListoneFromCsv`
+(`server/src/import/listoneImport.ts`). Per 587 righe sono 587 round-trip di
+rete sequenziali verso Neon. In produzione la richiesta passa dal browser
+alla Cloudflare Pages Function `functions/api/[[path]].js`, che fa da proxy
+verso Render (vedi README § Hosting, "Proxy API same-origin"): Cloudflare
+applica un timeout edge sulla risposta di quella Function (l'errore 524 è
+specificamente "gateway timeout", non un errore applicativo), e il piano free
+di Render aggiunge un cold start se il servizio era in sleep. Il fix non è
+lato Cloudflare/Render (fuori dal controllo del codice): è ridurre i
+round-trip.
+
+**Lavoro.**
+- Sostituisci il ciclo di `upsertPlayer` per riga con un **upsert in batch**:
+  una singola query `INSERT ... VALUES (...), (...), ... ON CONFLICT (...) DO
+  UPDATE` (o batch da N righe, es. 100, se il driver/Postgres ha limiti
+  pratici sul numero di parametri per query) invece di N query separate.
+  `upsertPlayer` in `server/src/db/players.ts` ha già la logica di
+  conflitto (`fanta_id` come chiave primaria, fallback `name+team`): non
+  duplicarla, estrarre la stessa logica di conflitto in una funzione batch
+  che la applica a un array di righe in una query sola. Se `fanta_id` è
+  assente su alcune righe e presente su altre nello stesso batch, valuta se
+  serve più di una query batch (una per chiave di conflitto) — non forzare
+  tutto in un'unica istruzione SQL se la semantica di conflitto differisce
+  per riga.
+- Mantieni identico il comportamento riga-per-riga verso il chiamante:
+  stesso `PlayerImportReport` (inserted/updated/discarded), stessi
+  `upsertResults` allineati per indice (servono a `listoneImport.ts` per le
+  quotazioni) — il refactor è solo nell'esecuzione delle query, non
+  nell'interfaccia.
+- Non toccare il path a header esistente (`importPlayersFromCsv`) se non
+  serve: applica il batching dove il volume è alto (listone posizionale,
+  centinaia di righe), verifica se ha senso condividerlo anche lì una volta
+  scritto.
+
+**Test.** Test di integrazione con un pool giocatori esistente e ~500+ righe
+di fixture sintetiche: verifica che il numero di query verso il DB sia
+dell'ordine di poche decine (batch), non centinaia (con un mock/spy sul
+client se il test attuale lo permette), a parità di risultato
+(inserted/updated/discarded identici alla versione riga-per-riga). Se non è
+misurabile il conteggio query nell'ambiente di test, verifica almeno il
+tempo di esecuzione su una fixture da 500+ righe e documenta la soglia
+scelta come regressione futura.
+
+**Accettazione.** L'import del file allegato (dopo P16a) completa entro
+tempi compatibili con il timeout edge di Cloudflare anche a freddo (Render
+sveglio da un cold start), senza errore 524.
+
+**Versioning (per entrambi P16a/P16b, un solo commit/tag a fine prompt).**
+`fix` → PATCH (nessun cambio di schema o di interfaccia pubblica).
+
+---
+
+## P17 — Fix ritaglio foto calciatori in Valutazioni (e ovunque non sia "hero")
+
+**Da eseguire nello stesso prompt di P18, come agente indipendente: nessun
+file in comune (questo tocca solo `index.css`).**
+
+**Obiettivo.** Le foto dei calciatori nella tabella Valutazioni appaiono
+tagliate in basso — lo stesso sintomo già corretto per lo slot "hero" in
+asta (`CHANGELOG.md` `v5.0.0`), non esteso alle altre taglie.
+
+**Contesto.** `web/src/index.css`, regola `.photo-box` (circa riga 1024):
+`background-size: cover; background-position: center top`, ereditata da
+tutte le taglie (`sm` 30px, `md` 44px, `lg` 64px, `hero` 168×232). Solo
+`.photo-box--hero` (riga ~1069) sovrascrive con `background-size: contain`.
+Un campioncino Fantacalcio è un'immagine verticale (più alta che larga): in
+un riquadro quasi quadrato (`sm`/`md`/`lg`), `cover` + `center top` inquadra
+la testa e ritaglia tutto ciò che sta sotto (stemma, numero, parte del
+busto) — esattamente il difetto segnalato, e la Vista Valutazioni
+(`ValuationsPage.tsx`/`MergedValuationRow.tsx`) usa `PlayerAvatar` in taglia
+`sm`/`md` per la colonna nome.
+
+**Lavoro.**
+- Decidi ed applica una soluzione coerente per `sm`/`md`/`lg`: l'opzione più
+  semplice e coerente con il fix già fatto per `hero` è portare anche queste
+  taglie a `background-size: contain` (l'immagine intera entra nel
+  riquadro, con margini laterali sul fondo tinta-ruolo già esistente,
+  nessun ritaglio) — verifica visivamente che a 30px/44px il risultato
+  resti leggibile (il fondo tinta-ruolo diventa più visibile ai lati).
+  Se `contain` a taglia `sm` risulta troppo piccolo/illeggibile, valuta in
+  alternativa un `background-position` diverso (es. spostare il punto di
+  focus più in alto senza arrivare al bordo) che riduca il ritaglio senza
+  cambiare `background-size` — ma preferisci `contain` per coerenza con
+  `hero`, a meno che il test visivo dica il contrario.
+- Non toccare `PlayerAvatar.tsx` (il componente non ha logica di
+  crop, è tutto nel CSS) né il fallback iniziali/placeholder (invariato).
+
+**Test.** Screenshot prima/dopo della tabella Valutazioni (righe con foto
+presente) e della vista Asta per le taglie toccate, per verifica visiva —
+non c'è logica pura da testare in unit test, il cambio è puramente CSS.
+
+**Accettazione.** Le foto dei calciatori nella tabella Valutazioni (e in
+ogni altro punto che usa `photo-box` in taglia `sm`/`md`/`lg`) mostrano il
+soggetto senza tagli visibili nella parte bassa dell'immagine.
+
+**Versioning.** `fix` → PATCH.
+
+---
+
+## P18 — Fantamedia della scorsa stagione al posto di "Fm regolata"
+
+**Da eseguire nello stesso prompt di P17, come agente indipendente: file
+diversi (`shared/src/recommendationEngine.ts`,
+`web/src/components/MergedValuationRow.tsx`, `web/src/lib/columnGlossary.ts`,
+`web/src/pages/ValuationsPage.tsx`), nessuna sovrapposizione con P17
+(`index.css`).**
+
+**Obiettivo.** Nella tabella Valutazioni, la colonna oggi etichettata "Fm
+regolata" deve mostrare la Fantamedia **reale** dell'ultima stagione, non
+quella ricostruita dalle regole di lega.
+
+**Contesto — sono due grandezze diverse, già entrambe nel codice.**
+- `leagueAdjustedFm` (`shared/src/recommendationEngine.ts`,
+  `PlayerRecommendationComponents.leagueAdjustedFm`): fantamedia
+  *ricostruita* — `mv − 6.0 + bonus/malus per presenza + bonus difesa +
+  bonus portiere`, secondo le regole della lega corrente. È quella mostrata
+  oggi in `MergedValuationRow.tsx` riga ~190 e usata internamente per lo
+  score (non toccare quell'uso interno, resta necessario per il calcolo).
+- `PlayerSeasonStatsRow.fm` (`shared/src/playerSeasonStats.ts`): fantamedia
+  **reale** importata dall'ultima stagione (voto medio con bonus/malus
+  realmente accaduti). Esiste già nei dati di input dell'engine (`stats:
+  PlayerSeasonStatsRow[]` in `RecommendationEngineInput`) e ha già una voce
+  nel glossario (`columnGlossary.ts`, chiave `fm`, label "Fm", tooltip
+  "Fantamedia importata dell'ultima stagione: voto medio con bonus/malus
+  reali.") — ma **non è propagata** in `PlayerRecommendationComponents` né
+  arriva a `MergedValuationRow.tsx`: oggi nella colonna "Fm regolata" della
+  vista Valutazioni non ha alcuno spazio.
+
+**Lavoro.**
+- In `computePlayerRecommendations` (`recommendationEngine.ts`), quando si
+  recupera lo `stat` del giocatore per calcolare `leagueAdjustedFm`, leggi
+  anche `stat.fm` (può essere `null` se il giocatore non ha statistiche
+  stagione precedente, es. debuttante/neopromosso — non inventare un
+  fallback numerico) e aggiungilo a `PlayerRecommendationComponents` come
+  nuovo campo (es. `fmScorsaStagione: number | null`), senza rimuovere
+  `leagueAdjustedFm` (resta usato per lo score).
+- In `MergedValuationRow.tsx`, sostituisci il valore mostrato nella colonna
+  "Fm regolata" (riga ~190) con `r.components.fmScorsaStagione` (fallback
+  `"—"` se `null`, stesso pattern già usato per `leagueAdjustedFm`).
+- In `columnGlossary.ts`: aggiorna la voce usata da quella colonna in
+  `ValuationsPage.tsx` (oggi `leagueAdjustedFm`, label "Fm regolata") perché
+  punti a un'etichetta/tooltip coerenti con il nuovo contenuto (es. "Fm
+  scorsa stagione", tooltip ripreso/adattato da quello già scritto per la
+  chiave `fm` esistente) — valuta se riusare la chiave `fm` già presente nel
+  glossario invece di duplicarla, visto che descrive esattamente questo
+  dato.
+- Non toccare `ScoreBreakdownDialog.tsx`: il modale "Dettagli" continua a
+  mostrare la scomposizione dello score, che si basa su
+  `leagueAdjustedFm` — quello resta corretto e va lasciato invariato.
+
+**Test.** Aggiorna `recommendationEngine.test.ts` con un caso che verifica
+`fmScorsaStagione` propagato correttamente da `stat.fm` (incluso il caso
+`stat.fm === null`, debuttante). Test di rendering di `MergedValuationRow`
+(o il test esistente che copre quella riga) che verifichi la colonna mostri
+il nuovo valore, non più `leagueAdjustedFm`.
+
+**Accettazione.** La colonna nella tabella Valutazioni mostra la Fantamedia
+reale dell'ultima stagione (coerente col dato del listone/statistiche
+importate), non più il valore ricostruito dalle regole di lega; quest'ultimo
+resta disponibile nei "Dettagli" per chi vuole vedere la scomposizione dello
+score.
+
+**Versioning (per P17+P18, un solo commit/tag a fine prompt).** `feat` →
+MINOR (il dato mostrato cambia significato per l'utente, non è un puro
+fix visivo come P17).
+
+---
+
+## P19 — Budgettizzazione in percentuale e budget target per ruolo
+
+**Due lavori indipendenti sullo stesso obiettivo di fondo (spendere il
+budget in modo consapevole per reparto), su file diversi: due agenti
+paralleli nello stesso prompt. Va dopo P18, che tocca di nuovo
+`MergedValuationRow.tsx`.**
+
+### P19a — Inserire una percentuale di budget e ricavare il max bid (agente 1)
+
+**Obiettivo.** In Valutazioni, poter inserire una percentuale del budget di
+lega per un giocatore e ottenere il max bid in crediti calcolato
+automaticamente, in alternativa a scriverlo direttamente in crediti.
+
+**Contesto.** `MergedValuationRow.tsx` ha già un input libero per
+`max_bid` (funzione `cellInput`, riga ~214), che scrive
+sull'override esistente (`user_valuation_override`, layer sparso,
+`effettivo = override ?? base` — invariante da rispettare, non introdurre
+un secondo campo di stato). Il budget di lega è già disponibile lato client
+(usato altrove per FVM ponderato, `valuationScale.ts`/`DEFAULT_BUDGET` o il
+budget reale della lega corrente — verifica quale sia già in scope nel
+componente prima di ripescarlo da un'altra route).
+
+**Lavoro.**
+- Aggiungi, accanto (non al posto) all'input `max_bid` in crediti, un modo
+  di inserire una percentuale (es. un secondo input più piccolo con `%`, o
+  un toggle che cambia l'unità dello stesso input — scegli l'opzione che
+  minimizza il diff e resta leggibile in una riga di tabella già densa).
+  Al blur/submit della percentuale, calcola `max_bid = round(percentuale /
+  100 * budget)` e scrivilo nello stesso override `max_bid` già esistente
+  (non un campo nuovo nello schema: la percentuale è solo un modo di
+  inserimento, il dato persistito resta in crediti, coerente con
+  l'invariante "nessun campo mutabile di stato" e con FVM/valuation che
+  sono sempre derivati/riscalati, mai duplicati).
+  Se serve mostrare la percentuale accanto al valore in crediti dopo il
+  salvataggio (per rieditarla), ricavala a display come `max_bid / budget *
+  100` — derivata, non salvata.
+- Arrotonda in modo esplicito e documentato (es. `Math.round`, non
+  troncamento silenzioso) e gestisci il caso budget non ancora caricato
+  (disabilita l'input percentuale finché il budget non è noto, non
+  calcolare con un default inventato).
+
+**Test.** Test del calcolo puro (percentuale → crediti, arrotondamento,
+casi limite 0%/100%) — se la funzione di conversione è pura, estraila in
+`shared/src` o in un modulo web testabile isolatamente invece di inlinarla
+nel componente. Test di interazione sulla riga (inserimento percentuale →
+valore in crediti scritto nell'override corretto).
+
+**Accettazione.** In Valutazioni si può impostare il max bid di un
+giocatore inserendo una percentuale del budget di lega, con il valore in
+crediti calcolato e salvato coerentemente con l'override esistente.
+
+### P19b — Budget target per ruolo: percentuali obiettivo, avviso, residuo (agente 2)
+
+**Obiettivo.** Configurare per lega percentuali obiettivo di budget per
+ruolo (es. P 10% / D 20% / C 30% / A 40%), avvisare quando un manager si
+avvicina o supera la soglia del proprio reparto, e mostrare sempre il
+budget residuo di quel reparto.
+
+**Contesto — non esiste ancora nulla di questo.** `LeagueRulesConfig`
+(`shared/src/league.ts`) non ha un concetto di allocazione budget per
+reparto. `ManagerAuctionStatus.slots` (`shared/src/purchase.ts`) conta solo
+slot liberi/occupati per ruolo, non crediti spesi per ruolo — serve un
+nuovo derivato dal log `purchase` (join con `player.ruolo`), coerente con
+l'invariante: **nessun campo mutabile**, la spesa per ruolo si calcola a
+ogni richiesta sommando `purchase.prezzo` per manager e ruolo del
+giocatore acquistato, non si memorizza.
+
+**Lavoro.**
+- Estendi lo schema lega: nuovo campo (es. `budgetTargetByRole: { P: number;
+  D: number; C: number; A: number }`, percentuali) in
+  `createLeagueSchema`/`leagueSchema` (`shared/src/league.ts`), con
+  validazione che la somma sia 100 (o vicino, decidi la tolleranza e
+  documentala) — **non** forzare una somma esatta se complica UX di
+  modifica progressiva, ma segnala in UI se non torna. Migrazione additiva
+  sulla tabella `league` (colonna nullable o con default ragionevole
+  desunto dalla convenzione di mercato in `PLAN.md` § Fase 8 ricerca
+  esterna: P 6-8%, D 12-20%, C 24-30%, A 42-60% — **non inventare un default
+  diverso**, riusa quei numeri già verificati su tre fonti).
+- Nuovo derivato server-side: spesa per ruolo per manager, dal log
+  `purchase` join `player.ruolo` (SQL o funzione pura sui dati già caricati,
+  a seconda di dove oggi si costruisce `ManagerAuctionStatus` —
+  `server/src/db/` o `shared/src/`, segui il pattern esistente per non
+  introdurre una seconda fonte di verità). Aggiungi il risultato a
+  `ManagerAuctionStatus` (nuovo campo, es. `spentByRole: { ruolo: Role;
+  spent: number; target: number; residuo: number }[]`) o esponilo come
+  endpoint/selettore dedicato se `ManagerAuctionStatus` è già usato in path
+  dove il costo aggiuntivo non è giustificato — valuta tu, ma non duplicare
+  la query di somma in più punti.
+- UI: budget residuo per ruolo visibile in modo permanente (Overview o
+  pannello lega esistente — non una pagina nuova se una esistente si presta)
+  e avviso contestuale in asta quando il manager (almeno "Io"; valuta se
+  estendere agli avversari visti in P14 una volta che il derivato esiste)
+  sta per superare la soglia del reparto del giocatore in chiamata — soglia
+  di "avvicinamento" esplicita e documentata (es. 90% della quota target),
+  non un numero magico senza commento.
+
+**Test.** Test del derivato spesa-per-ruolo (fixture di acquisti misti,
+verifica somma corretta per manager e ruolo, incluso il caso zero acquisti).
+Test di validazione dello schema lega (somma percentuali, valori negativi
+rifiutati). Test dell'avviso di soglia (sotto/sopra il 90%, sopra il 100%).
+
+**Accettazione.** Una lega può impostare percentuali obiettivo di budget per
+ruolo; durante l'asta è sempre visibile quanto budget resta per il reparto
+del giocatore in chiamata, e un manager riceve un avviso quando si avvicina
+o supera la propria quota di reparto.
+
+**Versioning (per P19a+P19b, un solo commit/tag a fine prompt).** `feat` →
+MINOR (P19b include una migrazione additiva, ma senza breaking change sullo
+schema esistente).

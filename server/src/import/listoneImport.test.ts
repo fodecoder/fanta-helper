@@ -45,6 +45,17 @@ describe("importListoneFromCsv — positional Lista FantaAsta", () => {
     expect(report.quotation!.written).toBeGreaterThan(500);
   });
 
+  it("parses the real file with quoted nicknames in unquoted fields", async () => {
+    const report = await importListoneFromCsv(FIXTURE, "2026-27");
+    expect(report.inserted).toBeGreaterThan(580);
+    expect(report.discarded.length).toBeLessThan(5);
+
+    const goncalves = upsertPlayer.mock.calls
+      .map((c) => c[0])
+      .find((input: { fanta_id?: number }) => input.fanta_id === 7625);
+    expect(goncalves).toMatchObject({ nome_completo: 'Goncalves "Pote" Pedro' });
+  });
+
   it("passes nome_completo and image_url to the upsert", async () => {
     await importListoneFromCsv(FIXTURE, "2026-27");
     const first = upsertPlayer.mock.calls[0]![0];

@@ -2,19 +2,30 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-08-31 — `v4.6.0`. Fasi 0–7 e la fase mobile (P10) sono
-> **complete**: scaffolding, MVP, engine di consiglio su valore relativo alla
-> lega, dati storici Serie A, redesign Broadsheet, multiutente (login,
-> personalizzazione, chat), sessione mobile. Dettagli di ognuna nel
-> [CHANGELOG.md](./CHANGELOG.md) e nella git history; l'audit di verifica P1–P9
-> resta più sotto per riferimento.
+> Stato al 2026-09-02 — `v5.1.0`. Fasi 0–8 sono **complete**: scaffolding, MVP,
+> engine di consiglio su valore relativo alla lega, dati storici Serie A,
+> redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
+> chat), sessione mobile, e le 9 correzioni della Fase 8 (palette ruolo, import
+> listone posizionale con `fanta_id`/nome completo/fallback foto, valutazioni a
+> copertura totale, FVM ponderato al budget, vista avversari in asta,
+> giocatori trappola). Dettagli di ognuna nel [CHANGELOG.md](./CHANGELOG.md) e
+> nella git history; l'audit di verifica P1–P9 resta più sotto per
+> riferimento, la Fase 8 (P11–P15) è tracciata come chiusa subito sotto.
 >
-> **In corso — Fase 8**: 9 problemi emersi dal primo uso reale dell'app in asta
-> (10 manager, 2026-08-30), verificati sul codice e con ricerca esterna
-> (Fantacalcio.it, fantacalcio.dev, Goal.com). Prompt operativi P11–P15 in
-> [PROMPTS.md](./PROMPTS.md).
+> **In corso — Fase 9**: 6 problemi emersi dal nuovo listone "Lista FantaAsta"
+> 2026/27 e dal primo uso reale della pagina Valutazioni, verificati sul
+> codice (riproducendo l'errore di import) e con ricerca esterna
+> (Fantacalcio Online, Goal.com, SOS Fanta/Gazzetta dello Sport, per le
+> probabili formazioni/rigoristi/punizioni aggiornate al 2026-09-02). Prompt
+> operativi P16–P19 in [PROMPTS.md](./PROMPTS.md).
 
-## Fase 8 — Correzioni post-asta reale  *(in corso)*
+## Fase 8 — Correzioni post-asta reale  *(chiusa)*
+
+Tutti i 9 punti sono implementati (P11–P15 in `PROMPTS.md`, storia completa nel
+`CHANGELOG.md` e nella git history: `e79402d` palette ruolo, `30fdd0d`/`f559d13`
+import posizionale + fix duplicati, `2e40bdf` valutazioni a copertura totale +
+FVM ponderato, `2711a58` vista avversari, `c51e09e` giocatori trappola).
+Elenco originale dei problemi mantenuto sotto per riferimento.
 
 Trovati usando l'app in un'asta vera a 10. Ognuno verificato sul codice (non
 solo riportato) prima di essere messo in prompt.
@@ -127,6 +138,110 @@ Aggravante nota (candidata a prompt successivo): dopo `POST /auth/login` il
 client non riverifica `/auth/me` (`web/src/App.tsx`), quindi quando il cookie di
 sessione non persiste si resta «loggati ma tutto 401» invece di tornare al login.
 
+## Fase 9 — Nuovo listone 2026/27 e primo uso reale delle Valutazioni  *(in corso)*
+
+Trovati caricando il nuovo export "Lista FantaAsta" 2026/27 e usando la pagina
+Valutazioni in preparazione d'asta. Ognuno riprodotto sul codice (non solo
+riportato) prima di essere messo in prompt.
+
+1. **Import listone: virgolette non escapate rompono il parsing.** Riprodotto:
+   `parseCsvRows` (`server/src/import/fileRows.ts`, `csv-parse/sync`) lancia
+   `Invalid Opening Quote` alla riga 585 del file allegato
+   (`Goncalves "Pote" Pedro` — un `"` non escapato dentro un campo non
+   quotato, es. soprannomi tra virgolette nel nome completo). Fix isolato:
+   `csv-parse` supporta `relax_quotes: true` per questo caso esatto — verificato
+   in locale che con l'opzione il file si parsa correttamente (587 righe,
+   incluso il record con l'apostrofo).
+2. **Timeout 524 sull'import di massa, dopo aver aggirato il punto 1.**
+   Riprodotto a livello di causa: `importPlayersFromRecords`
+   (`server/src/import/playerImport.ts`) fa un `await upsertPlayer(...)` per
+   riga, in sequenza, dentro un'unica transazione — per 587 righe sono altrettanti
+   round-trip di rete verso Neon, uno alla volta. In produzione la richiesta
+   passa dal browser alla Cloudflare Pages Function
+   (`functions/api/[[path]].js`) che la inoltra a Render: Cloudflare applica un
+   timeout edge (~100s, l'errore 524 è specificamente suo) sulla risposta di
+   quella Function, e Render free-tier aggiunge un cold start quando il
+   servizio è in sleep. Centinaia di round-trip sequenziali superano
+   facilmente la soglia. Il fix del punto 1 **non risolve** questo problema:
+   sono due bug distinti sullo stesso percorso, il secondo emerge solo dopo
+   aver aggirato il primo (motivo per cui l'utente li ha visti in sequenza).
+3. **Budgettizzazione in percentuale nelle Valutazioni.** Oggi `max_bid` in
+   `ValuationsPage`/`MergedValuationRow.tsx` si inserisce solo in crediti
+   assoluti. Richiesta: poter inserire una percentuale del budget di lega e
+   ricavarne il max bid in crediti automaticamente.
+4. **Budget target per ruolo, con avviso di sforamento e residuo per ruolo.**
+   Non esiste oggi alcun concetto di allocazione budget per reparto in
+   `LeagueRulesConfig` (`shared/src/league.ts`) né una spesa-per-ruolo
+   derivata dal log `purchase` (`ManagerAuctionStatus.slots` ha solo conteggi
+   di slot, non crediti spesi per ruolo). Richiesta: percentuali obiettivo
+   configurabili per lega (es. P 10% / D 20% / C 30% / A 40%), un avviso
+   quando un manager si avvicina/supera la soglia del proprio reparto, e la
+   quota residua di quel reparto sempre visibile.
+5. **Foto calciatori tagliate in basso nelle Valutazioni.** Stesso bug già
+   corretto per lo slot "hero" dell'asta (`CHANGELOG.md` `v5.0.0`), non esteso
+   alle altre taglie: `.photo-box` in `web/src/index.css` usa
+   `background-size: cover; background-position: center top` per le taglie
+   `sm`/`md`/`lg`, e solo `.photo-box--hero` ha il fix (`contain`). Su un
+   campioncino verticale (foto più alta che larga) dentro un riquadro quasi
+   quadrato, `cover` + `center top` mantiene il volto in vista e ritaglia lo
+   stemma/le gambe in fondo — esattamente il sintomo riportato.
+6. **"Fm regolata" nelle Valutazioni, da sostituire con la Fantamedia reale
+   dell'ultima stagione.** Sono due grandezze diverse già presenti nel
+   codice, non la stessa cosa rinominata: `leagueAdjustedFm`
+   (`shared/src/recommendationEngine.ts`, colonna "Fm regolata" secondo
+   `columnGlossary.ts`) è una fantamedia *ricostruita* con le regole di lega
+   (mv − 6 + bonus/malus + modificatori); `PlayerSeasonStatsRow.fm`
+   (`shared/src/playerSeasonStats.ts`) è la fantamedia *reale* importata
+   dall'ultima stagione, già definita nel glossario ("Fantamedia importata
+   dell'ultima stagione: voto medio con bonus/malus reali") ma **non
+   propagata** in `PlayerRecommendationComponents` né mostrata in
+   `MergedValuationRow.tsx` — oggi in quella colonna della vista Valutazioni
+   compare solo la versione ricostruita.
+
+### Ricerca esterna a supporto (formazioni, rigoristi, punizioni)
+
+Fatta il 2026-09-02, dopo le prime due giornate di campionato — i due seed
+statici in `server/src/scripts/data/` (`probableLineupsSeed.ts`,
+`setPieceTakersSeed.ts`) erano scritti prima dell'inizio stagione e non
+riflettevano le prime due giornate né gli ultimi giorni di mercato.
+Aggiornati con fonti datate, non a memoria:
+
+- **Formazioni titolari e moduli**, tutte le 20 squadre: [Fantacalcio
+  Online — Probabili formazioni Serie A
+  2026/27](https://www.fantacalcio-online.com/it/consigli-fantacalcio/probabili-formazioni-serie-a)
+  (pubblicato 12/08, aggiornato 01/09/2026, consenso di 11 guide all'asta).
+  Include due ballottaggi in porta segnalati esplicitamente dalla fonte
+  (Torino Paleari 54%/Mascardi 46%, Parma Daffara 51%/Corvi 49%): usato il
+  favorito, ballottaggio annotato nel seed.
+- **Rigoristi**, gerarchia numerata per tutte le 20 squadre: [Goal.com —
+  Rigoristi Serie A
+  2026/2027](https://www.goal.com/it/liste/fantacalcio-rigoristi-serie-a-2026-2027-tiratori-e-gerarchie-dal-dischetto-delle-20-squadre-del-campionato/bltdebca56c3bd91419)
+  (pubblicato 29/08, aggiornato 01/09/2026) — unica fonte trovata con
+  gerarchia esplicita 1°/2°/3° invece del solo nome designato.
+  **Verificato contro** la tabella rigoristi di Fantacalcio Online (stesso
+  articolo di cui sopra): il primo rigorista **non coincide su 6 squadre su
+  20** (Atalanta, Cagliari, Fiorentina, Lecce, Milan) — gerarchie
+  effettivamente aperte a inizio stagione (cambi di allenatore, mercato
+  ancora fresco al momento della scrittura), non un errore di trascrizione;
+  annotato squadra per squadra nei commenti del seed. Una riga (Lazio,
+  Gudmundsson come 2° rigorista secondo Goal.com) non è confermata da
+  nessun'altra fonte consultata ed è segnalata come possibile refuso della
+  fonte stessa.
+- **Punizioni** (calci piazzati diretti), tutte le 20 squadre: [SOS Fanta /
+  Gazzetta dello Sport — Tutti i tiratori di corner e punizioni in Serie A
+  2026/27](https://www.sosfanta.com/asta-fantacalcio/serie-a-2026-2027-tiratori-punizioni-corner-specialisti-fantacalcio-asta/)
+  (pubblicato 28/08, aggiornato 31/08/2026). La fonte elenca anche i tiratori
+  di corner separatamente: non copiati nel seed, che storicamente conflate le
+  due specialità nel solo campo `punizione` (vedi commento nel file).
+- **Composizione Serie A 2026/27 confermata invariata**: Venezia, Frosinone e
+  Monza (promosse dalla B) restano le tre neopromosse rispetto alla stagione
+  precedente — la lista squadre già presente nei due seed era corretta, non
+  andava toccata.
+- Questi due seed restano un **punto di partenza per l'inizio stagione**, non
+  sostituiscono il refresh settimanale in-app via screenshot (formazioni) o
+  la revisione manuale (rigoristi/punizioni): vanno tenuti d'occhio nelle
+  prime giornate, specialmente sulle 6 gerarchie rigoristi discordanti sopra.
+
 ## Traguardi di rilascio (storico)
 
 - `v1.0.0` — Fase 2 completa + servizi in produzione (Neon + Render + Cloudflare
@@ -137,3 +252,9 @@ sessione non persiste si resta «loggati ma tutto 401» invece di tornare al log
   personalizzazione consigli) + migrazioni schema associate.
 - `v4.5.0` — Fase 7 chiusa (bugfix UI + score 0–10 per ruolo).
 - `v4.6.0` — Fase mobile (P10): sessione, chat e notifiche su mobile.
+- `v5.0.0` — redesign "sportsbook" della UI (asta e shell); traguardo di
+  release, considerata stabile.
+- `v5.1.0` — Fase 8 chiusa (P11–P15): palette ruolo, import listone
+  posizionale, valutazioni a copertura totale, FVM ponderato, vista
+  avversari, giocatori trappola; più rifiniture asta (undo chiamata, manager
+  a rosa completa non selezionabile).

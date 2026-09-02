@@ -16,6 +16,19 @@ describe("parseCsvRows", () => {
     const rows = parseCsvRows("a,b;c,d", ";");
     expect(rows[0]).toEqual(["a,b", "c,d"]);
   });
+
+  it("reads quotes inside an unquoted field without throwing (nicknames in Nome completo)", () => {
+    const csv = ["1,Rossi,Mario \"Er\" Rossi,C,Inter", "2,Bianchi,Luca Bianchi,D,Como"].join("\n");
+    expect(() => parseCsvRows(csv)).not.toThrow();
+    const rows = parseCsvRows(csv);
+    expect(rows[0]![2]).toBe('Mario "Er" Rossi');
+    expect(rows).toHaveLength(2);
+  });
+
+  it("still sniffs comma when the first line carries an internal quote", () => {
+    const rows = parseCsvRows('1,Goncalves P.,Goncalves "Pote" Pedro,C,Fiorentina\n2,Tizio,Tizio Uno,D,Inter');
+    expect(rows[0]).toEqual(["1", "Goncalves P.", 'Goncalves "Pote" Pedro', "C", "Fiorentina"]);
+  });
 });
 
 describe("findHeaderRow", () => {
