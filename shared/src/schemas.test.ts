@@ -18,8 +18,6 @@ import {
   probableLineupEntrySchema,
   probableLineupConfirmEntrySchema,
   probableLineupConfirmRequestSchema,
-  probableLineupDraftRowSchema,
-  probableLineupExtractionResponseSchema,
   probableLineupImportReportSchema,
   PROBABLE_LINEUP_STATI,
 } from "./probableLineup";
@@ -43,8 +41,6 @@ import {
   setPieceTakerEntrySchema,
   setPieceTakerConfirmEntrySchema,
   setPieceTakerConfirmRequestSchema,
-  setPieceTakerDraftRowSchema,
-  setPieceTakerExtractionResponseSchema,
   setPieceTakerImportReportSchema,
   SET_PIECE_TAKER_TIPI,
 } from "./setPieceTaker";
@@ -170,13 +166,11 @@ describe("playerSeasonStats", () => {
 });
 
 describe("probableLineup", () => {
-  it("parses stati, entries, confirm and extraction shapes", () => {
+  it("parses stati, entries and confirm shapes", () => {
     expect(PROBABLE_LINEUP_STATI).toContain("titolare");
     probableLineupEntrySchema.parse({ team: "T", player_name: "X", ruolo: null, stato: "titolare" });
     probableLineupConfirmEntrySchema.parse({ player_name: "X", ruolo: "A", stato: "panchina" });
     probableLineupConfirmRequestSchema.parse([{ player_name: "X", ruolo: null, stato: "ballottaggio" }]);
-    probableLineupDraftRowSchema.parse({ player_name: "X", ruolo: null, stato: "titolare", uncertain: true, reason: "?" });
-    probableLineupExtractionResponseSchema.parse({ team: "T", rows: [], discarded: [] });
     probableLineupImportReportSchema.parse({ team: "T", entries: 0 });
     expect(() => probableLineupEntrySchema.parse({ team: "T", player_name: "X", ruolo: null, stato: "boh" })).toThrow();
   });
@@ -251,13 +245,11 @@ describe("rosterExchange", () => {
 });
 
 describe("setPieceTaker", () => {
-  it("parses tipi, entries, confirm and extraction shapes", () => {
+  it("parses tipi, entries and confirm shapes", () => {
     expect(SET_PIECE_TAKER_TIPI).toContain("rigore");
     setPieceTakerEntrySchema.parse({ team: "T", tipo: "rigore", player_name: "X", rank: 1 });
     setPieceTakerConfirmEntrySchema.parse({ tipo: "punizione", player_name: "X", rank: 2 });
     setPieceTakerConfirmRequestSchema.parse([{ tipo: "corner", player_name: "X", rank: 1 }]);
-    setPieceTakerDraftRowSchema.parse({ tipo: "rigore", player_name: "X", rank: 1, uncertain: false });
-    setPieceTakerExtractionResponseSchema.parse({ team: "T", rows: [], discarded: [] });
     setPieceTakerImportReportSchema.parse({ team: "T", entries: 0 });
     expect(() => setPieceTakerEntrySchema.parse({ team: "T", tipo: "rigore", player_name: "X", rank: 0 })).toThrow();
   });

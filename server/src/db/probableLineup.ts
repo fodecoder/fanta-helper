@@ -34,33 +34,3 @@ export async function replaceProbableLineupForTeam(
     client.release();
   }
 }
-
-export interface ProbableLineupScreenshotRow {
-  image: Buffer;
-  content_type: string;
-  uploaded_at: Date;
-}
-
-export async function upsertProbableLineupScreenshot(
-  team: string,
-  image: Buffer,
-  contentType: string,
-): Promise<void> {
-  await pool.query(
-    `INSERT INTO probable_lineup_screenshot (team, image, content_type, uploaded_at)
-     VALUES ($1, $2, $3, now())
-     ON CONFLICT (team) DO UPDATE
-       SET image = EXCLUDED.image, content_type = EXCLUDED.content_type, uploaded_at = now()`,
-    [team, image, contentType],
-  );
-}
-
-export async function getProbableLineupScreenshot(
-  team: string,
-): Promise<ProbableLineupScreenshotRow | undefined> {
-  const result = await pool.query<ProbableLineupScreenshotRow>(
-    "SELECT image, content_type, uploaded_at FROM probable_lineup_screenshot WHERE team = $1",
-    [team],
-  );
-  return result.rows[0];
-}

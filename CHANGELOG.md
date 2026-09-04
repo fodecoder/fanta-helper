@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0] - 2026-09-04
+
+### Changed
+
+- **Probabili formazioni e tiratori — import via JSON al posto di screenshot/Claude**:
+  l'estrazione automatica da screenshot editoriale (upload immagine → Claude
+  vision → revisione) è sostituita da un import JSON scritto/incollato
+  dall'utente, per una squadra sola o per tutte insieme nello stesso file
+  (`{team, titolari, ballottaggi, rigoristi, punizioni}` o un array di questi
+  oggetti). La pagina "Probabili formazioni" mostra la bozza per ogni
+  squadra caricata con possibilità di modificare, aggiungere o escludere
+  righe (sia formazione che rigoristi/punizioni) prima di confermare; la
+  conferma sostituisce, squadra per squadra, i dati già salvati.
+
+### Removed
+
+- **BREAKING**: rimossi gli endpoint `POST /probable-lineup/:team/extract`,
+  `POST /set-piece-taker/:team/extract` e i relativi `GET .../screenshot`,
+  insieme alle tabelle `probable_lineup_screenshot` e
+  `set_piece_taker_screenshot` (migrazione
+  `1788652800000_drop-probable-formation-screenshots.sql`). Restano invariati
+  `GET` e `POST .../confirm` per entrambe le risorse.
+
 ## [5.7.0] - 2026-09-02
 
 ### Added

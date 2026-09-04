@@ -1,6 +1,5 @@
 import type {
   SetPieceTakerEntry,
-  SetPieceTakerExtractionResponse,
   SetPieceTakerImportReport,
   SetPieceTakerConfirmEntry,
 } from "@fanta-helper/shared";
@@ -32,19 +31,6 @@ export function listSetPieceTakers(signal?: AbortSignal): Promise<SetPieceTakerE
   return apiFetch(BASE_URL, { signal }).then((res) => handle<SetPieceTakerEntry[]>(res));
 }
 
-export async function extractSetPieceTakers(
-  team: string,
-  file: File,
-): Promise<SetPieceTakerExtractionResponse> {
-  const contentType = file.type === "image/jpeg" ? "image/jpeg" : "image/png";
-  const res = await apiFetch(`${BASE_URL}/${encodeURIComponent(team)}/extract`, {
-    method: "POST",
-    headers: { "Content-Type": contentType },
-    body: await file.arrayBuffer(),
-  });
-  return handle<SetPieceTakerExtractionResponse>(res);
-}
-
 export function confirmSetPieceTakers(
   team: string,
   rows: SetPieceTakerConfirmEntry[],
@@ -54,8 +40,4 @@ export function confirmSetPieceTakers(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(rows),
   }).then((res) => handle<SetPieceTakerImportReport>(res));
-}
-
-export function screenshotUrl(team: string): string {
-  return `${BASE_URL}/${encodeURIComponent(team)}/screenshot`;
 }

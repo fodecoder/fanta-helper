@@ -10,6 +10,7 @@ export * from "./player";
 export * from "./gkPairing";
 export * from "./probableLineup";
 export * from "./setPieceTaker";
+export * from "./probableFormationImport";
 export * from "./manager";
 export * from "./teamPref";
 export * from "./teamPreferences";
