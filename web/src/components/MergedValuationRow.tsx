@@ -4,7 +4,6 @@ import { budgetPercentToCredits, creditsToBudgetPercent } from "@fanta-helper/sh
 import * as valuationsApi from "../api/valuations";
 import { ValuationsApiError } from "../api/valuations";
 import { roleColor } from "../lib/auctionDerivations";
-import { PlayerAvatar } from "./PlayerAvatar";
 
 type AmountField = "target" | "fair_value" | "max_bid" | "panic_price";
 
@@ -161,52 +160,34 @@ export function MergedValuationRow({
 
   return (
     <tr style={muted ? { opacity: 0.5 } : undefined}>
-      <td style={{ whiteSpace: "nowrap" }}>
-        <span className="player-name-cell">
-          <PlayerAvatar
-            name={r.nome_completo ?? r.name}
-            team={r.team}
-            ruolo={r.ruolo}
-            image_url={r.image_url}
-            size="sm"
-          />
-          {r.nome_completo ?? r.name}
-        </span>
+      <td className="val-name-cell">
+        <div className="val-name-main">{r.nome_completo ?? r.name}</div>
+        <div className="val-name-meta">
+          <span>{r.team}</span>
+          <span aria-hidden>·</span>
+          <span style={{ color: roleColor(r.ruolo) }}>{r.ruolo}</span>
+        </div>
+        <div className="val-name-tags">
+          <span className={r.tier === "Top" ? "tag tag-accent" : "tag tag-neutral"}>{r.tier}</span>
+          {occasione && <span className="tag tag-accent">Occasione</span>}
+          {r.teamPref === "avoid" && (
+            <span className="tag tag-neutral" style={{ color: "var(--color-accent-2-700)" }}>
+              squadra da evitare
+            </span>
+          )}
+          {r.teamPref === "prefer" && <span className="tag tag-accent">squadra preferita</span>}
+          {r.tags.map((t) => (
+            <span
+              key={t.id}
+              className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
+            >
+              {t.label}
+            </span>
+          ))}
+        </div>
       </td>
-      <td>{r.team}</td>
-      <td style={{ color: roleColor(r.ruolo) }}>{r.ruolo}</td>
       <td className="num" style={{ textAlign: "right", fontWeight: 600 }}>
         {normalizedScore !== undefined ? normalizedScore.toFixed(1) : "—"}
-      </td>
-      <td>
-        <span className={r.tier === "Top" ? "tag tag-accent" : "tag tag-neutral"}>{r.tier}</span>
-        {occasione && (
-          <span className="tag tag-accent" style={{ marginLeft: 6 }}>
-            Occasione
-          </span>
-        )}
-        {r.teamPref === "avoid" && (
-          <span
-            className="tag tag-neutral"
-            style={{ marginLeft: 6, color: "var(--color-accent-2-700)" }}
-          >
-            squadra da evitare
-          </span>
-        )}
-        {r.teamPref === "prefer" && (
-          <span className="tag tag-accent" style={{ marginLeft: 6 }}>
-            squadra preferita
-          </span>
-        )}
-        {r.tags.map((t) => (
-          <span
-            key={t.id}
-            className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
-            style={{ marginLeft: 6 }}
-          >
-            {t.label}
-          </span>
-        ))}
       </td>
       <td className="num" style={{ textAlign: "right" }}>
         {r.components.fmScorsaStagione !== null ? r.components.fmScorsaStagione.toFixed(2) : "—"}

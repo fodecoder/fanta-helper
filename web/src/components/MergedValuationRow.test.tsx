@@ -35,7 +35,7 @@ const rec: PlayerRecommendationWithTags = {
     pricePercentile: null,
     gapSignal: null,
   },
-  tags: [],
+  tags: [{ id: "rigorista", label: "Rigorista" }],
 };
 
 function valuation(maxBidBase: number): ValuationWithPlayer {
@@ -118,6 +118,16 @@ describe("MergedValuationRow — obiettivo (wishlist)", () => {
     renderRow({ factor: 1, leagueBudget: 1000, maxBidBase: 30, onToggleTarget });
     await userEvent.click(screen.getByRole("button", { name: "Segna come obiettivo" }));
     expect(onToggleTarget).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("MergedValuationRow — cella giocatore compatta", () => {
+  it("mostra nome, squadra, ruolo e i tag nella stessa cella, senza immagine", () => {
+    renderRow({ factor: 1, leagueBudget: 1000, maxBidBase: 30 });
+    expect(screen.getByText("Test Bomber")).toBeInTheDocument();
+    expect(screen.getByText("TeamX")).toBeInTheDocument();
+    expect(screen.getByText("Rigorista")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });
 

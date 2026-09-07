@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.5.2] - 2026-09-07
+
+### Fixed
+
+- **Tabella Valutazioni non più tagliata**: nome, squadra, ruolo e tag del
+  giocatore sono ora impilati in un'unica colonna "Giocatore" (squadra · ruolo
+  sotto il nome, tag ancora sotto), l'immagine è stata rimossa e le colonne
+  separate Squadra / Ruolo / Fascia sono sparite. La larghezza minima della
+  tabella scende da 1240 a 900px. Di conseguenza non è più possibile ordinare
+  cliccando su quelle intestazioni (per il ruolo resta il filtro segmentato);
+  restano gli ordinamenti per nome, punteggio e valori numerici.
+
 ## [6.5.1] - 2026-09-07
 
 ### Fixed

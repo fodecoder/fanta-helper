@@ -31,10 +31,7 @@ type RoleFilter = "tutti" | Role | "trappole";
 
 type SortKey =
   | "name"
-  | "team"
-  | "ruolo"
   | "score"
-  | "tier"
   | "fm"
   | "reliability"
   | "qt_a"
@@ -44,7 +41,7 @@ type SortKey =
   | "max_bid"
   | "panic_price";
 
-const STRING_SORT_KEYS: ReadonlySet<SortKey> = new Set(["name", "team", "ruolo", "tier"]);
+const STRING_SORT_KEYS: ReadonlySet<SortKey> = new Set(["name"]);
 
 // Stesse regole di scala di MergedValuationRow: il dato salvato è su base 1000,
 // il PDF mostra i valori riscalati per il budget di lega.
@@ -217,14 +214,8 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
       switch (key) {
         case "name":
           return r.name;
-        case "team":
-          return r.team;
-        case "ruolo":
-          return r.ruolo;
         case "score":
           return normById.get(r.player_id) ?? null;
-        case "tier":
-          return r.tier;
         case "fm":
           return r.components.fmScorsaStagione;
         case "reliability":
@@ -361,25 +352,15 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         </StatusMessage>
       ) : (
         <div className="table-scroll">
-          <table className="table" style={{ minWidth: 1240 }}>
+          <table className="table" style={{ minWidth: 900 }}>
             <thead>
               <tr>
                 <th style={{ cursor: "pointer" }} onClick={() => toggleSort("name")}>
-                  Nome{sortArrow("name")}
-                </th>
-                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("team")}>
-                  Squadra{sortArrow("team")}
-                </th>
-                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("ruolo")}>
-                  Ruolo{sortArrow("ruolo")}
+                  Giocatore{sortArrow("name")}
                 </th>
                 <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("score")}>
                   <InfoLabel {...COLUMN_GLOSSARY.score} />
                   {sortArrow("score")}
-                </th>
-                <th style={{ cursor: "pointer" }} onClick={() => toggleSort("tier")}>
-                  <InfoLabel {...COLUMN_GLOSSARY.tier} />
-                  {sortArrow("tier")}
                 </th>
                 <th style={{ textAlign: "right", cursor: "pointer" }} onClick={() => toggleSort("fm")}>
                   <InfoLabel {...COLUMN_GLOSSARY.fm} />
