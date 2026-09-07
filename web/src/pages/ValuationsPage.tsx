@@ -46,6 +46,25 @@ type SortKey =
 
 const STRING_SORT_KEYS: ReadonlySet<SortKey> = new Set(["name", "team", "ruolo", "tier"]);
 
+// Stesse regole di scala di MergedValuationRow: il dato salvato è su base 1000,
+// il PDF mostra i valori riscalati per il budget di lega.
+function toDisplayScaled(base1000: number, factor: number): number {
+  return factor === 1 ? base1000 : Math.round(base1000 * factor);
+}
+
+function fileSlug(name: string): string {
+  const stripped = name
+    .toLowerCase()
+    .normalize("NFD")
+    .split("")
+    .filter((ch) => {
+      const code = ch.codePointAt(0) ?? 0;
+      return code < 0x0300 || code > 0x036f;
+    })
+    .join("");
+  return stripped.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lega";
+}
+
 export function ValuationsPage({ league, calls }: ValuationsPageProps) {
   const [recommendations, setRecommendations] = useState<PlayerRecommendationWithTags[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
@@ -59,6 +78,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("tutti");
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
 
   const toggleSort = (key: SortKey) =>
@@ -139,6 +159,42 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
 
   const normById = useMemo(() => normalizeScoresByRole(recommendations ?? []), [recommendations]);
 
+  const handleExportPdf = async () => {
+    if (!recommendations || !valuations) return;
+    setExporting(true);
+    try {
+      const { buildValuationsPdfModel, downloadValuationsPdf } = await import("../lib/valuationsPdf");
+      const model = buildValuationsPdfModel({
+        leagueName: league.name,
+        budget: league.budget,
+        budgetTargetByRole: league.budget_target_by_role,
+        updatedAt: new Date(),
+        rows: recommendations.map((r) => {
+          const v = valuationByPlayer.get(r.player_id) ?? null;
+          return {
+            playerId: r.player_id,
+            name: r.nome_completo ?? r.name,
+            team: r.team,
+            ruolo: r.ruolo,
+            tier: v?.tier ?? r.tier ?? null,
+            target: v ? toDisplayScaled(v.target, valuationScale) : null,
+            maxBid: v ? toDisplayScaled(v.max_bid, valuationScale) : null,
+            score: normById.get(r.player_id) ?? null,
+            reliability: r.components.reliability,
+            lineupStato: r.components.breakdown?.lineupStato ?? null,
+            dataMissing: r.components.dataMissing,
+            needsRoleCheck: !r.components.ioNeedsRole,
+            note: v?.note ?? null,
+            purchased: purchasedIds.has(r.player_id),
+          };
+        }),
+      });
+      await downloadValuationsPdf(model, `guida-asta-${fileSlug(league.name)}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (recommendations ?? [])
@@ -209,9 +265,23 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
         subtitle="Il ranking dei giocatori disponibili ordinato per valore sopra il rimpiazzo (VORP) sulle regole della lega, con accanto il listino: tier, target, fair value, max bid e panic price. I valori numerici e la nota sono editabili inline e diventano un override personale (visibile solo a te); la base condivisa resta invariata. Importa un JSON già pronto o genera con Claude dal pannello in alto a destra."
         calls={calls}
         actions={
-          <button type="button" className="btn btn-secondary" onClick={() => setPanelOpen((o) => !o)}>
-            {panelOpen ? "Chiudi pannello" : "Importa / genera valutazioni"}
-          </button>
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setPanelOpen((o) => !o)}
+            >
+              {panelOpen ? "Chiudi pannello" : "Importa / genera valutazioni"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={recommendations === null || valuations === null || exporting}
+              onClick={() => void handleExportPdf()}
+            >
+              {exporting ? "Esporto…" : "Esporta PDF"}
+            </button>
+          </>
         }
       />
 

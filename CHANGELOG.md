@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.0] - 2026-09-07
+
+### Added
+
+- **Valutazioni — esportazione PDF ("Guida Asta")**: nuovo pulsante "Esporta PDF"
+  nella testata della pagina (disabilitato finché i dati non sono caricati) che
+  genera una guida A4 stampabile con jsPDF + jspdf-autotable (import lazy, fuori
+  dal bundle iniziale). Contiene intestazione con stagione, sottotitolo con lega
+  e budget reale, quattro indicatori di riparto per ruolo calcolati da
+  `computeRoleBudget` sul budget della lega, legenda, e una sezione per ruolo
+  (P/D/C/A) con numerazione propria e colonne
+  `# | Giocatore | Squadra | Tier | Target | Max | Situazione | Acquistato · Note`;
+  l'header di colonna si ripete a cavallo di pagina. La colonna "Situazione" è
+  derivata dai segnali esistenti (probabili formazioni + affidabilità), senza
+  introdurre campi nuovi; la nota personale è troncata a 60 caratteri. Il mapping
+  dati→modello è nella funzione pura `buildValuationsPdfModel`
+  (`web/src/lib/valuationsPdf.ts`), separata dalla generazione del documento.
+
 ## [6.2.0] - 2026-09-07
 
 ### Added
