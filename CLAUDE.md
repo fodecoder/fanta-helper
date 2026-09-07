@@ -19,7 +19,9 @@ Regole vincolanti per lo sviluppo di questa repo. Non sono linee guida: sono req
 ## Versioning
 
 - Schema: SemVer (`MAJOR.MINOR.PATCH`).
-- A ogni feature aggiorna `version` in `package.json` in modo coerente:
+- A ogni feature aggiorna `version` nel `package.json` di **root** del monorepo
+  in modo coerente (è quello letto da `web/vite.config.ts` per `__APP_VERSION__`,
+  cioè la versione mostrata in app; `web/package.json` NON è usato):
   - `feat` → incremento `MINOR`
   - `fix` → incremento `PATCH`
   - breaking change → incremento `MAJOR`

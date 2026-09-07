@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.5.1] - 2026-09-07
+
+### Fixed
+
+- **Versione mostrata in app allineata**: le feature 6.1.0–6.5.0 avevano
+  aggiornato per errore `web/package.json` (campo non letto da nessuno) invece
+  del `package.json` di root, l'unico da cui `web/vite.config.ts` ricava
+  `__APP_VERSION__`. Il badge in basso a sinistra nella Sidebar restava così a
+  `v6.0.0`. Root portato a `6.5.1` e regola di versioning in `CLAUDE.md`
+  chiarita. Il redeploy in produzione resta manuale (push su `main`).
+
 ## [6.5.0] - 2026-09-07
 
 ### Added
