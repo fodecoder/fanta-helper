@@ -11,6 +11,7 @@ import * as recommendationsApi from "../api/recommendations";
 import * as teamPrefsApi from "../api/teamPrefs";
 import * as playerTrapTagsApi from "../api/playerTrapTags";
 import * as purchasesApi from "../api/purchases";
+import * as wishlistApi from "../api/wishlist";
 import { ValuationImportForm } from "../components/ValuationImportForm";
 import { ValuationGenerateForm } from "../components/ValuationGenerateForm";
 import { MergedValuationRow } from "../components/MergedValuationRow";
@@ -51,6 +52,7 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
   const [purchasedIds, setPurchasedIds] = useState<Set<number>>(new Set());
   const [teamPrefs, setTeamPrefs] = useState<TeamPref[]>([]);
   const [trapTagIds, setTrapTagIds] = useState<Set<number>>(new Set());
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [query, setQuery] = useState("");
@@ -93,6 +95,10 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
       .listPlayerTrapTags(league.id, controller.signal)
       .then((ids) => setTrapTagIds(new Set(ids)))
       .catch(() => setTrapTagIds(new Set()));
+    wishlistApi
+      .listWishlist(league.id, controller.signal)
+      .then((entries) => setWishlistIds(new Set(entries.map((e) => e.player_id))))
+      .catch(() => setWishlistIds(new Set()));
     void purchasesApi
       .listPurchases(league.id, controller.signal)
       .then((rows) => setPurchasedIds(new Set(rows.map((r) => r.player_id))))
@@ -106,6 +112,13 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
     const call = trapTagIds.has(playerId)
       ? playerTrapTagsApi.removePlayerTrapTag(league.id, playerId)
       : playerTrapTagsApi.addPlayerTrapTag(league.id, playerId);
+    call.then(refresh).catch(refresh);
+  };
+
+  const toggleWishlist = (playerId: number) => {
+    const call = wishlistIds.has(playerId)
+      ? wishlistApi.removeFromWishlist(league.id, playerId)
+      : wishlistApi.addToWishlist(league.id, playerId);
     call.then(refresh).catch(refresh);
   };
 
@@ -358,6 +371,8 @@ export function ValuationsPage({ league, calls }: ValuationsPageProps) {
                   purchased={purchasedIds.has(r.player_id)}
                   isTrap={trapTagIds.has(r.player_id)}
                   onToggleTrap={() => toggleTrap(r.player_id)}
+                  isTargeted={wishlistIds.has(r.player_id)}
+                  onToggleTarget={() => toggleWishlist(r.player_id)}
                   onDetails={() => setDetailPlayerId(r.player_id)}
                   onSaved={refresh}
                 />

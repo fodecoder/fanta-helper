@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.2.0] - 2026-09-07
+
+### Added
+
+- **Valutazioni — "Segna come obiettivo"**: ogni riga del ranking ha un pulsante
+  stella (★/☆) accanto a "Segna trappola" che aggiunge o rimuove il giocatore
+  dalla wishlist della lega. Lo stato è caricato da `listWishlist` insieme agli
+  altri dati della pagina e riflesso dopo il refresh (non ottimistico), così un
+  giocatore segnato qui compare tra gli "Obiettivi" dell'asta e viceversa.
+
 ## [6.1.0] - 2026-09-07
 
 ### Added

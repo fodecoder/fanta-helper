@@ -21,6 +21,8 @@ interface MergedValuationRowProps {
   purchased: boolean;
   isTrap: boolean;
   onToggleTrap: () => void;
+  isTargeted: boolean;
+  onToggleTarget: () => void;
   onDetails: () => void;
   onSaved: () => void;
 }
@@ -48,6 +50,8 @@ export function MergedValuationRow({
   purchased,
   isTrap,
   onToggleTrap,
+  isTargeted,
+  onToggleTarget,
   onDetails,
   onSaved,
 }: MergedValuationRowProps) {
@@ -309,6 +313,16 @@ export function MergedValuationRow({
           onClick={onToggleTrap}
         >
           {isTrap ? "Rimuovi trappola" : "Segna trappola"}
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ padding: "2px 10px", fontSize: 12, marginLeft: 6 }}
+          aria-pressed={isTargeted}
+          aria-label={isTargeted ? "Rimuovi da obiettivi" : "Segna come obiettivo"}
+          onClick={onToggleTarget}
+        >
+          {isTargeted ? "★" : "☆"}
         </button>
         {v?.override != null && (
           <button

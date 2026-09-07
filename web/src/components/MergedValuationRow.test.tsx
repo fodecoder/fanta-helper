@@ -57,7 +57,13 @@ function valuation(maxBidBase: number): ValuationWithPlayer {
   };
 }
 
-function renderRow(props: { factor: number; leagueBudget: number; maxBidBase: number }) {
+function renderRow(props: {
+  factor: number;
+  leagueBudget: number;
+  maxBidBase: number;
+  isTargeted?: boolean;
+  onToggleTarget?: () => void;
+}) {
   return render(
     <table>
       <tbody>
@@ -71,6 +77,8 @@ function renderRow(props: { factor: number; leagueBudget: number; maxBidBase: nu
           purchased={false}
           isTrap={false}
           onToggleTrap={vi.fn()}
+          isTargeted={props.isTargeted ?? false}
+          onToggleTarget={props.onToggleTarget ?? vi.fn()}
           onDetails={vi.fn()}
           onSaved={vi.fn()}
         />
@@ -89,6 +97,29 @@ function pctInput(): HTMLElement {
   if (!pct) throw new Error("percent input not found");
   return pct;
 }
+
+describe("MergedValuationRow — obiettivo (wishlist)", () => {
+  it("mostra la stella vuota e aria-pressed false quando non è un obiettivo", () => {
+    renderRow({ factor: 1, leagueBudget: 1000, maxBidBase: 30, isTargeted: false });
+    const btn = screen.getByRole("button", { name: "Segna come obiettivo" });
+    expect(btn).toHaveTextContent("☆");
+    expect(btn).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("mostra la stella piena e aria-pressed true quando è un obiettivo", () => {
+    renderRow({ factor: 1, leagueBudget: 1000, maxBidBase: 30, isTargeted: true });
+    const btn = screen.getByRole("button", { name: "Rimuovi da obiettivi" });
+    expect(btn).toHaveTextContent("★");
+    expect(btn).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("chiama onToggleTarget al click", async () => {
+    const onToggleTarget = vi.fn();
+    renderRow({ factor: 1, leagueBudget: 1000, maxBidBase: 30, onToggleTarget });
+    await userEvent.click(screen.getByRole("button", { name: "Segna come obiettivo" }));
+    expect(onToggleTarget).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("MergedValuationRow — max bid come percentuale del budget", () => {
   it("converte 40% del budget 500 in crediti sulla base 1000", async () => {
