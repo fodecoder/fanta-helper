@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.0] - 2026-09-07
+
+### Added
+
+- **Asta — portieri della stessa squadra**: chiamando un portiere, un blocco
+  distinto sotto il suo riquadro elenca gli altri portieri ancora liberi della
+  stessa squadra (nome, squadra, tier e fair value), ordinati per fair value
+  decrescente come proxy della gerarchia titolare/riserva. È separato dal
+  suggerimento di accoppiata portieri (`GkPairingHint`), che resta invariato. Il
+  blocco compare solo per i portieri e solo se esiste almeno un altro portiere
+  disponibile nella squadra. Nuovo derivato `sameTeamGoalkeepers` in
+  `AuctionMode` e nuovo componente `SameTeamGoalkeepers`, condiviso tra vista
+  desktop e telefono.
+
 ## [6.3.0] - 2026-09-07
 
 ### Added

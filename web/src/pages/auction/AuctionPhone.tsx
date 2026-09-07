@@ -3,6 +3,7 @@ import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
+import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
 import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import {
@@ -220,6 +221,9 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               tags={view.tagsFor(sel.id)}
               attributes={view.attributesFor(sel.id)}
             />
+            {sel.ruolo === "P" && (
+              <SameTeamGoalkeepers goalkeepers={view.sameTeamGoalkeepers} />
+            )}
 
             {view.ladder && (
               <div className="ladder" style={{ margin: "30px 16px 58px 6px" }}>

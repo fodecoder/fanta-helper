@@ -4,6 +4,7 @@ import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
+import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { ScoreBreakdownDialog } from "../../components/ScoreBreakdownDialog";
 import { InfoLabel } from "../../components/ui/InfoLabel";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
@@ -216,6 +217,9 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     tags={view.tagsFor(sel.id)}
                     attributes={view.attributesFor(sel.id)}
                   />
+                  {sel.ruolo === "P" && (
+                    <SameTeamGoalkeepers goalkeepers={view.sameTeamGoalkeepers} />
+                  )}
                 </div>
                 </div>
                 <div className={`verdict-badge verdict-badge--${view.verdictTone}`}>

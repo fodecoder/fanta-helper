@@ -151,6 +151,10 @@ export interface AuctionView {
   probableLineup: ProbableLineupEntry[] | null;
   setPieceTakers: SetPieceTakerEntry[] | null;
   gkPairingSuggestion: GkPairingSuggestion | null;
+  // Altri portieri della stessa squadra del giocatore in chiamata (solo quando
+  // è un portiere): riferimento per la gerarchia titolare/riserva, desunta da
+  // fair value decrescente. Blocco distinto dal `gkPairingSuggestion`.
+  sameTeamGoalkeepers: { player: Player; tier: string | null; fairValue: number | null }[];
 
   logRows: {
     key: string;
@@ -421,6 +425,27 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     () => gkPairingSuggestionFor(myGoalkeeperTeams, gkPairing ?? [], isTeamGoalkeeperAvailable),
     [myGoalkeeperTeams, gkPairing, isTeamGoalkeeperAvailable],
   );
+
+  // Portieri ancora liberi della stessa squadra del portiere in chiamata,
+  // ordinati per fair value decrescente (proxy della gerarchia titolare/riserva:
+  // nei dati non esiste un campo "ruolo di squadra").
+  const sameTeamGoalkeepers = useMemo(() => {
+    const empty: { player: Player; tier: string | null; fairValue: number | null }[] = [];
+    if (!selectedPlayer || selectedPlayer.ruolo !== "P" || !players) return empty;
+    return players
+      .filter(
+        (p) =>
+          p.ruolo === "P" &&
+          p.team === selectedPlayer.team &&
+          p.id !== selectedPlayer.id &&
+          !purchasedPlayerIds.has(p.id),
+      )
+      .map((p) => {
+        const v = valuationById.get(p.id);
+        return { player: p, tier: v?.tier ?? null, fairValue: v?.fair_value ?? null };
+      })
+      .sort((a, b) => (b.fairValue ?? -1) - (a.fairValue ?? -1));
+  }, [selectedPlayer, players, purchasedPlayerIds, valuationById]);
 
   const opponents = useMemo(
     () => opponentSummaries(statuses, selectedPlayer?.ruolo ?? null),
@@ -763,6 +788,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     probableLineup,
     setPieceTakers,
     gkPairingSuggestion,
+    sameTeamGoalkeepers,
     logRows,
     wishRows,
     assignError,
