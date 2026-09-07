@@ -173,13 +173,14 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-09-02, `v5.1.0`).** **In produzione**: Neon + Render + Cloudflare
-Pages attivi, app funzionante end-to-end. Fasi 0–8 complete (multiutente, chat,
+**Stato (2026-09-07, `v6.0.0`).** **In produzione**: Neon + Render + Cloudflare
+Pages attivi, app funzionante end-to-end. Fasi 0–9 complete (multiutente, chat,
 tag, preferenze per-utente, sessione mobile, redesign "sportsbook", import
-listone posizionale, occasioni/trappole); in corso la Fase 9 (correzioni dal
-listone 2026/27 e dal primo uso reale delle Valutazioni, vedi
-[PLAN.md](./PLAN.md)). La procedura sotto resta come riferimento per un nuovo
-ambiente. I passi eseguiti:
+listone posizionale, occasioni/trappole, budget in percentuale e per reparto,
+Fantamedia reale in Valutazioni); in corso la Fase 10 (rifiniture da uso reale
+in preparazione d'asta — edit manager, secondo/terzo portiere, export PDF,
+wishlist in Valutazioni, vedi [PLAN.md](./PLAN.md)). La procedura sotto resta
+come riferimento per un nuovo ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati
 - [x] Secret GitHub per le migrazioni impostato (`NEON_DIRECT_DATABASE_URL`,

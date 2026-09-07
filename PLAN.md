@@ -2,22 +2,32 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-02 — `v5.1.0`. Fasi 0–8 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-07 — `v6.0.0`. Fasi 0–9 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
-> chat), sessione mobile, e le 9 correzioni della Fase 8 (palette ruolo, import
+> chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
 > listone posizionale con `fanta_id`/nome completo/fallback foto, valutazioni a
 > copertura totale, FVM ponderato al budget, vista avversari in asta,
-> giocatori trappola). Dettagli di ognuna nel [CHANGELOG.md](./CHANGELOG.md) e
-> nella git history; l'audit di verifica P1–P9 resta più sotto per
-> riferimento, la Fase 8 (P11–P15) è tracciata come chiusa subito sotto.
+> giocatori trappola) e le 6 correzioni della Fase 9 (import CSV robusto,
+> budget in percentuale e per reparto, foto non tagliate, Fantamedia reale in
+> Valutazioni) più le aggiunte fatte nello stesso periodo ma fuori dai 6 punti
+> originali: generazione offline del listino base, colonne ordinabili in
+> Valutazioni, tolleranza ai decimali in import, disattivazione automatica
+> svincolati al re-import listone, conferma di sovrascrittura override al
+> re-import valutazioni, import probabili formazioni/rigoristi/punizioni via
+> JSON al posto di screenshot (`v5.2.0`→`v6.0.0`, dettagli nel
+> [CHANGELOG.md](./CHANGELOG.md)). L'audit di verifica P1–P9 resta più sotto
+> per riferimento, le Fasi 8 e 9 (P11–P19) sono tracciate come chiuse subito
+> sotto.
 >
-> **In corso — Fase 9**: 6 problemi emersi dal nuovo listone "Lista FantaAsta"
-> 2026/27 e dal primo uso reale della pagina Valutazioni, verificati sul
-> codice (riproducendo l'errore di import) e con ricerca esterna
-> (Fantacalcio Online, Goal.com, SOS Fanta/Gazzetta dello Sport, per le
-> probabili formazioni/rigoristi/punizioni aggiornate al 2026-09-02). Prompt
-> operativi P16–P19 in [PROMPTS.md](./PROMPTS.md).
+> **In corso — Fase 10**: 4 feature richieste dall'uso reale in preparazione
+> d'asta (edit manager più diretto, secondo/terzo portiere alla chiamata,
+> export PDF della lista valutazioni, "segna come obiettivo" wishlist in
+> Valutazioni), verificate sul codice esistente prima di essere messe in
+> prompt. Prompt operativi P20–P24 in [PROMPTS.md](./PROMPTS.md). In
+> parallelo, ricalibrazione dei due listini valutazioni (lega da 8 e da 10,
+> budget 1000) sui prezzi medi realmente pagati in asta — lavoro sui dati, non
+> sul codice, descritto sotto in "Ricalibrazione valutazioni 07/09/2026".
 
 ## Fase 8 — Correzioni post-asta reale  *(chiusa)*
 
@@ -138,7 +148,13 @@ Aggravante nota (candidata a prompt successivo): dopo `POST /auth/login` il
 client non riverifica `/auth/me` (`web/src/App.tsx`), quindi quando il cookie di
 sessione non persiste si resta «loggati ma tutto 401» invece di tornare al login.
 
-## Fase 9 — Nuovo listone 2026/27 e primo uso reale delle Valutazioni  *(in corso)*
+## Fase 9 — Nuovo listone 2026/27 e primo uso reale delle Valutazioni  *(chiusa)*
+
+Tutti i 6 punti sono implementati (P16–P19 in `PROMPTS.md`, storia completa nel
+`CHANGELOG.md` e nella git history: `1115865` parsing CSV con virgolette,
+`316b115` import a lotti anti-timeout, `93c8c4f` max bid da percentuale,
+`f35d7a8`+`5655fa2` budget per reparto, `f39957a` Fantamedia reale + foto non
+tagliate). Elenco originale dei problemi mantenuto sotto per riferimento.
 
 Trovati caricando il nuovo export "Lista FantaAsta" 2026/27 e usando la pagina
 Valutazioni in preparazione d'asta. Ognuno riprodotto sul codice (non solo
@@ -242,6 +258,88 @@ Aggiornati con fonti datate, non a memoria:
   la revisione manuale (rigoristi/punizioni): vanno tenuti d'occhio nelle
   prime giornate, specialmente sulle 6 gerarchie rigoristi discordanti sopra.
 
+## Fase 10 — Rifiniture da uso reale in preparazione d'asta  *(in corso)*
+
+Richieste dopo aver usato l'app per preparare due liste valutazioni (lega da 8
+e da 10) prima dell'asta vera. Ognuna verificata sul codice esistente prima di
+essere messa in prompt — nessuna è partita da zero, tutte riusano
+meccanismi/pattern già presenti.
+
+1. **Click su un manager non porta alla pagina di modifica.** `ManagersPage`
+   (`web/src/pages/ManagersPage.tsx`) ha già il rename inline (input diretto
+   in tabella, `commitRename`), ma la tabella "Stato dei manager" di
+   `OverviewPage` (`web/src/pages/OverviewPage.tsx`, righe 130–170, colonna
+   `s.managerName`) mostra il nome come testo statico, non collegato. `App.tsx`
+   non passa a `OverviewPage` alcuna callback di navigazione (oggi riceve solo
+   `league`/`calls`) — va aggiunta, sul modello di come `Sidebar`/`setPage`
+   già gestiscono `SetupPage`.
+2. **Alla chiamata di un portiere, niente secondo/terzo portiere della stessa
+   squadra né consiglio dalla griglia portieri.** Esiste già
+   `GkPairingHint`/`gkPairingSuggestion` (`AuctionMode.tsx`, uso in
+   `AuctionDesktop.tsx` riga 748) ma è un suggerimento di *accoppiata fra
+   squadre diverse* per il calendario, sempre visibile in colonna "Io" — non
+   la lista dei portieri della *stessa* squadra del giocatore chiamato. Il
+   pool completo (`players`, stato in `AuctionMode.tsx` riga 190) e la logica
+   di confronto alternative stesso ruolo (righe 488–498, usata altrove) sono
+   il punto di partenza per filtrare per squadra+ruolo=P quando
+   `selectedPlayer.ruolo === "P"`.
+3. **Export PDF della lista valutazioni.** Nessun export esiste oggi.
+   Template fornito dall'utente (`guida-asta-lega10-redesign.pdf`, 14
+   pagine): intestazione con nome lega/budget/data, 4 indicatori di riparto
+   budget per ruolo (%, crediti indicativi), legenda tag colorati (Infortunio,
+   In forma, Sottotono, Da verificare, Verifica ruolo), poi una tabella per
+   ruolo (numerazione che riparte da 1 a ogni ruolo, colonne # / Giocatore /
+   Squadra / Tier / Target / Max / Situazione / Acquistato-Note vuota per
+   scrivere a mano durante l'asta), con una riga "Scelte top" sotto ogni
+   titolo di sezione.
+4. **Nessun modo di segnare un giocatore come obiettivo nella pagina
+   Valutazioni.** Il modello wishlist esiste già per intero lato API
+   (`web/src/api/wishlist.ts`: list/add/remove/reorder) ed è usato in asta,
+   ma non in `ValuationsPage`/`MergedValuationRow.tsx`. Il pattern da
+   replicare è quello già in uso per i giocatori trappola: stato
+   `trapTagIds: Set<number>` + `toggleTrap` in `ValuationsPage.tsx` (righe
+   53, 105–108) passato come prop `isTrap`/`onToggleTrap` a
+   `MergedValuationRow` (stesso file, righe 22–23, bottone riga 305–312).
+
+5. **Nota di scouting non visibile durante la chiamata, né evidenziata quando
+   il giocatore viene battuto.** Il campo `note` della valutazione esiste ed
+   è modificabile (`MergedValuationRow.tsx` righe 277–284) ma non compare
+   nella vista Asta. La soglia di "battuto" non va inventata: esiste già in
+   `verdict()`/`verdictTone()` (`web/src/lib/auctionDerivations.ts` righe
+   74–90), che segna "Fuori mercato" quando `price > val.panic_price` — è il
+   segnale da riusare per evidenziare la nota, non un valore nuovo.
+
+### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
+
+I due file valutazioni caricati dall'utente (`valutazioni-lega-10-aggiornato.json`,
+250 giocatori; `valutazioni-lega-8-aggiornato.json`, 200 giocatori — entrambi
+ora nella root del repo) avevano due problemi, corretti fuori dal codice
+dell'app:
+
+- **Campi `note`/`Note` duplicati** (nota tattica del modello + nota di
+  ricerca incrociata aggiunta dall'utente): uniti in un unico campo `note`.
+- **`target`/`fair_value`/`max_bid`/`panic_price` sistematicamente troppo
+  bassi rispetto ai prezzi realmente pagati in asta.** Verificato incrociando
+  due fonti indipendenti (Fantacalcio-Online "Tool Asta Fantacalcio: stima
+  prezzo medio per lega/budget", Economia e Sport "prezzi medi asta 2026/27"),
+  che convergono sullo stesso ordine di grandezza per i nomi controllati (es.
+  Malen: ~320-325 crediti medi pagati su budget 1000, contro un `panic_price`
+  di 122 nel file originale — coincidenza non casuale: il `panic_price`
+  originale risultava pari a 2× la sola quotazione ufficiale, senza alcun
+  ponderamento sul prezzo di mercato). Applicato un fattore correttivo per
+  ruolo×tier (mediana dello scarto sulle ~336 righe con un riscontro diretto
+  nelle fonti; nuovo campo per giocatore `price_calibration_factor`),
+  **non** una ricerca puntuale su tutti i 450 giocatori — scelta esplicita
+  per stare nei tempi di una sessione, con verifica mirata solo su ~20 nomi
+  di richiamo. Fattori applicati: P tier A ×1.88, P tier B ×1.30, D tier A
+  ×1.57, D tier B ×1.60, C tier A ×2.24, C tier B ×1.99, A tier A ×3.44, A
+  tier B ×2.21, A tier C ×2.19 — gli attaccanti erano il ruolo più
+  sottostimato. Limite noto, documentato nel campo `updated_note` di ogni
+  file: la somma di `fair_value` su tutto il pool è al 116% (lega 10) e 132%
+  (lega 8) del monte crediti di lega — sopra il 100%, atteso in un modello di
+  questo tipo (i target top si pagano spesso sopra media, le riserve sotto),
+  ma da tenere presente.
+
 ## Traguardi di rilascio (storico)
 
 - `v1.0.0` — Fase 2 completa + servizi in produzione (Neon + Render + Cloudflare
@@ -258,3 +356,18 @@ Aggiornati con fonti datate, non a memoria:
   posizionale, valutazioni a copertura totale, FVM ponderato, vista
   avversari, giocatori trappola; più rifiniture asta (undo chiamata, manager
   a rosa completa non selezionabile).
+- `v5.2.0` — Fantamedia reale in Valutazioni al posto della sola versione
+  ricostruita; fix foto ritagliate (P17+P18).
+- `v5.3.0` — max bid da percentuale di budget; budget obiettivo per reparto,
+  avviso di sforamento e residuo (P19a+P19b).
+- `v5.4.0` — generazione offline del listino base valutazioni; colonne
+  ordinabili in Valutazioni; import valutazioni tollerante ai decimali.
+- `v5.5.0` — budget obiettivo per reparto sempre visibile in asta (colonna
+  "Io" desktop e fascia compatta mobile).
+- `v5.6.0` — disattivazione automatica dei giocatori svincolati al re-import
+  del listone, con conferma esplicita oltre soglia.
+- `v5.7.0` — Fase 9 chiusa: conferma di sovrascrittura degli override
+  personali al re-import valutazioni.
+- `v6.0.0` — **BREAKING**: import probabili formazioni/rigoristi/punizioni
+  via JSON incollato dall'utente, al posto di screenshot + estrazione Claude;
+  rimossi gli endpoint di estrazione automatica.

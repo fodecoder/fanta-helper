@@ -1,0 +1,402 @@
+[
+  {
+    "team": "Atalanta",
+    "titolari": [
+      { "player_name": "Carnesecchi", "ruolo": "P" },
+      { "player_name": "Scalvini", "ruolo": "D" },
+      { "player_name": "Kristensen T.", "ruolo": "D" },
+      { "player_name": "Ederson D.S.", "ruolo": "C" },
+      { "player_name": "Gaetano", "ruolo": "C" },
+      { "player_name": "Scamacca", "ruolo": "A" },
+      { "player_name": "De Ketelaere", "ruolo": "A" },
+      { "player_name": "Rowe", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Bernasconi", "Kolasinac"] },
+      { "ruolo": "D", "opzioni": ["Bellanova", "Zappacosta"] },
+      { "ruolo": "C", "opzioni": ["Kessiè", "Samardzic"] }
+    ],
+    "rigoristi": ["Kessiè", "Scamacca", "Krstovic"],
+    "punizioni": ["Gaetano", "Samardzic", "De Ketelaere"]
+  },
+  {
+    "team": "Bologna",
+    "titolari": [
+      { "player_name": "Skorupski", "ruolo": "P" },
+      { "player_name": "Zortea", "ruolo": "D" },
+      { "player_name": "Miranda J.", "ruolo": "D" },
+      { "player_name": "Heggem", "ruolo": "D" },
+      { "player_name": "Ferguson", "ruolo": "C" },
+      { "player_name": "Dovyk", "ruolo": "A" },
+      { "player_name": "Orsolini", "ruolo": "A" },
+      { "player_name": "Cambiaghi", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Theate", "Helland"] },
+      { "ruolo": "C", "opzioni": ["Pobega", "Moro N."] },
+      { "ruolo": "C", "opzioni": ["Odgaard", "Bernardeschi"] }
+    ],
+    "rigoristi": ["Orsolini", "Dovyk", "Bernardeschi"],
+    "punizioni": ["Orsolini", "Bernardeschi"]
+  },
+  {
+    "team": "Cagliari",
+    "titolari": [
+      { "player_name": "Caprile", "ruolo": "P" },
+      { "player_name": "Mina", "ruolo": "D" },
+      { "player_name": "Rodriguez Ju.", "ruolo": "D" },
+      { "player_name": "Obert", "ruolo": "D" },
+      { "player_name": "Winks", "ruolo": "C" },
+      { "player_name": "Romano", "ruolo": "C" },
+      { "player_name": "Fazzini", "ruolo": "C" },
+      { "player_name": "Maldini", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Zè Pedro", "Sugawara"] },
+      { "ruolo": "C", "opzioni": ["Adopo", "Fadera"] },
+      { "ruolo": "A", "opzioni": ["Kevin Carlos", "Nzola"] }
+    ],
+    "rigoristi": ["Kevin Carlos", "Fazzini", "Mina"],
+    "punizioni": ["Fazzini", "Winks", "Romano"]
+  },
+  {
+    "team": "Como",
+    "titolari": [
+      { "player_name": "Butez", "ruolo": "P" },
+      { "player_name": "Chalobah T.", "ruolo": "D" },
+      { "player_name": "Ramon", "ruolo": "D" },
+      { "player_name": "Valle", "ruolo": "D" },
+      { "player_name": "Milla", "ruolo": "C" },
+      { "player_name": "Paz N.", "ruolo": "C" },
+      { "player_name": "Diao", "ruolo": "A" },
+      { "player_name": "Douvikas", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Couto", "Smolcik I."] },
+      { "ruolo": "C", "opzioni": ["Da Cunha", "Perrone"] },
+      { "ruolo": "C", "opzioni": ["Baturina", "Rodriguez Je."] }
+    ],
+    "rigoristi": ["Da Cunha", "Baturina", "Paz N."],
+    "punizioni": ["Paz N.", "Baturina", "Da Cunha"]
+  },
+  {
+    "team": "Fiorentina",
+    "titolari": [
+      { "player_name": "De Gea", "ruolo": "P" },
+      { "player_name": "Dragusin", "ruolo": "D" },
+      { "player_name": "Valdepenas", "ruolo": "D" },
+      { "player_name": "Ndour", "ruolo": "C" },
+      { "player_name": "Atta", "ruolo": "C" },
+      { "player_name": "Mastantuono", "ruolo": "C" },
+      { "player_name": "Goncalves P.", "ruolo": "C" },
+      { "player_name": "Beto", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Ranieri L.", "Viery"] },
+      { "ruolo": "D", "opzioni": ["Dodò", "Jimenez A."] },
+      { "ruolo": "C", "opzioni": ["Fagioli", "Oulai"] }
+    ],
+    "rigoristi": ["Pellegrino M.", "Goncalves P.", "Beto"],
+    "punizioni": ["Mastantuono", "Atta", "Goncalves P."]
+  },
+  {
+    "team": "Frosinone",
+    "titolari": [
+      { "player_name": "Palmisani", "ruolo": "P" },
+      { "player_name": "Calvani", "ruolo": "D" },
+      { "player_name": "Monterisi", "ruolo": "D" },
+      { "player_name": "Calò", "ruolo": "C" },
+      { "player_name": "Schmid", "ruolo": "C" },
+      { "player_name": "Kvernadze", "ruolo": "C" },
+      { "player_name": "Ghedjemis", "ruolo": "C" },
+      { "player_name": "Raimondo", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Tchato", "Oyono A."] },
+      { "ruolo": "D", "opzioni": ["Bracaglia", "Terzic"] },
+      { "ruolo": "C", "opzioni": ["Cichella", "Grillitsch"] }
+    ],
+    "rigoristi": ["Calò", "Schmid", "Ghedjemis"],
+    "punizioni": ["Calò", "Schmid", "Ghedjemis"]
+  },
+  {
+    "team": "Genoa",
+    "titolari": [
+      { "player_name": "Bijlow", "ruolo": "P" },
+      { "player_name": "Marcandalli", "ruolo": "D" },
+      { "player_name": "Vasquez", "ruolo": "D" },
+      { "player_name": "Ostigard", "ruolo": "D" },
+      { "player_name": "Ellertsson", "ruolo": "C" },
+      { "player_name": "Frendrup", "ruolo": "C" },
+      { "player_name": "Baldanzi", "ruolo": "C" },
+      { "player_name": "Colombo", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Mitaj", "Drameh"] },
+      { "ruolo": "C", "opzioni": ["Sow", "Amorim"] },
+      { "ruolo": "A", "opzioni": ["Vitinha O.", "Osmajic"] }
+    ],
+    "rigoristi": ["Colombo", "Vitinha O.", "Ostigard"],
+    "punizioni": ["Baldanzi", "Vitinha O.", "Traorè Hj."]
+  },
+  {
+    "team": "Inter",
+    "titolari": [
+      { "player_name": "Martinez Jo.", "ruolo": "P" },
+      { "player_name": "Akanji", "ruolo": "D" },
+      { "player_name": "Bastoni", "ruolo": "D" },
+      { "player_name": "Dimarco", "ruolo": "D" },
+      { "player_name": "Calhanoglu", "ruolo": "C" },
+      { "player_name": "Barella", "ruolo": "C" },
+      { "player_name": "Thuram", "ruolo": "A" },
+      { "player_name": "Martinez L.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Stones", "Bisseck"] },
+      { "ruolo": "C", "opzioni": ["Diouf", "Spence"] },
+      { "ruolo": "C", "opzioni": ["Jones C.", "Zielinski"] }
+    ],
+    "rigoristi": ["Calhanoglu", "Zielinski", "Martinez L."],
+    "punizioni": ["Calhanoglu", "Dimarco", "Zielinski"]
+  },
+  {
+    "team": "Juventus",
+    "titolari": [
+      { "player_name": "Vicario", "ruolo": "P" },
+      { "player_name": "Kalulu", "ruolo": "D" },
+      { "player_name": "Bremer", "ruolo": "D" },
+      { "player_name": "Locatelli", "ruolo": "C" },
+      { "player_name": "McKennie", "ruolo": "C" },
+      { "player_name": "Conceicao", "ruolo": "C" },
+      { "player_name": "Gonzalez N.", "ruolo": "C" },
+      { "player_name": "Kolo Muani", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Lucumi", "Kelly L."] },
+      { "ruolo": "D", "opzioni": ["Celik", "Cambiaso"] },
+      { "ruolo": "C", "opzioni": ["Sarr P.", "Douglas Luiz"] }
+    ],
+    "rigoristi": ["Kolo Muani", "Yildiz", "Locatelli"],
+    "punizioni": ["Yildiz", "Locatelli", "Cambiaso"]
+  },
+  {
+    "team": "Lazio",
+    "titolari": [
+      { "player_name": "Mandas", "ruolo": "P" },
+      { "player_name": "Provstgaard", "ruolo": "D" },
+      { "player_name": "Frattesi", "ruolo": "C" },
+      { "player_name": "Rovella", "ruolo": "C" },
+      { "player_name": "Taylor K.", "ruolo": "C" },
+      { "player_name": "Isaksen", "ruolo": "C" },
+      { "player_name": "Zaccagni", "ruolo": "C" },
+      { "player_name": "Pinamonti", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Marusic", "Fioriani Mussolini"] },
+      { "ruolo": "D", "opzioni": ["Sutalo J.", "Doekhi"] },
+      { "ruolo": "D", "opzioni": ["Tavares N.", "Pedraza"] }
+    ],
+    "rigoristi": ["Zaccagni", "Pinamonti", "Taylor K."],
+    "punizioni": ["Zaccagni", "Taylor K.", "Cataldi"]
+  },
+  {
+    "team": "Lecce",
+    "titolari": [
+      { "player_name": "Falcone", "ruolo": "P" },
+      { "player_name": "Veiga D.", "ruolo": "D" },
+      { "player_name": "Tiago Gabriel", "ruolo": "D" },
+      { "player_name": "Gallo", "ruolo": "D" },
+      { "player_name": "Coulibaly L.", "ruolo": "C" },
+      { "player_name": "Pierotti", "ruolo": "C" },
+      { "player_name": "Monteiro J.", "ruolo": "C" },
+      { "player_name": "Geubbels", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Gaspar K.", "Siebert"] },
+      { "ruolo": "C", "opzioni": ["Ilic", "Ngom"] },
+      { "ruolo": "C", "opzioni": ["Berisha M.", "Gandelman"] }
+    ],
+    "rigoristi": ["Geubbels", "Stulic", "Berisha M."],
+    "punizioni": ["Berisha M.", "Gallo", "Pierotti"]
+  },
+  {
+    "team": "Milan",
+    "titolari": [
+      { "player_name": "Maigan", "ruolo": "P" },
+      { "player_name": "Gila", "ruolo": "D" },
+      { "player_name": "Pavlovic", "ruolo": "C" },
+      { "player_name": "Musah", "ruolo": "C" },
+      { "player_name": "Modric", "ruolo": "C" },
+      { "player_name": "Rabiot", "ruolo": "C" },
+      { "player_name": "Pulisic", "ruolo": "C" },
+      { "player_name": "Ramos G.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["De Winter", "Gabbia"] },
+      { "ruolo": "D", "opzioni": ["Bartesaghi", "Estupinan"] },
+      { "ruolo": "C", "opzioni": ["Moreira", "Chukwueze"] }
+    ],
+    "rigoristi": ["Ramos G.", "Pulisic", "Modric"],
+    "punizioni": ["Modric", "Pulisic", "Saelemaekers"]
+  },
+  {
+    "team": "Monza",
+    "titolari": [
+      { "player_name": "Tornqvist", "ruolo": "P" },
+      { "player_name": "Kouadio", "ruolo": "D" },
+      { "player_name": "Lucchesi", "ruolo": "D" },
+      { "player_name": "Mangas", "ruolo": "D" },
+      { "player_name": "Mout", "ruolo": "C" },
+      { "player_name": "Akinsanmiro", "ruolo": "C" },
+      { "player_name": "Ngonge", "ruolo": "A" },
+      { "player_name": "Varela G.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Carboni A.", "Ziolkowski"] },
+      { "ruolo": "D", "opzioni": ["Birindelli", "Tourè I."] },
+      { "ruolo": "A", "opzioni": ["Zeballos", "Folorunsho"] }
+    ],
+    "rigoristi": ["Pessina", "Cutrone", "Varela G."],
+    "punizioni": ["Colpani", "Pessina", "Zeballos"]
+  },
+  {
+    "team": "Napoli",
+    "titolari": [
+      { "player_name": "Meret", "ruolo": "P" },
+      { "player_name": "Di Lorenzo", "ruolo": "D" },
+      { "player_name": "Rrahmani", "ruolo": "D" },
+      { "player_name": "Lobotka", "ruolo": "C" },
+      { "player_name": "McTominay", "ruolo": "C" },
+      { "player_name": "Politano", "ruolo": "C" },
+      { "player_name": "Hojlund", "ruolo": "A" },
+      { "player_name": "Santos A.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Badiashile", "Buongiorno"] },
+      { "ruolo": "D", "opzioni": ["Spinozzola", "Olivera"] },
+      { "ruolo": "C", "opzioni": ["De Bruyne", "Zambo Anguissa"] }
+    ],
+    "rigoristi": ["De Bruyne", "Hojlund", "Politano"],
+    "punizioni": ["De Bruyne", "Politano", "Vergara"]
+  },
+  {
+    "team": "Parma",
+    "titolari": [
+      { "player_name": "Delprato", "ruolo": "D" },
+      { "player_name": "Troilo", "ruolo": "D" },
+      { "player_name": "Diego Carlos", "ruolo": "D" },
+      { "player_name": "Valeri", "ruolo": "D" },
+      { "player_name": "Keita M.", "ruolo": "C" },
+      { "player_name": "Ordonez C.", "ruolo": "C" },
+      { "player_name": "Fabbian", "ruolo": "C" },
+      { "player_name": "Bernabè", "ruolo": "C" },
+      { "player_name": "Tourè E.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "P", "opzioni": ["Corvi", "Daffara"] },
+      { "ruolo": "A", "opzioni": ["Romero D.", "Lontani"] }
+    ],
+    "rigoristi": ["Tourè E.", "Valeri", "Nicolussi Caviglia"],
+    "punizioni": ["Bernabè", "Nicolussi Caviglia", "Valeri"]
+  },
+  {
+    "team": "Roma",
+    "titolari": [
+      { "player_name": "Svilar", "ruolo": "P" },
+      { "player_name": "Mancini", "ruolo": "D" },
+      { "player_name": "N'Dicka", "ruolo": "D" },
+      { "player_name": "Wesley", "ruolo": "D" },
+      { "player_name": "Molina N.", "ruolo": "D" },
+      { "player_name": "Konè M.", "ruolo": "C" },
+      { "player_name": "Cristante", "ruolo": "C" },
+      { "player_name": "Dybala", "ruolo": "A" },
+      { "player_name": "Malen", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Hermoso", "Koulierakis"] },
+      { "ruolo": "C", "opzioni": ["Mora", "Soulè"] }
+    ],
+    "rigoristi": ["Malen", "Dybala", "Castro S."],
+    "punizioni": ["Dybala", "Mora", "Soulè"]
+  },
+  {
+    "team": "Sassuolo",
+    "titolari": [
+      { "player_name": "Muric", "ruolo": "P" },
+      { "player_name": "Van Der Brempt", "ruolo": "D" },
+      { "player_name": "Idzes", "ruolo": "D" },
+      { "player_name": "Matic", "ruolo": "C" },
+      { "player_name": "Thorstvedt", "ruolo": "C" },
+      { "player_name": "Berardi", "ruolo": "A" },
+      { "player_name": "Esposito Se.", "ruolo": "A" },
+      { "player_name": "Laurientè", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Caleta-Car", "Leysen F."] },
+      { "ruolo": "D", "opzioni": ["Obrador", "Doig"] },
+      { "ruolo": "C", "opzioni": ["Bakola", "Adzic"] }
+    ],
+    "rigoristi": ["Berardi", "Esposito Se.", "Laurientè"],
+    "punizioni": ["Berardi", "Laurientè", "Adzic"]
+  },
+  {
+    "team": "Torino",
+    "titolari": [
+      { "player_name": "Perri", "ruolo": "P" },
+      { "player_name": "Comert", "ruolo": "D" },
+      { "player_name": "Mandragora", "ruolo": "C" },
+      { "player_name": "Fitz-Jim", "ruolo": "C" },
+      { "player_name": "Cacciamani", "ruolo": "C" },
+      { "player_name": "Casadei", "ruolo": "C" },
+      { "player_name": "Vlasic", "ruolo": "C" },
+      { "player_name": "Simeone", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Comuzzo", "Ismajli"] },
+      { "ruolo": "D", "opzioni": ["Coco", "Ismajli"] },
+      { "ruolo": "D", "opzioni": ["Belghali", "Patterson"] }
+    ],
+    "rigoristi": ["Vlasic", "Mandragora", "Simeone"],
+    "punizioni": ["Vlasic", "Oristano", "Fitz-Jim"]
+  },
+  {
+    "team": "Udinese",
+    "titolari": [
+      { "player_name": "Okoye", "ruolo": "P" },
+      { "player_name": "Kabasele", "ruolo": "D" },
+      { "player_name": "Solet", "ruolo": "D" },
+      { "player_name": "Kamara H.", "ruolo": "D" },
+      { "player_name": "Vojvoda", "ruolo": "D" },
+      { "player_name": "Karlstrom", "ruolo": "C" },
+      { "player_name": "Zaniolo", "ruolo": "C" },
+      { "player_name": "Ekkelenkamp", "ruolo": "C" },
+      { "player_name": "Davis K.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Abankwah", "Palma"] },
+      { "ruolo": "C", "opzioni": ["Piotrowski", "Miller L."] }
+    ],
+    "rigoristi": ["Davis K.", "Solet", "Zaniolo"],
+    "punizioni": ["Zaniolo", "Ekkelenkamp", "Unai Gomez"]
+  },
+  {
+    "team": "Venezia",
+    "titolari": [
+      { "player_name": "Stankovic F.", "ruolo": "P" },
+      { "player_name": "Schingtienne", "ruolo": "D" },
+      { "player_name": "Bella-Kotchap", "ruolo": "D" },
+      { "player_name": "Perez K.", "ruolo": "C" },
+      { "player_name": "Busio", "ruolo": "C" },
+      { "player_name": "Basic", "ruolo": "C" },
+      { "player_name": "Adams A.", "ruolo": "A" },
+      { "player_name": "Yeboah J.", "ruolo": "A" }
+    ],
+    "ballottaggi": [
+      { "ruolo": "D", "opzioni": ["Juan Jesus", "Halhal"] },
+      { "ruolo": "D", "opzioni": ["Mazzocchi", "Hainaut"] },
+      { "ruolo": "D", "opzioni": ["Haps", "Correia T."] }
+    ],
+    "rigoristi": ["Busio", "Adams A.", "Perez K."],
+    "punizioni": ["Busio", "Perez K.", "Basic"]
+  }
+]
