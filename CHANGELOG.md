@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.1.0] - 2026-09-07
+
+### Added
+
+- **Panoramica — apertura rapida della modifica nome manager**: nella tabella
+  "Stato dei manager" il nome di ogni manager è un pulsante testuale; il clic
+  porta alla pagina "Manager" con il campo nome di quel manager già a fuoco e
+  selezionato, pronto da sovrascrivere. La navigazione usa uno stato
+  `focusManagerId` accanto alla pagina attiva, azzerato quando si lascia la
+  pagina "Manager" o si cambia lega.
+
 ## [6.0.0] - 2026-09-04
 
 ### Changed

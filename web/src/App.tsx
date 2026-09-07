@@ -46,6 +46,7 @@ function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeLeagueId, setActiveLeagueId] = useState<number | null>(readLeagueIdFromUrl);
   const [page, setPage] = useState<SetupPage>("panoramica");
+  const [focusManagerId, setFocusManagerId] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>("setup");
   const [purchaseCount, setPurchaseCount] = useState<number | null>(null);
   const [shellRefresh, setShellRefresh] = useState(0);
@@ -121,9 +122,20 @@ function App() {
     return () => controller.abort();
   }, [activeLeagueResolvedId, shellRefresh]);
 
+  function handleNavigate(next: SetupPage) {
+    if (next !== "manager") setFocusManagerId(null);
+    setPage(next);
+  }
+
+  function openManager(id: number) {
+    setFocusManagerId(id);
+    setPage("manager");
+  }
+
   function handleSelectLeague(id: number | null) {
     setActiveLeagueId(id);
     writeLeagueIdToUrl(id);
+    setFocusManagerId(null);
     setPage(id === null ? "leghe" : "panoramica");
   }
 
@@ -175,7 +187,7 @@ function App() {
         activeLeague={activeLeague}
         onSelectLeague={handleSelectLeague}
         page={effectivePage}
-        onNavigate={setPage}
+        onNavigate={handleNavigate}
         onEnterAuction={() => setMode("auction")}
         backendStatus={status}
         version={__APP_VERSION__}
@@ -198,9 +210,13 @@ function App() {
         ) : activeLeague === null ? (
           <StatusMessage kind="empty">Nessuna lega. Creane una dalla pagina Leghe.</StatusMessage>
         ) : effectivePage === "panoramica" ? (
-          <OverviewPage league={activeLeague} calls={purchaseCount} />
+          <OverviewPage league={activeLeague} calls={purchaseCount} onOpenManager={openManager} />
         ) : effectivePage === "manager" ? (
-          <ManagersPage league={activeLeague} calls={purchaseCount} />
+          <ManagersPage
+            league={activeLeague}
+            calls={purchaseCount}
+            focusManagerId={focusManagerId ?? undefined}
+          />
         ) : effectivePage === "valutazioni" ? (
           <ValuationsPage league={activeLeague} calls={purchaseCount} />
         ) : effectivePage === "quotazioni" ? (
@@ -218,7 +234,7 @@ function App() {
         activeLeague={activeLeague}
         onSelectLeague={handleSelectLeague}
         page={effectivePage}
-        onNavigate={setPage}
+        onNavigate={handleNavigate}
         onEnterAuction={() => setMode("auction")}
         onLogout={handleLogout}
       />

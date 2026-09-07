@@ -29,9 +29,10 @@ import { COLUMN_GLOSSARY } from "../lib/columnGlossary";
 interface OverviewPageProps {
   league: League;
   calls: number | null;
+  onOpenManager: (managerId: number) => void;
 }
 
-export function OverviewPage({ league, calls }: OverviewPageProps) {
+export function OverviewPage({ league, calls, onOpenManager }: OverviewPageProps) {
   const [purchases, setPurchases] = useState<PurchaseWithDetails[] | null>(null);
   const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
   const [valuations, setValuations] = useState<ValuationWithPlayer[] | null>(null);
@@ -167,7 +168,19 @@ export function OverviewPage({ league, calls }: OverviewPageProps) {
                         ) : (
                           <span className={isMe ? "mgr-dot mgr-dot--me" : "mgr-dot"} />
                         )}
-                        {s.managerName}
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{
+                            padding: 0,
+                            fontSize: "inherit",
+                            fontWeight: "inherit",
+                            textDecoration: "underline",
+                          }}
+                          onClick={() => onOpenManager(s.managerId)}
+                        >
+                          {s.managerName}
+                        </button>
                       </span>
                     </td>
                     <td className="num" style={{ textAlign: "right" }}>

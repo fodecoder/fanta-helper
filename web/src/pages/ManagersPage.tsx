@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { League, Manager, ManagerAuctionStatus } from "@fanta-helper/shared";
 import * as managersApi from "../api/managers";
 import { ManagersApiError } from "../api/managers";
@@ -9,9 +9,10 @@ import { StatusMessage } from "../components/StatusMessage";
 interface ManagersPageProps {
   league: League;
   calls: number | null;
+  focusManagerId?: number;
 }
 
-export function ManagersPage({ league, calls }: ManagersPageProps) {
+export function ManagersPage({ league, calls, focusManagerId }: ManagersPageProps) {
   const [managers, setManagers] = useState<Manager[] | null>(null);
   const [statuses, setStatuses] = useState<ManagerAuctionStatus[] | null>(null);
   const [drafts, setDrafts] = useState<Record<number, string>>({});
@@ -19,6 +20,8 @@ export function ManagersPage({ league, calls }: ManagersPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+  const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  const focusDone = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -39,6 +42,21 @@ export function ManagersPage({ league, calls }: ManagersPageProps) {
       .catch(() => setStatuses(null));
     return () => controller.abort();
   }, [league.id, refreshToken]);
+
+  useEffect(() => {
+    if (focusDone.current || focusManagerId == null || managers === null) return;
+    const el = inputRefs.current.get(focusManagerId);
+    if (!el) return;
+    focusDone.current = true;
+    el.focus();
+    el.select();
+    // jsdom non implementa scrollIntoView: non deve rompere focus/select.
+    try {
+      el.scrollIntoView({ block: "center" });
+    } catch {
+      /* ambienti senza layout */
+    }
+  }, [focusManagerId, managers]);
 
   const refresh = () => setRefreshToken((t) => t + 1);
   const statusFor = (id: number) => statuses?.find((s) => s.managerId === id);
@@ -150,6 +168,10 @@ export function ManagersPage({ league, calls }: ManagersPageProps) {
                     <input
                       className="input"
                       style={{ minHeight: 30 }}
+                      ref={(el) => {
+                        if (el) inputRefs.current.set(m.id, el);
+                        else inputRefs.current.delete(m.id);
+                      }}
                       value={drafts[m.id] ?? ""}
                       onChange={(e) => setDrafts((d) => ({ ...d, [m.id]: e.target.value }))}
                       onBlur={() => void commitRename(m)}
