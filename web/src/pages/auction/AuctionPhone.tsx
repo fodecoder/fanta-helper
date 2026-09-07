@@ -4,6 +4,7 @@ import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
+import { ScoutingNote } from "../../components/ScoutingNote";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
 import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import {
@@ -205,6 +206,9 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 {view.verdict.text}
               </span>
             </div>
+            {view.selectedNote && (
+              <ScoutingNote note={view.selectedNote} highlighted={view.verdictTone === "over"} />
+            )}
             <div style={{ fontSize: 13, color: "var(--color-neutral-800)", marginTop: 4 }}>
               {sel.team}
               {val &&

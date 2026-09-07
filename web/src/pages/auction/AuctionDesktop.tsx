@@ -5,6 +5,7 @@ import { OpponentRosterDialog } from "./OpponentRosterDialog";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
+import { ScoutingNote } from "../../components/ScoutingNote";
 import { ScoreBreakdownDialog } from "../../components/ScoreBreakdownDialog";
 import { InfoLabel } from "../../components/ui/InfoLabel";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
@@ -227,6 +228,13 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   <span className="verdict-badge__text">{view.verdict.text}</span>
                 </div>
               </div>
+
+              {view.selectedNote && (
+                <ScoutingNote
+                  note={view.selectedNote}
+                  highlighted={view.verdictTone === "over"}
+                />
+              )}
 
               {view.ladder && (
                 <div style={{ padding: "26px 0 6px" }}>

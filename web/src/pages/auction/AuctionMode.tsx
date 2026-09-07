@@ -120,6 +120,9 @@ export interface AuctionView {
 
   selectedPlayer: Player | undefined;
   selectedValuation: ValuationWithPlayer | undefined;
+  // Nota di scouting del giocatore in chiamata, già ripulita: `null` se assente
+  // o vuota (nessun placeholder lato vista).
+  selectedNote: string | null;
   wishlistPlayerIds: Set<number>;
   valuationFor: (playerId: number) => ValuationWithPlayer | undefined;
   quotationFor: (playerId: number) => QuotationRow | undefined;
@@ -756,6 +759,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     onSortKey: setSortKey,
     selectedPlayer,
     selectedValuation,
+    selectedNote: selectedValuation?.note?.trim() || null,
     wishlistPlayerIds,
     valuationFor,
     quotationFor,
