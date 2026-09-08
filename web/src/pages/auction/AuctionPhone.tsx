@@ -7,8 +7,10 @@ import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { ScoutingNote } from "../../components/ScoutingNote";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
+import { WarningBadge } from "../../components/WarningBadge";
 import { OpponentsBoard } from "./OpponentsBoard";
 import {
+  COLOR_WARN,
   deltaColor,
   formatDelta,
   lineupStatusFor,
@@ -38,6 +40,7 @@ type Tab = "lista" | "alternative" | "log";
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
   const [opponentsOpen, setOpponentsOpen] = useState(false);
+  const [myRosterOpen, setMyRosterOpen] = useState(false);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const selectedManagerName =
@@ -150,6 +153,45 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               </span>
             </span>
           ))}
+        </div>
+      )}
+
+      {view.myRoster.length > 0 && (
+        <div style={{ padding: "0 12px 6px" }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-block"
+            style={{ minHeight: 36, fontSize: 12 }}
+            aria-expanded={myRosterOpen}
+            onClick={() => setMyRosterOpen((v) => !v)}
+          >
+            {myRosterOpen ? "▾" : "▸"} Rosa (
+            {view.myRoster.reduce((n, g) => n + g.players.length, 0)})
+          </button>
+          {myRosterOpen && (
+            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 8 }}>
+              {view.myRoster.map((g) => (
+                <div key={g.ruolo}>
+                  <span className="role-tag" style={{ fontSize: 11, color: roleColor(g.ruolo) }}>
+                    {g.ruolo}
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 3 }}>
+                    {g.players.map((p) => (
+                      <div key={p.player_id} style={{ display: "flex", gap: 8, fontSize: 12 }}>
+                        <span
+                          className="ellipsis"
+                          style={{ flex: 1, minWidth: 0, color: "var(--color-neutral-800)" }}
+                        >
+                          {p.name}
+                        </span>
+                        <span className="num" style={{ fontWeight: 600 }}>{p.prezzo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -314,32 +356,27 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
             >
               Assegna a {selectedManagerName}
             </button>
-            <div
-              style={{
-                fontSize: 12,
-                color: view.assignError ? "var(--color-accent-2-700)" : view.impact.color,
-                marginTop: 7,
-                minHeight: 32,
-                lineHeight: 1.35,
-              }}
-            >
-              {view.assignError ?? view.impact.text}
-            </div>
-            {view.roleBudgetImpact && (
-              <div
-                style={{ fontSize: 12, color: "var(--color-accent-2-700)", lineHeight: 1.35 }}
-              >
-                {view.roleBudgetImpact.text}
+            {view.selectedManagerId !== null && (
+              <div style={{ marginTop: 4 }}>
+                <WarningBadge warnings={view.warningsFor(view.selectedManagerId)} />
               </div>
             )}
-            {view.strongRoleAlerts.map((a) => (
+            {/* Testo solo quando non è un avviso: gli avvisi (max bid superato/slot
+                pieni, quota di reparto, giocatori forti presi) compaiono come badge
+                lampeggiante qui sopra e sui nomi avversario più sotto. */}
+            {!view.assignError && view.impact.color !== COLOR_WARN && (
               <div
-                key={a.managerId}
-                style={{ fontSize: 12, color: "var(--color-accent-2-700)", lineHeight: 1.35 }}
+                style={{
+                  fontSize: 12,
+                  color: view.impact.color,
+                  marginTop: 7,
+                  minHeight: 32,
+                  lineHeight: 1.35,
+                }}
               >
-                {a.text}
+                {view.impact.text}
               </div>
-            ))}
+            )}
 
             <div style={{ marginTop: 10 }}>
               <button
@@ -356,8 +393,9 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                   <OpponentsBoard
                     cards={view.opponentRosterCards}
                     calledRole={sel?.ruolo ?? null}
-                    imageUrlFor={view.playerImageFor}
                     onDeletePurchase={view.onDeletePurchase}
+                    onUpdatePurchasePrice={view.onUpdatePurchasePrice}
+                    warningsFor={view.warningsFor}
                   />
                 </div>
               )}

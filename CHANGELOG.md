@@ -5,6 +5,41 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.12.0] - 2026-09-08
+
+### Added
+
+- **Rosa "Io" per ruolo nella colonna asta** (Fase 11, P31): sotto "Rosa · slot
+  per ruolo" (desktop) o in una sezione collassabile propria (telefono), la
+  rosa del proprietario raggruppata P-D-C-A con nome e prezzo pagato — nuovo
+  `myRosterByRole`.
+- **Modifica dei crediti di un acquisto dal pannello avversari** (Fase 11,
+  P31): il prezzo in ogni riga rosa di `OpponentsBoard` è ora un bottone che
+  apre un campo numerico inline; conferma con Invio o al blur. Nessun update
+  sul log `purchase` (resta valido "mai update, solo insert/delete"): delete +
+  insert con lo stesso manager, validati prima contro il residuo disponibile
+  (il nuovo prezzo non può far scendere il residuo sotto zero).
+- **Avvisi come badge lampeggiante** (Fase 11, P31): i tre avvisi testuali
+  sotto il prezzo (max bid rettificato superato o slot pieni per il manager
+  che comprerebbe, quota di reparto sforata/vicina, avversari con giocatori
+  forti già presi nel ruolo) diventano un'emoji ⚠️ lampeggiante (nuovo
+  `WarningBadge`) accanto al nome del manager coinvolto — "Io" o la card
+  avversario — con il motivo in un toast al click o al passaggio del mouse.
+  Il testo informativo non di avviso resta a schermo com'era.
+
+### Changed
+
+- **`AlternativesPanel` collassabile a griglia di soli nomi** (Fase 11, P31):
+  parte collassato; una volta aperto mostra tutte le alternative libere dello
+  stesso ruolo su una griglia a 3 colonne di soli nomi (niente immagine,
+  niente paginazione a 5 righe). Il click su un nome apre solo il suo
+  dettaglio (fair value/target/max, delta, punteggio, stats/attributi) sotto
+  la griglia — non seleziona più il giocatore in chiamata.
+- **Rosa avversari ordinata per ruolo poi data d'acquisto** (Fase 11, P31):
+  `opponentRosterCards` ordina la rosa di ogni avversario per ruolo (P-D-C-A)
+  invece che per prezzo decrescente; le righe non mostrano più l'immagine del
+  giocatore.
+
 ## [6.11.0] - 2026-09-08
 
 ### Changed

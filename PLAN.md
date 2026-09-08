@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.11.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.12.0`. Fasi 0–11 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -31,11 +31,12 @@ Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 > pagati in asta — lavoro sui dati, non sul codice, descritto sotto in
 > "Ricalibrazione valutazioni 07/09/2026".
 >
-> **In corso — Fase 11 (v7.0, restyling Asta)**: 8 richieste di restyling
-> della schermata Asta raccolte dall'uso reale (listone collassabile,
-> alternative compatte e paginate, verdetto/barra fair-value vicino al nome,
-> stato avversari sotto il giocatore in chiamata con drag&drop/cancellazione
-> diretta, storico ridotto a un bottone). Prompt operativi P25–P31 in
+> **Fase 11 (chiusa, `v6.6.0`→`v6.12.0`, restyling Asta)**: 8 richieste di
+> restyling della schermata Asta raccolte dall'uso reale (listone collassabile,
+> alternative compatte a griglia di nomi, verdetto/barra fair-value vicino al
+> nome, stato avversari sotto il giocatore in chiamata con drag&drop/
+> cancellazione/modifica crediti, storico ridotto a un bottone, rosa "Io" per
+> ruolo, avvisi come badge lampeggiante). Prompt operativi P25–P31 in
 > [PROMPTS.md](./PROMPTS.md). A differenza delle fasi precedenti i prompt non
 > sono quasi mai file-disjoint (convergono quasi tutti su
 > `AuctionDesktop.tsx`/`AuctionPhone.tsx`): la nota di parallelizzabilità è
@@ -327,7 +328,7 @@ meccanismi/pattern già presenti.
    74–90), che segna "Fuori mercato" quando `price > val.panic_price` — è il
    segnale da riusare per evidenziare la nota, non un valore nuovo.
 
-## Fase 11 — Restyling Asta (v7.0)  *(in corso)*
+## Fase 11 — Restyling Asta  *(chiusa, `v6.6.0`→`v6.12.0`)*
 
 8 richieste di restyling della schermata Asta, raccolte durante l'asta vera
 del 08/09/2026 (screenshot allegati in chat, non nel repo). A differenza delle
@@ -371,10 +372,29 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    `PurchaseLogDialog` col log completo e la cancellazione per riga, "Annulla
    ultima" come azione rapida). `OpponentRosterDialog.tsx` eliminato (codice
    morto: `OpponentsBoard` di P28 ne copre già tutti i dati).
+8. **Alternative collassabili a griglia di soli nomi, rosa avversari ordinata
+   per ruolo e crediti modificabili, rosa "Io" per ruolo, avvisi come badge
+   lampeggiante.** ✅ *(P31, v6.12.0)* — `AlternativesPanel` parte collassato e,
+   una volta aperto, mostra tutte le alternative libere su griglia a 3 colonne
+   di soli nomi (niente immagine, niente paginazione); il click apre solo il
+   dettaglio del giocatore cliccato (fv/target/max/Δ/punteggio +
+   `PlayerDetailPanel`), non seleziona più il giocatore in chiamata.
+   `opponentRosterCards` ordina la rosa di ogni avversario per ruolo (P-D-C-A)
+   poi data d'acquisto (non più per prezzo decrescente); righe rosa senza
+   immagine, prezzo cliccabile per modificarlo (delete + insert sullo stesso
+   manager, validato contro il residuo disponibile — mai un update sul log).
+   Nuovo `myRosterByRole` mostra la rosa del proprietario per ruolo sotto gli
+   slot/budget nella colonna "Io" (desktop) e in una sezione collassabile
+   (telefono). I tre avvisi testuali sotto il prezzo (max bid/slot pieni,
+   quota di reparto, giocatori forti già presi da un avversario) diventano un
+   badge ⚠️ lampeggiante (nuovo `WarningBadge`) accanto al nome del manager
+   coinvolto — "Io" o la card avversario — con il motivo in un toast al click
+   o al passaggio del mouse; il testo neutro (non di avviso) resta a schermo.
 
 Prompt operativi: P25 (punto 1, chiusa), P26 (punti 3+4), P27 (punti 2), P28
-(punto 5), P29 (punto 6, chiusa), P30 (punto 7, chiusa) — dettagli,
-note di implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
+(punto 5), P29 (punto 6, chiusa), P30 (punto 7, chiusa), P31 (punto 8,
+chiusa) — dettagli, note di implementazione e gruppi paralleli in
+[PROMPTS.md](./PROMPTS.md).
 
 ### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
 
@@ -454,3 +474,7 @@ dell'app:
 - `v6.11.0` — Fase 11: P30 — storico acquisti dietro il bottone "Log acquisti"
   (`PurchaseLogDialog`), non più sempre a schermo; `OpponentRosterDialog`
   rimosso.
+- `v6.12.0` — Fase 11 chiusa: P31 — `AlternativesPanel` collassabile a griglia
+  di soli nomi; rosa avversari ordinata per ruolo con crediti modificabili;
+  rosa "Io" per ruolo; avvisi come badge lampeggiante con toast al posto del
+  testo sotto il prezzo.

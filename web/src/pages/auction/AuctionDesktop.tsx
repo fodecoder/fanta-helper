@@ -9,7 +9,9 @@ import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { ScoutingNote } from "../../components/ScoutingNote";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
+import { WarningBadge } from "../../components/WarningBadge";
 import {
+  COLOR_WARN,
   ROLE_LABEL,
   lineupStatusFor,
   roleColor,
@@ -357,29 +359,13 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   Assegna
                 </button>
               </div>
-              <div
-                className="bid-impact"
-                style={{
-                  color: view.assignError ? "var(--color-accent-2-700)" : view.impact.color,
-                }}
-              >
-                {view.assignError ?? view.impact.text}
-              </div>
-              {view.roleBudgetImpact && (
-                <div style={{ fontSize: 12, color: "var(--color-accent-2-700)" }}>
-                  {view.roleBudgetImpact.text}
-                </div>
-              )}
-              {view.strongRoleAlerts.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {view.strongRoleAlerts.map((a) => (
-                    <span
-                      key={a.managerId}
-                      style={{ fontSize: 12, color: "var(--color-accent-2-700)" }}
-                    >
-                      {a.text}
-                    </span>
-                  ))}
+              {/* Testo solo quando non è un avviso: gli avvisi (max bid superato/slot
+                  pieni, quota di reparto, giocatori forti presi) compaiono come
+                  badge lampeggiante accanto al nome del manager coinvolto — vedi
+                  "Io" qui sopra e i nomi in "Avversari" sotto. */}
+              {!view.assignError && view.impact.color !== COLOR_WARN && (
+                <div className="bid-impact" style={{ color: view.impact.color }}>
+                  {view.impact.text}
                 </div>
               )}
             </div>
@@ -400,9 +386,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
             <OpponentsBoard
               cards={view.opponentRosterCards}
               calledRole={sel?.ruolo ?? null}
-              imageUrlFor={view.playerImageFor}
               onDeletePurchase={view.onDeletePurchase}
               onReassignPurchase={view.onReassignPurchase}
+              onUpdatePurchasePrice={view.onUpdatePurchasePrice}
+              warningsFor={view.warningsFor}
               reassignError={view.reassignError}
             />
           </div>
@@ -411,7 +398,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
         {/* Colonna 3 — io */}
         <aside className="io-col">
           <div>
-            <h6 style={{ margin: "0 0 18px", color: "var(--color-neutral-700)" }}>Io</h6>
+            <h6 style={{ margin: "0 0 18px", color: "var(--color-neutral-700)" }}>
+              Io
+              {me && <WarningBadge warnings={view.warningsFor(me.managerId)} />}
+            </h6>
             <GkPairingHint
               suggestion={view.gkPairingSuggestion}
               onFilterTeam={(team) => {
@@ -472,6 +462,42 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               ))}
             </div>
           </div>
+
+          {view.myRoster.length > 0 && (
+            <div>
+              <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
+                Rosa
+              </h6>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {view.myRoster.map((g) => (
+                  <div key={g.ruolo}>
+                    <div
+                      className="role-tag"
+                      style={{ fontSize: 11, marginBottom: 3, color: roleColor(g.ruolo) }}
+                    >
+                      {g.ruolo}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      {g.players.map((p) => (
+                        <div
+                          key={p.player_id}
+                          style={{ display: "flex", gap: 8, fontSize: 12 }}
+                        >
+                          <span
+                            className="ellipsis"
+                            style={{ flex: 1, minWidth: 0, color: "var(--color-neutral-800)" }}
+                          >
+                            {p.name}
+                          </span>
+                          <span className="num" style={{ fontWeight: 600 }}>{p.prezzo}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {me && me.spentByRole.length > 0 && (
             <div>

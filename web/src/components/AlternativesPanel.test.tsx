@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Player, ValuationWithPlayer } from "@fanta-helper/shared";
 import type { CompareRow } from "../lib/auctionDerivations";
@@ -59,7 +59,6 @@ function makeView(rows: CompareRow[], over: Partial<AlternativesPanelView> = {})
     compareSortKey: "fair_value",
     onCompareSortKey: vi.fn(),
     compareSortValueFor: () => null,
-    onSelect: vi.fn(),
     quotationFor: () => undefined,
     weightedFvmFor: () => null,
     seasonStatsById: new Map(),
@@ -72,62 +71,54 @@ function makeView(rows: CompareRow[], over: Partial<AlternativesPanelView> = {})
   };
 }
 
-function rowNames(): string[] {
-  return screen
-    .getAllByRole("button", { name: /^Player \d+$/ })
-    .map((b) => b.textContent ?? "");
+function toggle() {
+  return screen.getByRole("button", { name: /Alternative nello stesso ruolo/ });
 }
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("AlternativesPanel", () => {
-  it("mostra 5 righe per pagina e pagina avanti/indietro", async () => {
+  it("parte collassato: nessun nome visibile finché non si apre", () => {
+    const rows = Array.from({ length: 4 }, (_, i) => row(i + 1));
+    render(<AlternativesPanel view={makeView(rows)} />);
+
+    expect(toggle()).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Player 1" })).not.toBeInTheDocument();
+  });
+
+  it("il click sul titolo apre il pannello e mostra tutti i nomi senza paginazione", async () => {
     const user = userEvent.setup();
     const rows = Array.from({ length: 12 }, (_, i) => row(i + 1));
     render(<AlternativesPanel view={makeView(rows)} />);
 
-    expect(rowNames()).toEqual(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5"]);
-    expect(screen.getByText("Pagina 1 di 3")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Successiva" }));
-    expect(rowNames()).toEqual(["Player 6", "Player 7", "Player 8", "Player 9", "Player 10"]);
-    expect(screen.getByText("Pagina 2 di 3")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Precedente" }));
-    expect(rowNames()).toEqual(["Player 1", "Player 2", "Player 3", "Player 4", "Player 5"]);
-  });
-
-  it("disabilita Precedente sulla prima pagina e Successiva sull'ultima", async () => {
-    const user = userEvent.setup();
-    const rows = Array.from({ length: 12 }, (_, i) => row(i + 1));
-    render(<AlternativesPanel view={makeView(rows)} />);
-
-    expect(screen.getByRole("button", { name: "Precedente" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Successiva" })).toBeEnabled();
-
-    await user.click(screen.getByRole("button", { name: "Successiva" }));
-    await user.click(screen.getByRole("button", { name: "Successiva" }));
-    expect(screen.getByText("Pagina 3 di 3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Successiva" })).toBeDisabled();
-  });
-
-  it("non mostra i controlli di paginazione con 5 righe o meno", () => {
-    render(<AlternativesPanel view={makeView([row(1), row(2), row(3)])} />);
+    await user.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-expanded", "true");
+    for (const r of rows) {
+      expect(screen.getByRole("button", { name: `Player ${r.player.id}` })).toBeInTheDocument();
+    }
     expect(screen.queryByRole("button", { name: "Successiva" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Pagina \d+ di/)).not.toBeInTheDocument();
   });
 
-  it("rimonta con key nuova (cambio giocatore) e torna a pagina 1", async () => {
+  it("con 0 alternative mostra il messaggio vuoto", async () => {
     const user = userEvent.setup();
-    const rows = Array.from({ length: 12 }, (_, i) => row(i + 1));
-    const { rerender } = render(
-      <AlternativesPanel key="1:fair_value" view={makeView(rows)} />,
-    );
-    await user.click(screen.getByRole("button", { name: "Successiva" }));
-    expect(screen.getByText("Pagina 2 di 3")).toBeInTheDocument();
+    render(<AlternativesPanel view={makeView([])} />);
+    await user.click(toggle());
+    expect(screen.getByText("Nessuna alternativa libera in questo ruolo.")).toBeInTheDocument();
+  });
 
-    rerender(<AlternativesPanel key="2:fair_value" view={makeView(rows)} />);
-    expect(screen.getByText("Pagina 1 di 3")).toBeInTheDocument();
+  it("il click sul nome apre solo i dettagli, non seleziona il giocatore in asta", async () => {
+    const user = userEvent.setup();
+    render(<AlternativesPanel view={makeView([row(7)])} />);
+    await user.click(toggle());
+
+    const nameBtn = screen.getByRole("button", { name: "Player 7" });
+    await user.click(nameBtn);
+    expect(nameBtn).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Squadra")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Chiudi" }));
+    expect(screen.queryByText("Squadra")).not.toBeInTheDocument();
   });
 
   it("il select di ordinamento chiama onCompareSortKey", async () => {
@@ -136,6 +127,7 @@ describe("AlternativesPanel", () => {
     render(
       <AlternativesPanel view={makeView([row(1), row(2)], { onCompareSortKey })} />,
     );
+    await user.click(toggle());
     await user.selectOptions(
       screen.getByLabelText("Ordina alternative per"),
       "target",
@@ -143,34 +135,10 @@ describe("AlternativesPanel", () => {
     expect(onCompareSortKey).toHaveBeenCalledWith("target");
   });
 
-  it("con 0 alternative mostra il messaggio vuoto e nessuna barra", () => {
-    const { container } = render(<AlternativesPanel view={makeView([])} />);
-    expect(screen.getByText("Nessuna alternativa libera in questo ruolo.")).toBeInTheDocument();
-    expect(container.querySelector(".bar-track")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Successiva" })).not.toBeInTheDocument();
-  });
-
-  it("il toggle Dettagli apre un solo pannello per volta", async () => {
+  it("nessuna immagine giocatore nella griglia", async () => {
     const user = userEvent.setup();
-    render(<AlternativesPanel view={makeView([row(1), row(2)])} />);
-
-    const [first, second] = screen.getAllByRole("listitem") as [HTMLElement, HTMLElement];
-    await user.click(within(first).getByRole("button", { name: "Dettagli" }));
-    expect(within(first).getByText("Squadra")).toBeInTheDocument();
-
-    await user.click(within(second).getByRole("button", { name: "Dettagli" }));
-    expect(within(second).getByText("Squadra")).toBeInTheDocument();
-    expect(within(first).queryByText("Squadra")).not.toBeInTheDocument();
-
-    await user.click(within(second).getByRole("button", { name: "Chiudi" }));
-    expect(within(second).queryByText("Squadra")).not.toBeInTheDocument();
-  });
-
-  it("il click sul nome seleziona il giocatore", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    render(<AlternativesPanel view={makeView([row(7)], { onSelect })} />);
-    await user.click(screen.getByRole("button", { name: "Player 7" }));
-    expect(onSelect).toHaveBeenCalledWith(7);
+    render(<AlternativesPanel view={makeView([row(1)])} />);
+    await user.click(toggle());
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });

@@ -28,6 +28,12 @@ export const ROLE_LABEL: Record<Role, string> = {
   A: "Attaccante",
 };
 
+// Ordine di reparto standard (P-D-C-A) per raggruppare rose e liste giocatori.
+export const ROLE_ORDER: Role[] = ["P", "D", "C", "A"];
+export function roleRank(ruolo: Role): number {
+  return ROLE_ORDER.indexOf(ruolo);
+}
+
 export function roleColor(ruolo: Role): string {
   return `var(--role-${ruolo.toLowerCase()})`;
 }
@@ -345,9 +351,12 @@ export function opponentRosterCards(
         used: slot.used,
         total: slot.total,
       })),
+      // Ruolo (P-D-C-A) poi data di acquisto: `players` arriva già ordinato per
+      // `ts` crescente da `getManagerRosters` (join su `listPurchasesWithDetailsByLeague`,
+      // ordinata per `purchase.ts`), quindi uno stable sort sul solo ruolo basta.
       roster: (rosterByManager.get(s.managerId)?.players ?? [])
         .slice()
-        .sort((a, b) => b.prezzo - a.prezzo)
+        .sort((a, b) => roleRank(a.ruolo) - roleRank(b.ruolo))
         .map((p) => ({
           player_id: p.player_id,
           name: p.name,
@@ -355,6 +364,30 @@ export function opponentRosterCards(
           prezzo: p.prezzo,
         })),
     }));
+}
+
+export interface MyRosterGroup {
+  ruolo: Role;
+  players: { player_id: number; name: string; prezzo: number }[];
+}
+
+// Rosa del proprietario ("Io"), raggruppata per ruolo (P-D-C-A) nell'ordine
+// di acquisto — stessa logica di `opponentRosterCards`, ma senza i dati
+// avversario (residuo/max bid/slot, già mostrati sopra nella colonna "Io").
+// Solo i ruoli con almeno un giocatore compaiono.
+export function myRosterByRole(rosters: ManagerRoster[] | null): MyRosterGroup[] {
+  const mine = (rosters ?? []).find((r) => r.isOwner);
+  if (!mine) return [];
+  const byRole = new Map<Role, MyRosterGroup["players"]>();
+  for (const p of mine.players) {
+    const list = byRole.get(p.ruolo) ?? [];
+    list.push({ player_id: p.player_id, name: p.name, prezzo: p.prezzo });
+    byRole.set(p.ruolo, list);
+  }
+  return ROLE_ORDER.filter((r) => byRole.has(r)).map((ruolo) => ({
+    ruolo,
+    players: byRole.get(ruolo)!,
+  }));
 }
 
 export interface StrongRoleAlert {

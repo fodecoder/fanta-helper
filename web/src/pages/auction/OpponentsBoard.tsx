@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from "react";
-import { PlayerAvatar } from "../../components/PlayerAvatar";
+import { WarningBadge } from "../../components/WarningBadge";
 import { ROLE_LABEL, roleColor, type OpponentRosterCard } from "../../lib/auctionDerivations";
 import type { Role } from "@fanta-helper/shared";
 
@@ -7,7 +7,9 @@ interface OpponentsBoardProps {
   cards: OpponentRosterCard[];
   // Ruolo del giocatore in chiamata, per l'etichetta "max <ruolo>".
   calledRole: Role | null;
-  imageUrlFor: (playerId: number) => string | null;
+  // Avvisi per manager (P30): badge lampeggiante accanto al nome. Opzionale:
+  // senza, nessun badge (es. dialog di fallback senza dati sufficienti).
+  warningsFor?: (managerId: number) => string[];
   // P29 — azioni sulle righe rosa. Opzionali: senza `onReassignPurchase` le righe
   // non sono trascinabili (telefono / dialog di fallback), senza `onDeletePurchase`
   // sparisce il bottone di cancellazione.
@@ -19,6 +21,9 @@ interface OpponentsBoardProps {
     fromManagerId: number,
     toManagerId: number,
   ) => void;
+  // Modifica del prezzo di un acquisto (click sui crediti). Opzionale come le
+  // altre azioni: senza, i crediti restano testo non cliccabile.
+  onUpdatePurchasePrice?: (playerId: number, managerId: number, oldPrezzo: number, newPrezzo: number) => void;
   reassignError?: string | null;
 }
 
@@ -38,14 +43,32 @@ interface DragPayload {
 export function OpponentsBoard({
   cards,
   calledRole,
-  imageUrlFor,
   onDeletePurchase,
   onReassignPurchase,
+  onUpdatePurchasePrice,
+  warningsFor,
   reassignError,
 }: OpponentsBoardProps) {
   const [draggingFrom, setDraggingFrom] = useState<number | null>(null);
   const [dragOverManager, setDragOverManager] = useState<number | null>(null);
+  const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState("");
   const draggable = !!onReassignPurchase;
+
+  function startEdit(playerId: number, prezzo: number) {
+    if (!onUpdatePurchasePrice) return;
+    setEditingPlayerId(playerId);
+    setEditingValue(String(prezzo));
+  }
+
+  function commitEdit(managerId: number, playerId: number, oldPrezzo: number) {
+    if (!onUpdatePurchasePrice) return;
+    const parsed = Number(editingValue);
+    setEditingPlayerId(null);
+    if (!Number.isFinite(parsed) || parsed < 0 || Math.trunc(parsed) !== parsed) return;
+    if (parsed === oldPrezzo) return;
+    onUpdatePurchasePrice(playerId, managerId, oldPrezzo, parsed);
+  }
 
   function onDragStart(e: DragEvent, payload: DragPayload) {
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(payload));
@@ -102,7 +125,10 @@ export function OpponentsBoard({
             onDrop={draggable ? (e) => onDrop(e, o.managerId) : undefined}
           >
             <div className="opp-card__head">
-              <span className="opp-card__name">{o.name}</span>
+              <span className="opp-card__name">
+                {o.name}
+                {warningsFor && <WarningBadge warnings={warningsFor(o.managerId)} />}
+              </span>
               <span className="num" style={{ fontSize: 11, color: "var(--color-neutral-700)" }}>
                 {calledRole ? `max ${ROLE_LABEL[calledRole].toLowerCase()}` : "max su corrente"}
               </span>
@@ -167,22 +193,58 @@ export function OpponentsBoard({
                         : undefined
                     }
                   >
-                    <PlayerAvatar
-                      name={p.name}
-                      team=""
-                      ruolo={p.ruolo}
-                      image_url={imageUrlFor(p.player_id)}
-                      size="sm"
-                    />
+                    <span
+                      className="role-tag"
+                      style={{ width: 14, fontSize: 11, color: roleColor(p.ruolo) }}
+                    >
+                      {p.ruolo}
+                    </span>
                     <span
                       className="ellipsis"
                       style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600 }}
                     >
                       {p.name}
                     </span>
-                    <span className="num" style={{ fontWeight: 700, fontSize: 12 }}>
-                      {p.prezzo}
-                    </span>
+                    {editingPlayerId === p.player_id ? (
+                      <input
+                        autoFocus
+                        type="number"
+                        min={0}
+                        step={1}
+                        className="input num"
+                        aria-label={`Modifica crediti di ${p.name}`}
+                        style={{ width: 52, fontSize: 12, padding: "1px 4px" }}
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => commitEdit(o.managerId, p.player_id, p.prezzo)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.currentTarget.blur();
+                          } else if (e.key === "Escape") {
+                            setEditingPlayerId(null);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className="num"
+                        title={onUpdatePurchasePrice ? "Modifica crediti" : undefined}
+                        disabled={!onUpdatePurchasePrice}
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 12,
+                          border: 0,
+                          background: "transparent",
+                          padding: 0,
+                          cursor: onUpdatePurchasePrice ? "pointer" : "default",
+                          color: "inherit",
+                        }}
+                        onClick={() => startEdit(p.player_id, p.prezzo)}
+                      >
+                        {p.prezzo}
+                      </button>
+                    )}
                     {onDeletePurchase && (
                       <button
                         type="button"

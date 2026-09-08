@@ -226,7 +226,7 @@ describe("Vista Asta — pannello avversari contestuale", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("segnala quando un avversario ha già preso giocatori forti nel ruolo", async () => {
+  it("segnala con un badge lampeggiante quando un avversario ha già preso giocatori forti nel ruolo", async () => {
     stubApis([
       {
         managerId: 2,
@@ -240,13 +240,19 @@ describe("Vista Asta — pannello avversari contestuale", () => {
     ]);
     render(<AuctionMode league={league()} onExit={vi.fn()} />);
     await callStriker();
-    expect(await screen.findByText(/Rivale: già 1 Attaccante forti \(2 in reparto\)/)).toBeInTheDocument();
+    const card = await oppCard("Rivale");
+    const badge = within(card).getByRole("button", {
+      name: /Rivale: già 1 Attaccante forti \(2 in reparto\)/,
+    });
+    expect(within(card).queryByText(/Rivale: già 1/)).not.toBeInTheDocument();
+    await userEvent.click(badge);
+    expect(within(card).getByText(/Rivale: già 1 Attaccante forti \(2 in reparto\)/)).toBeInTheDocument();
   });
 
   it("nessun avviso quando l'avversario non ha acquisti", async () => {
     stubApis([{ managerId: 2, managerName: "Rivale", isOwner: false, players: [] }]);
     render(<AuctionMode league={league()} onExit={vi.fn()} />);
     await callStriker();
-    expect(screen.queryByText(/forti \(/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Avviso:/)).not.toBeInTheDocument();
   });
 });

@@ -16,6 +16,7 @@ import {
   ladderModel,
   lineupStatusFor,
   maxSpendableOn,
+  myRosterByRole,
   opponentRosterCards,
   opponentSummaries,
   rankSameRole,
@@ -221,7 +222,7 @@ describe("verdictTone", () => {
 });
 
 describe("opponentRosterCards", () => {
-  it("joins status + roster per non-owner, sorts roster by price desc", () => {
+  it("joins status + roster per non-owner, sorts roster by role (P-D-C-A) then acquisition order", () => {
     const statuses: ManagerAuctionStatus[] = [
       status({ managerId: 1, managerName: "Io", isOwner: true }),
       status({
@@ -251,7 +252,7 @@ describe("opponentRosterCards", () => {
     expect(cards[0]!.name).toBe("Rivale");
     expect(cards[0]!.residuo).toBe(120);
     expect(cards[0]!.maxOnCurrent).toBe(0); // A slots full
-    expect(cards[0]!.roster.map((p) => p.name)).toEqual(["Star", "Cheap"]);
+    expect(cards[0]!.roster.map((p) => p.name)).toEqual(["Cheap", "Star"]);
     expect(cards[0]!.slots.find((s) => s.ruolo === "P")).toMatchObject({ used: 1, total: 3 });
   });
   it("returns an empty roster when the manager has no purchases", () => {
@@ -259,6 +260,41 @@ describe("opponentRosterCards", () => {
     const cards = opponentRosterCards(statuses, [], null);
     expect(cards[0]!.roster).toEqual([]);
     expect(cards[0]!.maxOnCurrent).toBe(100);
+  });
+});
+
+describe("myRosterByRole", () => {
+  it("raggruppa la rosa del proprietario per ruolo (P-D-C-A), solo ruoli con giocatori", () => {
+    const rosters: ManagerRoster[] = [
+      roster({ managerId: 2, managerName: "Rivale", isOwner: false, players: [
+        { player_id: 99, name: "Non mio", ruolo: "P", prezzo: 1, tier: "X", tags: [] },
+      ] }),
+      roster({
+        managerId: 1,
+        managerName: "Io",
+        isOwner: true,
+        players: [
+          { player_id: 1, name: "Attaccante A", ruolo: "A", prezzo: 40, tier: "Top", tags: [] },
+          { player_id: 2, name: "Difensore A", ruolo: "D", prezzo: 10, tier: "X", tags: [] },
+          { player_id: 3, name: "Attaccante B", ruolo: "A", prezzo: 5, tier: "X", tags: [] },
+        ],
+      }),
+    ];
+    expect(myRosterByRole(rosters)).toEqual([
+      { ruolo: "D", players: [{ player_id: 2, name: "Difensore A", prezzo: 10 }] },
+      {
+        ruolo: "A",
+        players: [
+          { player_id: 1, name: "Attaccante A", prezzo: 40 },
+          { player_id: 3, name: "Attaccante B", prezzo: 5 },
+        ],
+      },
+    ]);
+  });
+
+  it("torna vuoto senza rose o senza proprietario", () => {
+    expect(myRosterByRole(null)).toEqual([]);
+    expect(myRosterByRole([roster({ managerId: 2, isOwner: false })])).toEqual([]);
   });
 });
 

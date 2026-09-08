@@ -1,4 +1,4 @@
-# PROMPTS.md — Fase 11 (restyling Asta, v7.0)
+# PROMPTS.md — Fase 11 (restyling Asta, chiusa a v6.12.0)
 
 Prompt operativi per Claude Code, **in plan mode**. Le Fasi 7 (P1–P9), la fase
 mobile (P10), la Fase 8 (P11–P15), la Fase 9 (P16–P19) e la Fase 10
@@ -193,3 +193,69 @@ Test in `AuctionMode.log.test.tsx` (log non a schermo finché non si clicca "Log
 acquisti", 🗑 dentro il dialog che cancella, "Annulla ultima" fuori dal dialog,
 chiusura su Escape). Scelto `feat` → MINOR: "Log acquisti" è una nuova superficie
 UI. Dettaglio in [CHANGELOG.md](./CHANGELOG.md) `[6.11.0]`.
+
+---
+
+## P31 — Alternative a griglia, rosa avversari ordinata/modificabile, rosa "Io", avvisi come badge *(chiuso, `v6.12.0`)*
+
+Chiude Fase 11 (punto 8, l'ultimo dei richiesti). Quattro modifiche indipendenti
+allo stesso screenshot d'asta:
+
+`AlternativesPanel` (`web/src/components/AlternativesPanel.tsx`) riscritto:
+parte collassato (`useState(true)`), niente più paginazione a 5 righe. Aperto,
+mostra tutte le alternative libere su una griglia CSS a 3 colonne di soli nomi
+(niente `PlayerAvatar`). Il click su un nome non chiama più `view.onSelect`
+(non seleziona il giocatore in chiamata): apre un pannello di dettaglio sotto
+la griglia con le colonne rimosse dalla riga compatta (fv/target/max, Δ,
+punteggio con `ScoreBreakdownDialog`) più `PlayerDetailPanel`. `onSelect`
+rimosso da `AlternativesPanelView` (non più usato dal componente).
+
+`opponentRosterCards` (`web/src/lib/auctionDerivations.ts`) ordina la rosa di
+ogni avversario per ruolo (nuovo `ROLE_ORDER`/`roleRank`, condiviso con P-D-C-A
+altrove) invece che per prezzo decrescente; la data d'acquisto come criterio
+secondario è gratis — `players` arriva già ordinato per `ts` crescente da
+`getManagerRosters` (join su `listPurchasesWithDetailsByLeague`), uno stable
+sort sul solo ruolo basta. `OpponentsBoard.tsx`: righe rosa senza
+`PlayerAvatar` (solo tag ruolo colorato); il prezzo è un bottone che apre un
+`<input type="number">` inline al click — Invio o blur conferma, Escape
+annulla. Nuova prop opzionale `onUpdatePurchasePrice`.
+
+La modifica prezzo non introduce un update sul log (`server/src/db/purchases.ts`
+resta valido, commento invariato): `AuctionMode.tsx` fa `deletePurchase` +
+`createPurchase` con lo stesso manager, stesso schema già usato da
+`onReassignPurchase`. Validata contro il budget **prima** di toccare il log:
+`residuo attuale + prezzo vecchio − prezzo nuovo` non può scendere sotto zero,
+altrimenti errore visibile (`reassignError`, riusato) e nessuna chiamata di
+rete. Se l'insert fallisce dopo il delete, tenta il ripristino al prezzo
+originale.
+
+Nuovo `myRosterByRole` (`auctionDerivations.ts`): rosa del proprietario
+raggruppata per ruolo (P-D-C-A), stessa logica di `opponentRosterCards` ma
+senza i dati avversario. Resa sotto "Rosa · slot per ruolo" in `AuctionDesktop`
+(colonna "Io"); su telefono in una sezione collassabile propria (default
+chiusa), come "Avversari".
+
+Nuovo `WarningBadge` (`web/src/components/WarningBadge.tsx`): emoji ⚠️ con
+animazione CSS `step-start` (blink), toast posizionato al click o al
+`mouseenter`/`mouseleave` sullo `span` contenitore. `AuctionMode.tsx` calcola
+`warningsByManagerId`/`warningsFor(managerId)`: per `effectiveManagerId` (chi
+comprerebbe) l'errore di assegnazione o `impact` quando è un avviso
+(`COLOR_WARN`) più `roleBudgetImpact`; per ogni avversario in `strongAlerts`.
+I blocchi di testo equivalenti sotto il prezzo (`assignError`/`impact.text`
+quando avviso, `roleBudgetImpact`, `strongRoleAlerts`) sono rimossi da
+`AuctionDesktop.tsx`/`AuctionPhone.tsx` — il badge compare vicino al nome
+("Io" o `opp-card__name`); il testo non di avviso (`impact.text` quando non è
+`COLOR_WARN`) resta a schermo com'era. `roleBudgetImpact`/`strongRoleAlerts`
+restano in `AuctionView` (letti solo da `warningsByManagerId`).
+
+Test: `AlternativesPanel.test.tsx` riscritto (collassato di default, griglia
+completa senza paginazione, click sul nome non seleziona), nuovo
+`OpponentsBoard.test.tsx` (niente immagini, cestino opzionale, edit crediti
+opzionale con Invio), nuovo `WarningBadge.test.tsx` (nessun render senza
+avvisi, toast a click/hover), `auctionDerivations.test.ts` esteso
+(`opponentRosterCards` per ruolo, `myRosterByRole`),
+`AuctionMode.reassign.test.tsx` esteso (modifica prezzo con delete+insert,
+rifiuto se supera il residuo), `AuctionMode.opponents.test.tsx` aggiornato
+(avviso "giocatori forti" ora dietro il badge). Scelto `feat` → MINOR: nuova
+superficie UI (edit crediti, badge avvisi), nessuna rottura di contratto.
+Dettaglio in [CHANGELOG.md](./CHANGELOG.md) `[6.12.0]`.

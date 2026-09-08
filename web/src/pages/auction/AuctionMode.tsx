@@ -41,9 +41,11 @@ import {
   valuationScaleFactor,
 } from "@fanta-helper/shared";
 import {
+  COLOR_WARN,
   gkPairingSuggestionFor,
   impact as computeImpact,
   ladderModel,
+  myRosterByRole,
   opponentRosterCards,
   opponentSummaries,
   rankSameRole,
@@ -55,6 +57,7 @@ import {
   type CompareRow,
   type CompareSortKey,
   type GkPairingSuggestion,
+  type MyRosterGroup,
   type OpponentRosterCard,
   type OpponentSummary,
   type RankRow,
@@ -91,6 +94,10 @@ export interface AuctionView {
   me: ManagerAuctionStatus | undefined;
   opponents: OpponentSummary[];
   opponentRosterCards: OpponentRosterCard[];
+  myRoster: MyRosterGroup[];
+  // Avvisi (max bid/slot pieni, quota reparto, giocatori forti presi) per
+  // manager — badge lampeggiante vicino al nome, testo del motivo nel toast.
+  warningsFor: (managerId: number) => string[];
   playerImageFor: (playerId: number) => string | null;
   strongRoleAlerts: StrongRoleAlert[];
   selectedManagerId: number | null;
@@ -187,6 +194,13 @@ export interface AuctionView {
     ruolo: Role,
     fromManagerId: number,
     toManagerId: number,
+  ) => void;
+  // Modifica del prezzo di un acquisto già registrato (click sui crediti).
+  onUpdatePurchasePrice: (
+    playerId: number,
+    managerId: number,
+    oldPrezzo: number,
+    newPrezzo: number,
   ) => void;
   reassignError: string | null;
 }
@@ -459,6 +473,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     () => opponentRosterCards(statuses, managerRosters, selectedPlayer?.ruolo ?? null),
     [statuses, managerRosters, selectedPlayer?.ruolo],
   );
+  const myRoster = useMemo(() => myRosterByRole(managerRosters), [managerRosters]);
   const strongAlerts = useMemo(
     () => strongRoleAlerts(managerRosters, selectedPlayer?.ruolo ?? null),
     [managerRosters, selectedPlayer?.ruolo],
@@ -474,6 +489,35 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     selectedPlayer && selectedManagerStatus && priceNum !== null
       ? roleBudgetImpact(selectedManagerStatus, selectedPlayer.ruolo, priceNum)
       : null;
+  const impactColor = impact.color;
+  const impactText = impact.text;
+
+  // Avvisi per manager (P30): sostituiscono i blocchi di testo sotto il prezzo
+  // con un'emoji lampeggiante accanto al nome del manager coinvolto — max bid
+  // superato/slot pieni e quota di reparto per chi comprerebbe (`effectiveManagerId`),
+  // giocatori forti già presi per ogni avversario nel ruolo in chiamata.
+  const warningsByManagerId = useMemo(() => {
+    const map = new Map<number, string[]>();
+    function push(managerId: number, text: string) {
+      const list = map.get(managerId);
+      if (list) list.push(text);
+      else map.set(managerId, [text]);
+    }
+    if (effectiveManagerId !== null) {
+      if (assignError) push(effectiveManagerId, assignError);
+      else if (impactColor === COLOR_WARN && impactText) push(effectiveManagerId, impactText);
+      if (roleBudgetWarn) push(effectiveManagerId, roleBudgetWarn.text);
+    }
+    for (const a of strongAlerts) push(a.managerId, a.text);
+    return map;
+    // `impact` è un letterale ricreato a ogni render: si dipende dai suoi campi
+    // primitivi (stabili per valore), non dall'oggetto, per non vanificare la
+    // memoizzazione.
+  }, [effectiveManagerId, assignError, impactColor, impactText, roleBudgetWarn, strongAlerts]);
+  const warningsFor = useCallback(
+    (managerId: number) => warningsByManagerId.get(managerId) ?? [],
+    [warningsByManagerId],
+  );
 
   const seasonStatsById = useMemo(() => {
     const map = new Map<number, PlayerLatestSeasonStats>();
@@ -762,6 +806,56 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     [league.id, statusByManagerId],
   );
 
+  // Modifica del prezzo di un acquisto già registrato (click sui crediti in
+  // rosa). Stesso schema di `onReassignPurchase`: nessun update sul log (vedi
+  // server/src/db/purchases.ts), delete + insert con lo stesso manager/ruolo.
+  // Il nuovo prezzo è validato contro il budget disponibile del manager prima
+  // di toccare il log: residuo attuale + prezzo vecchio − prezzo nuovo non può
+  // scendere sotto zero.
+  const onUpdatePurchasePrice = useCallback(
+    async (playerId: number, managerId: number, oldPrezzo: number, newPrezzo: number) => {
+      if (newPrezzo === oldPrezzo) return;
+      const status = statusByManagerId.get(managerId);
+      const budgetAfter = (status?.residuo ?? 0) + oldPrezzo - newPrezzo;
+      if (budgetAfter < 0) {
+        setReassignError(
+          `Prezzo non valido: supererebbe il residuo disponibile di ${status?.managerName ?? "questo manager"}.`,
+        );
+        return;
+      }
+      setReassignError(null);
+      try {
+        await purchasesApi.deletePurchase(league.id, playerId);
+      } catch {
+        setReassignError("Modifica non riuscita: l'acquisto è rimasto invariato.");
+        return;
+      }
+      try {
+        await purchasesApi.createPurchase(league.id, {
+          player_id: playerId,
+          manager_id: managerId,
+          prezzo: newPrezzo,
+        });
+      } catch {
+        try {
+          await purchasesApi.createPurchase(league.id, {
+            player_id: playerId,
+            manager_id: managerId,
+            prezzo: oldPrezzo,
+          });
+          setReassignError("Modifica non riuscita: prezzo ripristinato al valore originale.");
+        } catch {
+          setReassignError(
+            "Modifica non riuscita e ripristino fallito: correggi il prezzo a mano.",
+          );
+        }
+      } finally {
+        refresh();
+      }
+    },
+    [league.id, statusByManagerId],
+  );
+
   // Tastiera: ↑/↓ selezione, Invio assegna, Esc esce.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -797,6 +891,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     me,
     opponents,
     opponentRosterCards: opponentRosterCardsView,
+    myRoster,
+    warningsFor,
     playerImageFor,
     strongRoleAlerts: strongAlerts,
     selectedManagerId: effectiveManagerId,
@@ -863,6 +959,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     onDeletePurchase: (id) => void onDeleteCall(id),
     onReassignPurchase: (playerId, prezzo, ruolo, fromManagerId, toManagerId) =>
       void onReassignPurchase(playerId, prezzo, ruolo, fromManagerId, toManagerId),
+    onUpdatePurchasePrice: (playerId, managerId, oldPrezzo, newPrezzo) =>
+      void onUpdatePurchasePrice(playerId, managerId, oldPrezzo, newPrezzo),
     reassignError,
   };
 

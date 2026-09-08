@@ -173,16 +173,17 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-09-08, `v6.11.0`).** **In produzione**: Neon + Render + Cloudflare
-Pages attivi, app funzionante end-to-end. Fasi 0–10 complete (multiutente,
+**Stato (2026-09-08, `v6.12.0`).** **In produzione**: Neon + Render + Cloudflare
+Pages attivi, app funzionante end-to-end. Fasi 0–11 complete (multiutente,
 chat, tag, preferenze per-utente, sessione mobile, redesign "sportsbook",
 import listone posizionale, occasioni/trappole, budget in percentuale e per
 reparto, Fantamedia reale in Valutazioni, apertura rapida manager, portieri
 stessa squadra, export PDF valutazioni, wishlist in Valutazioni, nota di
-scouting in asta); in corso la Fase 11 (restyling della schermata Asta verso
-`v7.0` — verdetto compatto e barra prezzi accanto al nome, listone
-collassabile, alternative compatte e paginate, pannello avversari con
-drag&drop sotto il giocatore in chiamata, vedi [PLAN.md](./PLAN.md)). La procedura sotto resta come riferimento per un nuovo
+scouting in asta, restyling della schermata Asta — verdetto compatto e barra
+prezzi accanto al nome, listone collassabile, alternative a griglia
+collassabile, pannello avversari con drag&drop/modifica crediti sotto il
+giocatore in chiamata, rosa "Io" per ruolo, avvisi come badge lampeggiante,
+vedi [PLAN.md](./PLAN.md)). La procedura sotto resta come riferimento per un nuovo
 ambiente. I passi eseguiti:
 
 - [x] Progetto e database Neon creati

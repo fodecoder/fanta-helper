@@ -276,4 +276,45 @@ describe("Vista Asta — riassegnamento e cancellazione dal pannello avversari",
     );
     await waitFor(() => expect(purchasesApi.deletePurchase).toHaveBeenCalledWith(1, 9));
   });
+
+  it("modifica i crediti di un acquisto: delete + insert con lo stesso manager", async () => {
+    stubApis(6, [boughtByAlfa, emptyBeta]);
+    vi.mocked(purchasesApi.deletePurchase).mockResolvedValue({} as never);
+    vi.mocked(purchasesApi.createPurchase).mockResolvedValue({} as never);
+
+    render(<AuctionMode league={league()} onExit={vi.fn()} />);
+    const cardAlfa = await oppCard("Alfa");
+    const user = userEvent.setup();
+    await user.click(within(cardAlfa).getByRole("button", { name: "50" }));
+    const input = within(cardAlfa).getByLabelText("Modifica crediti di Preso");
+    await user.clear(input);
+    await user.type(input, "70{Enter}");
+
+    await waitFor(() => expect(purchasesApi.deletePurchase).toHaveBeenCalledWith(1, 9));
+    expect(purchasesApi.createPurchase).toHaveBeenCalledWith(1, {
+      player_id: 9,
+      manager_id: 2,
+      prezzo: 70,
+    });
+  });
+
+  it("rifiuta una modifica che porterebbe il residuo sotto zero: nessuna chiamata", async () => {
+    stubApis(6, [boughtByAlfa, emptyBeta]);
+    vi.mocked(purchasesApi.deletePurchase).mockResolvedValue({} as never);
+    vi.mocked(purchasesApi.createPurchase).mockResolvedValue({} as never);
+
+    render(<AuctionMode league={league()} onExit={vi.fn()} />);
+    const cardAlfa = await oppCard("Alfa");
+    const user = userEvent.setup();
+    await user.click(within(cardAlfa).getByRole("button", { name: "50" }));
+    const input = within(cardAlfa).getByLabelText("Modifica crediti di Preso");
+    await user.clear(input);
+    // Alfa ha residuo 450 e ha già speso 50 su "Preso": budget disponibile
+    // massimo per lui è 450 + 50 = 500.
+    await user.type(input, "600{Enter}");
+
+    expect(await screen.findByText(/supererebbe il residuo disponibile/)).toBeInTheDocument();
+    expect(purchasesApi.deletePurchase).not.toHaveBeenCalled();
+    expect(purchasesApi.createPurchase).not.toHaveBeenCalled();
+  });
 });
