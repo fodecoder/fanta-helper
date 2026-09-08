@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.11.0] - 2026-09-08
+
+### Changed
+
+- **Storico acquisti dietro il bottone "Log acquisti"** (Fase 11, P30): la
+  sezione "Ultime chiamate" non è più sempre a schermo nella colonna "Io"
+  dell'asta desktop. Al suo posto due bottoni compatti — "Log acquisti", che
+  apre un `Dialog` (nuovo `PurchaseLogDialog`, stesso pattern di
+  `ScoreBreakdownDialog`) col log completo (avatar, nome, manager, prezzo, Δ e
+  cancellazione per riga) più un "Annulla ultima" interno, e "Annulla ultima"
+  come azione rapida fuori dal dialog. Nessun dato perso, solo dietro un click.
+  Nella vista telefono il log è già un tab dedicato e "Avversari" una sezione
+  collassabile: nessuna modifica.
+- Rimosso il componente ormai inutilizzato `OpponentRosterDialog` (il pannello
+  avversari inline `OpponentsBoard` introdotto in P28 ne copre già tutti i dati,
+  rosa completa coi prezzi inclusa).
+
 ## [6.10.0] - 2026-09-08
 
 ### Added

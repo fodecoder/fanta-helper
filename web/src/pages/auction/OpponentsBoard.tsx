@@ -34,8 +34,7 @@ interface DragPayload {
 // Stato completo di ogni avversario durante l'asta — residuo, max bid sul
 // giocatore in chiamata, uso degli slot per ruolo e rosa acquistata coi prezzi
 // pagati. Tutto derivato da opponentRosterCards, nessuno stato memorizzato.
-// Reso inline sotto il giocatore in chiamata (desktop e telefono) e riusato
-// dentro OpponentRosterDialog come fallback.
+// Reso inline sotto il giocatore in chiamata (desktop e telefono).
 export function OpponentsBoard({
   cards,
   calledRole,

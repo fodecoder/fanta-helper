@@ -3,6 +3,7 @@ import { AlternativesPanel } from "../../components/AlternativesPanel";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { OpponentsBoard } from "./OpponentsBoard";
+import { PurchaseLogDialog } from "./PurchaseLogDialog";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
@@ -10,8 +11,6 @@ import { ScoutingNote } from "../../components/ScoutingNote";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
 import {
   ROLE_LABEL,
-  deltaColor,
-  formatDelta,
   lineupStatusFor,
   roleColor,
   setPieceRanksFor,
@@ -31,6 +30,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const [callColCollapsed, setCallColCollapsed] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
 
   return (
     <div className="auction">
@@ -517,15 +517,16 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           )}
 
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <h6 style={{ margin: 0, color: "var(--color-neutral-700)" }}>Ultime chiamate</h6>
+            <h6 style={{ margin: "0 0 8px", color: "var(--color-neutral-700)" }}>Chiamate</h6>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: 12 }}
+                onClick={() => setLogOpen(true)}
+              >
+                Log acquisti
+              </button>
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -534,54 +535,6 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               >
                 Annulla ultima
               </button>
-            </div>
-            <div className="log-scroll" style={{ display: "flex", flexDirection: "column" }}>
-              {view.logRows.map((l) => (
-                <div className="log-row" key={l.key}>
-                  <PlayerAvatar
-                    name={l.name}
-                    team={l.team}
-                    ruolo={l.ruolo}
-                    image_url={l.imageUrl}
-                    size="sm"
-                  />
-                  <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
-                    {l.name}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: "var(--color-neutral-700)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {l.manager}
-                  </span>
-                  <span className="num" style={{ fontWeight: 600, fontSize: 13 }}>
-                    {l.prezzo}
-                  </span>
-                  <span
-                    className="num"
-                    style={{
-                      fontSize: 11,
-                      width: 34,
-                      textAlign: "right",
-                      color: l.delta === null ? "var(--color-neutral-700)" : deltaColor(l.delta),
-                    }}
-                  >
-                    {l.delta === null ? "—" : formatDelta(l.delta)}
-                  </span>
-                  <button
-                    type="button"
-                    className="log-del"
-                    title="Annulla questa chiamata"
-                    aria-label={`Annulla la chiamata di ${l.name}`}
-                    onClick={() => view.onDeleteCall(l.playerId)}
-                  >
-                    🗑
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -616,6 +569,15 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           </div>
         </aside>
       </div>
+
+      {logOpen && (
+        <PurchaseLogDialog
+          rows={view.logRows}
+          onDeleteCall={view.onDeleteCall}
+          onUndo={view.onUndo}
+          onClose={() => setLogOpen(false)}
+        />
+      )}
     </div>
   );
 }

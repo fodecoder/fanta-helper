@@ -171,50 +171,25 @@ l'insert fallisce, 🗑 che cancella). Dettaglio in
 
 ---
 
-## P30 — Storico ridotto a un bottone "Log acquisti", rimozione del dialog avversari (dopo P28 e P29)
+## P30 — Storico ridotto a un bottone "Log acquisti", rimozione del dialog avversari *(chiuso, `v6.11.0`)*
 
-**Obiettivo.** Conseguenza diretta di P28 e P29: con lo stato avversari
-sempre visibile sotto il giocatore e il riassegnamento/cancellazione
-possibili da lì, lo storico acquisti a piena vista e il dialog avversari
-separato non servono più nella forma attuale.
+Nuovo componente `PurchaseLogDialog` (`web/src/pages/auction/PurchaseLogDialog.tsx`):
+il contenuto di "Ultime chiamate" (righe `.log-row` — avatar, nome, manager,
+prezzo, Δ, 🗑 per riga) più un "Annulla ultima" interno, dentro `<Dialog>`
+(stesso pattern di `ScoreBreakdownDialog`). Nella `io-col` di `AuctionDesktop.tsx`
+la sezione sempre visibile è sostituita da due bottoni compatti: "Log acquisti"
+(apre il dialog, stato locale `logOpen`) e "Annulla ultima" (azione rapida su
+`view.onUndo`). `deltaColor`/`formatDelta` non più importati in `AuctionDesktop`.
 
-**Contesto.** "Ultime chiamate" è oggi una sezione sempre visibile in
-`io-col` (`AuctionDesktop.tsx` righe 945–1012, `view.logRows`, con bottone
-"Annulla ultima" e cancellazione per riga). `OpponentRosterDialog.tsx` è
-aperto dal bottone in `io-col` riga 909-941 — reso ridondante da P28.
+`OpponentRosterDialog.tsx` **eliminato**: era già codice morto dopo P28 (nessun
+import, nessun uso JSX — verificato con `grep`), e `OpponentsBoard` inline ne
+copre tutti i dati (rosa completa coi prezzi). Nessun file di test associato da
+rimuovere. Commento in `OpponentsBoard.tsx` aggiornato (non cita più il dialog).
 
-**Lavoro.**
-- Sostituisci la sezione "Ultime chiamate" sempre visibile con un bottone
-  "Log acquisti" che apre un `Dialog` (riusa `components/ui/Dialog.tsx`,
-  stesso pattern di `OpponentRosterDialog`/`ScoreBreakdownDialog`) col
-  contenuto attuale (righe 964–1011: avatar, nome, manager, prezzo, Δ,
-  cancellazione per riga) — nessun dato perso, solo dietro un click invece
-  che sempre a schermo. "Annulla ultima" può restare come azione rapida
-  fuori dal dialog (bottone singolo, non l'intero log) se lo spazio in
-  `io-col` lo permette.
-- Rimuovi il bottone "Rose avversari & crediti residui" e l'uso di
-  `OpponentRosterDialog` da `AuctionDesktop.tsx` (righe 909–941, 1054–1061)
-  **solo dopo aver verificato** che `OpponentsBoard` (P28) copre davvero
-  tutti i dati che il dialog mostrava (rosa completa coi prezzi inclusa, non
-  solo il riepilogo) — se manca qualcosa, va aggiunto a `OpponentsBoard`
-  prima di eliminare il dialog, non lasciato scoperto.
-- Se `OpponentRosterDialog.tsx` non ha più nessun uso dopo questa modifica
-  (verifica con una ricerca nel repo, non a memoria), eliminalo insieme al
-  suo file di test — non lasciare codice morto.
-- Applica la stessa semplificazione in `AuctionPhone.tsx` se il tab
-  "Avversari"/dialog equivalente esiste ancora lì dopo P28.
+`AuctionPhone.tsx` invariato: il log è già un tab dedicato e "Avversari" una
+sezione collassabile.
 
-**Test.** Test di rendering: bottone "Log acquisti" apre il dialog col
-contenuto atteso, cancellazione riga funziona dentro il dialog. Se
-`OpponentRosterDialog` viene rimosso, verifica che la build/lint non abbiano
-riferimenti orfani (import inutilizzati, test che referenziano un
-componente eliminato).
-
-**Accettazione.** Lo storico acquisti è dietro un bottone "Log acquisti"
-invece che sempre a schermo; non esiste più un dialog avversari separato dal
-pannello introdotto in P28.
-
-**Versioning.** `fix`/`refactor` → PATCH se rimuove solo markup/dialog senza
-cambiare contratti pubblici; `feat` → MINOR se il bottone "Log acquisti" è
-considerato una funzionalità nuova più che una rifinitura — a discrezione di
-chi implementa, motivalo nel commit.
+Test in `AuctionMode.log.test.tsx` (log non a schermo finché non si clicca "Log
+acquisti", 🗑 dentro il dialog che cancella, "Annulla ultima" fuori dal dialog,
+chiusura su Escape). Scelto `feat` → MINOR: "Log acquisti" è una nuova superficie
+UI. Dettaglio in [CHANGELOG.md](./CHANGELOG.md) `[6.11.0]`.

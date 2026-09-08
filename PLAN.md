@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.10.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.11.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -366,13 +366,14 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    slot col nuovo helper condiviso `roleSlotFree`; bottone 🗑 per riga come
    alternativa accessibile (anche su telefono).
 7. **Storico ridotto a un bottone "Log acquisti"** + **rimozione del dialog
-   avversari** (conseguenza diretta dei punti 5 e 6: se lo stato avversari è
-   sempre visibile sotto il giocatore, `OpponentRosterDialog.tsx` diventa
-   ridondante, e "Ultime chiamate" — oggi sempre visibile, righe 945–1012 —
-   può diventare un bottone che apre il log completo).
+   avversari.** ✅ *(P30, v6.11.0)* — "Ultime chiamate" non è più sempre a
+   schermo nella `io-col`: due bottoni compatti ("Log acquisti" apre il nuovo
+   `PurchaseLogDialog` col log completo e la cancellazione per riga, "Annulla
+   ultima" come azione rapida). `OpponentRosterDialog.tsx` eliminato (codice
+   morto: `OpponentsBoard` di P28 ne copre già tutti i dati).
 
 Prompt operativi: P25 (punto 1, chiusa), P26 (punti 3+4), P27 (punti 2), P28
-(punto 5), P29 (punto 6, chiusa), P30 (punto 7, dopo P28 e P29) — dettagli,
+(punto 5), P29 (punto 6, chiusa), P30 (punto 7, chiusa) — dettagli,
 note di implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
 
 ### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
@@ -450,3 +451,6 @@ dell'app:
 - `v6.10.0` — Fase 11: P29 — riassegnamento drag&drop di un acquisto fra
   avversari (delete + insert, nessun nuovo endpoint) e cancellazione diretta
   dalle righe del pannello avversari.
+- `v6.11.0` — Fase 11: P30 — storico acquisti dietro il bottone "Log acquisti"
+  (`PurchaseLogDialog`), non più sempre a schermo; `OpponentRosterDialog`
+  rimosso.
