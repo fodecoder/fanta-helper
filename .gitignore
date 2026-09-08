@@ -28,6 +28,9 @@ pnpm-debug.log*
 .turbo/
 *.tsbuildinfo
 
+# Leftover da build interrotte (Vite ricrea/rimuove normalmente da solo)
+*.timestamp-*.mjs
+
 # Cloudflare / Wrangler
 .wrangler/
 
