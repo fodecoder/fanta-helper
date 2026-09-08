@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-07 — `v6.0.0`. Fasi 0–9 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.5.2`. Fasi 0–10 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -17,17 +17,29 @@ Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 > re-import valutazioni, import probabili formazioni/rigoristi/punizioni via
 > JSON al posto di screenshot (`v5.2.0`→`v6.0.0`, dettagli nel
 > [CHANGELOG.md](./CHANGELOG.md)). L'audit di verifica P1–P9 resta più sotto
-> per riferimento, le Fasi 8 e 9 (P11–P19) sono tracciate come chiuse subito
-> sotto.
+> per riferimento, le Fasi 8, 9 e 10 (P11–P24) sono tracciate come chiuse
+> subito sotto.
 >
-> **In corso — Fase 10**: 4 feature richieste dall'uso reale in preparazione
-> d'asta (edit manager più diretto, secondo/terzo portiere alla chiamata,
-> export PDF della lista valutazioni, "segna come obiettivo" wishlist in
-> Valutazioni), verificate sul codice esistente prima di essere messe in
-> prompt. Prompt operativi P20–P24 in [PROMPTS.md](./PROMPTS.md). In
-> parallelo, ricalibrazione dei due listini valutazioni (lega da 8 e da 10,
-> budget 1000) sui prezzi medi realmente pagati in asta — lavoro sui dati, non
-> sul codice, descritto sotto in "Ricalibrazione valutazioni 07/09/2026".
+> **Fase 10 (chiusa, `v6.1.0`→`v6.5.2`)**: 5 feature richieste dall'uso reale
+> in preparazione d'asta — edit manager più diretto (P20), secondo/terzo
+> portiere alla chiamata (P21), "segna come obiettivo" wishlist in
+> Valutazioni (P23), export PDF della lista valutazioni (P22), nota di
+> scouting evidenziata in asta (P24). Commit: `3615943`, `e097cf9`,
+> `95cf77d`, `f11b37d`, `6f143c1`. Prompt originali in
+> [PROMPTS.md](./PROMPTS.md). In parallelo, ricalibrazione dei due listini
+> valutazioni (lega da 8 e da 10, budget 1000) sui prezzi medi realmente
+> pagati in asta — lavoro sui dati, non sul codice, descritto sotto in
+> "Ricalibrazione valutazioni 07/09/2026".
+>
+> **In corso — Fase 11 (v7.0, restyling Asta)**: 8 richieste di restyling
+> della schermata Asta raccolte dall'uso reale (listone collassabile,
+> alternative compatte e paginate, verdetto/barra fair-value vicino al nome,
+> stato avversari sotto il giocatore in chiamata con drag&drop/cancellazione
+> diretta, storico ridotto a un bottone). Prompt operativi P25–P31 in
+> [PROMPTS.md](./PROMPTS.md). A differenza delle fasi precedenti i prompt non
+> sono quasi mai file-disjoint (convergono quasi tutti su
+> `AuctionDesktop.tsx`/`AuctionPhone.tsx`): la nota di parallelizzabilità è
+> nella sezione dedicata di `PROMPTS.md`, non qui.
 
 ## Fase 8 — Correzioni post-asta reale  *(chiusa)*
 
@@ -258,7 +270,13 @@ Aggiornati con fonti datate, non a memoria:
   la revisione manuale (rigoristi/punizioni): vanno tenuti d'occhio nelle
   prime giornate, specialmente sulle 6 gerarchie rigoristi discordanti sopra.
 
-## Fase 10 — Rifiniture da uso reale in preparazione d'asta  *(in corso)*
+## Fase 10 — Rifiniture da uso reale in preparazione d'asta  *(chiusa)*
+
+Tutti i 5 punti sono implementati (P20–P24 in `PROMPTS.md`, storia completa
+nel `CHANGELOG.md` e nella git history: `3615943` apertura rapida modifica
+manager, `e097cf9` portieri stessa squadra, `95cf77d` "segna come obiettivo",
+`f11b37d` export PDF valutazioni, `6f143c1` nota di scouting in asta).
+Elenco originale dei problemi mantenuto sotto per riferimento.
 
 Richieste dopo aver usato l'app per preparare due liste valutazioni (lega da 8
 e da 10) prima dell'asta vera. Ognuna verificata sul codice esistente prima di
@@ -308,6 +326,50 @@ meccanismi/pattern già presenti.
    `verdict()`/`verdictTone()` (`web/src/lib/auctionDerivations.ts` righe
    74–90), che segna "Fuori mercato" quando `price > val.panic_price` — è il
    segnale da riusare per evidenziare la nota, non un valore nuovo.
+
+## Fase 11 — Restyling Asta (v7.0)  *(in corso)*
+
+8 richieste di restyling della schermata Asta, raccolte durante l'asta vera
+del 08/09/2026 (screenshot allegati in chat, non nel repo). A differenza delle
+fasi precedenti, quasi tutte convergono sugli stessi due file
+(`AuctionDesktop.tsx`, `AuctionPhone.tsx`): l'analisi di parallelizzabilità
+per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
+
+1. **Listone collassabile.** `call-col` (`AuctionDesktop.tsx` righe 96–174,
+   `index.css` riga 1361 `grid-template-columns: minmax(200px, 260px)
+   minmax(0, 1fr) minmax(210px, 260px)`) è sempre visibile a larghezza fissa.
+   Serve un bottone che la collassi per allargare `bid-col`.
+2. **Alternative limitate a 5 e paginate** + **alternative in un riquadro
+   compatto vicino al giocatore** (due richieste, stessa superficie: la
+   tabella `compareRows` oggi mostra tutte le righe libere senza paginazione,
+   `AuctionDesktop.tsx` righe 468–751). Da unificare in un unico componente
+   compatto, posizionato vicino a `PlayerDetailPanel`/`SameTeamGoalkeepers`
+   invece che come tabella a piena larghezza sotto.
+3. **Barra fair value/target/panic vicino al nome del giocatore.** Oggi è
+   `.ladder` (righe 239–298 desktop, 232–298 phone), renderizzata sotto
+   l'intero blocco header invece che accanto al nome.
+4. **Verdetto più piccolo.** `.verdict-badge__text` è `800 20px` (`index.css`
+   riga 1164), va ridotto — nessun dato mancante, solo CSS + eventuale
+   riduzione di padding.
+5. **Stato avversari sotto il calciatore in asta.** Oggi è nella colonna "Io"
+   (`AuctionDesktop.tsx` righe 864–943, dati da `view.opponents`/
+   `view.opponentRosterCards`, derivati in `AuctionMode.tsx` righe 453–458) e
+   in un dialog separato (`OpponentRosterDialog.tsx`). Da spostare come
+   pannello sempre visibile sotto il riquadro del giocatore chiamato.
+6. **Drag&drop dei giocatori fra manager, o cancellazione diretta
+   dell'acquisto da lì.** Non esiste oggi un endpoint per riassegnare un
+   acquisto: `web/src/api/purchases.ts` ha solo `createPurchase`,
+   `deletePurchase(playerId)`, `deleteLastPurchase` — nessun `updatePurchase`.
+   Dipende dal punto 5 (serve una griglia manager visibile su cui trascinare).
+7. **Storico ridotto a un bottone "Log acquisti"** + **rimozione del dialog
+   avversari** (conseguenza diretta dei punti 5 e 6: se lo stato avversari è
+   sempre visibile sotto il giocatore, `OpponentRosterDialog.tsx` diventa
+   ridondante, e "Ultime chiamate" — oggi sempre visibile, righe 945–1012 —
+   può diventare un bottone che apre il log completo).
+
+Prompt operativi: P25 (punto 1), P26 (punti 3+4), P27 (punti 2), P28 (punto
+5), P29 (punto 6, dopo P28), P30 (punto 7, dopo P28 e P29) — dettagli, note di
+implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
 
 ### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
 

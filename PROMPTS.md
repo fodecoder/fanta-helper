@@ -1,10 +1,11 @@
-# PROMPTS.md — Fase 10 (rifiniture da uso reale in preparazione d'asta)
+# PROMPTS.md — Fase 11 (restyling Asta, v7.0)
 
 Prompt operativi per Claude Code, **in plan mode**. Le Fasi 7 (P1–P9), la fase
-mobile (P10), la Fase 8 (P11–P15) e la Fase 9 (P16–P19) sono chiuse: la loro
-traccia vive nel `CHANGELOG.md` e nella git history, non più in questo file
-(elenco dettagliato troppo lungo da tenere a mano ad ogni fase — un
-riferimento a un commit verificabile vale più di un testo copiato).
+mobile (P10), la Fase 8 (P11–P15), la Fase 9 (P16–P19) e la Fase 10
+(P20–P24) sono chiuse: la loro traccia vive nel `CHANGELOG.md` e nella git
+history, non più in questo file (elenco dettagliato troppo lungo da tenere a
+mano ad ogni fase — un riferimento a un commit verificabile vale più di un
+testo copiato).
 
 - **Fase 8 (chiusa)** — P11 palette ruolo, P12 import listone posizionale +
   nome completo + fix duplicati + fallback foto, P13 valutazioni a copertura
@@ -21,6 +22,11 @@ riferimento a un commit verificabile vale più di un testo copiato).
   di sovrascrittura override al re-import valutazioni, import probabili
   formazioni/rigoristi/punizioni via JSON al posto di screenshot
   (`v5.4.0`–`v6.0.0`).
+- **Fase 10 (chiusa)** — P20 apertura rapida modifica manager da Overview,
+  P21 secondo/terzo portiere alla chiamata, P23 "segna come obiettivo" in
+  Valutazioni, P22 export PDF valutazioni, P24 nota di scouting evidenziata
+  in asta. Commit: `3615943`, `e097cf9`, `95cf77d`, `f11b37d`, `6f143c1`.
+  (`v6.1.0`–`v6.5.2`).
 
 Dettagli di ognuna nel [CHANGELOG.md](./CHANGELOG.md); il riassunto verificato
 di ogni fase resta in [PLAN.md](./PLAN.md).
@@ -36,291 +42,358 @@ prompt include **test** (unit sui moduli puri condivisi, integrazione dove
 tocca DB/route) a verifica dell'implementazione, non solo del codice che
 compila.
 
-**Ordine Fase 10.** Due gruppi di file completamente disgiunti fra loro,
-eseguibili in parallelo l'uno rispetto all'altro (due agenti, ognuno con la
-propria sequenza interna, lanciati nello stesso giro):
+**Ordine Fase 11 — nota onesta sulla parallelizzabilità.** A differenza della
+Fase 10, qui **non ci sono gruppi di file disgiunti**: tutti e 6 i prompt
+toccano `AuctionDesktop.tsx` e/o `AuctionPhone.tsx` (spesso entrambi), e tre
+di loro toccano anche `AuctionMode.tsx` per derivare nuovi dati di view. Due
+agenti che lavorano in parallelo sullo stesso file finiscono quasi certamente
+in conflitto al merge, anche se le regioni di JSX che toccano sono diverse
+(entrambi rigenerano l'intero file, gli indici di riga si spostano). La
+raccomandazione è **eseguire in sequenza, un prompt alla volta, con commit fra
+uno e l'altro** — non per regola di processo ma perché è l'opzione più veloce
+al netto dei conflitti da risolvere a mano.
 
-- **Gruppo A — Manager**, indipendente da tutto il resto: **P20** (un solo
-  agente).
-- **Gruppo B — Valutazioni**, sequenziale al proprio interno: **P23 → P22**
-  (P22 dopo P23 perché tocca di nuovo `ValuationsPage.tsx`).
-- **Gruppo C — Asta**, sequenziale al proprio interno: **P21 → P24** (P24
-  dopo P21 perché tocca di nuovo `AuctionDesktop.tsx`/`AuctionPhone.tsx`/
-  `AuctionMode.tsx`).
+Se si vuole comunque parallelizzare (es. due sessioni umane che rivedono in
+parallelo, o due branch da rebasare a mano), l'unico prompt realmente isolato
+è **P25** (`call-col`, nessuna modifica a `bid-col`/`io-col`/`AuctionMode.tsx`
+oltre a uno stato locale di collasso). Tutto il resto ha una dipendenza reale
+o quasi-reale:
 
-Gruppo A, B e C non condividono file: possono partire come tre agenti
-paralleli (o tre sessioni separate), ciascuno rispettando l'ordine interno
-indicato.
+- **P26** (verdetto + barra fair value) e **P27** (riquadro alternative
+  compatto) toccano entrambi l'header/il corpo di `bid-col` nello stesso
+  file — farli in sequenza (ordine indifferente fra loro) evita che il
+  secondo prompt lavori su un file che l'altro ha già ristrutturato altrove.
+- **P28** (pannello avversari sotto il giocatore) è prerequisito reale di
+  **P29** (drag&drop/cancellazione, serve la griglia manager visibile su cui
+  agire) e di **P30** (rimozione dialog avversari + bottone "Log acquisti",
+  ha senso solo dopo che il pannello sostituisce il dialog). Ordine
+  obbligato: **P28 → P29 → P30**.
 
----
-
-## P20 — Click su un manager apre la modifica del nome (Gruppo A)
-
-**Obiettivo.** Dalla tabella "Stato dei manager" in Overview, cliccare sul
-nome di un manager porta alla pagina di modifica di quel manager, invece di
-non fare nulla.
-
-**Contesto.** `ManagersPage.tsx` (`web/src/pages/ManagersPage.tsx`) ha già il
-rename inline: un `input` per riga con `onBlur` → `commitRename` (righe
-143–160). Manca solo il collegamento per arrivarci da altrove già mirato su
-un manager specifico. `OverviewPage.tsx` (`web/src/pages/OverviewPage.tsx`)
-mostra la tabella "Stato dei manager" (a partire da riga 130), con
-`s.managerName` come testo statico (riga 170) — nessun `onClick`, nessuna
-prop di navigazione ricevuta dal componente (oggi solo `league`/`calls`,
-righe 29–34). La navigazione fra pagine non usa React Router: `App.tsx` tiene
-`page`/`setPage` di tipo `SetupPage` (righe 48, 107) e passa `league`/`calls`
-a ogni pagina, incluso `<OverviewPage league={activeLeague}
-calls={purchaseCount} />` (riga 201) — nessuna callback di cambio pagina
-oggi arriva a `OverviewPage`.
-
-**Lavoro.**
-- Aggiungi a `OverviewPageProps` una prop di navigazione (es. `onOpenManager:
-  (managerId: number) => void`), passata da `App.tsx` come `() => { setPage("manager");
-  ...}` — decidi se serve solo cambiare pagina o anche portare il focus su
-  quella riga specifica (vedi punto sotto), e nomina la prop di conseguenza.
-- Rendi cliccabile `s.managerName` nella riga 170 di `OverviewPage.tsx` (un
-  `button`/link in stile testo, non un intero `<tr>` cliccabile per non
-  rompere altri click nella riga), che chiama la prop di navigazione con
-  `s.managerId`.
-- In `ManagersPage.tsx`, aggiungi una prop opzionale (es. `focusManagerId?:
-  number`) che, se presente al mount, porta il focus (e se serve lo scroll)
-  sull'`input` di rename di quel manager — così il click da Overview non
-  porta solo "alla pagina Manager" ma dritto a modificare quel nome. Se
-  l'App tiene lo stato di navigazione in un unico posto (`App.tsx`), valuta
-  se propagare l'id selezionato come nuovo stato accanto a `page`, invece di
-  duplicarlo in più componenti.
-
-**Test.** Test di `OverviewPage` (interazione: click sul nome manager chiama
-la callback con l'id corretto). Test di `ManagersPage` con `focusManagerId`
-valorizzato (l'input corrispondente riceve il focus al mount) e senza (nessun
-focus automatico, comportamento invariato).
-
-**Accettazione.** Dalla tabella "Stato dei manager" in Overview, cliccando su
-un nome si arriva alla pagina Manager con il campo nome di quel manager
-pronto per essere modificato.
-
-**Versioning.** `feat` → MINOR (nuova prop pubblica su due componenti, nessun
-cambio di schema).
+Ordine consigliato complessivo: **P25 → P26 → P27 → P28 → P29 → P30** (P25 in
+testa proprio perché è l'unico scorporabile, se si preferisce comunque
+assegnarlo a un secondo agente in parallelo agli altri cinque).
 
 ---
 
-## P21 — Secondo/terzo portiere e consigliati alla chiamata di un portiere (Gruppo C, 1/2)
+## P25 — Listone collassabile
 
-**Obiettivo.** Quando il giocatore chiamato in asta è un portiere, mostrare
-gli altri portieri della stessa squadra (secondo/terzo) e i portieri
-consigliati secondo la griglia/accoppiate già calcolata, senza dover uscire
-dalla schermata di chiamata.
+**Obiettivo.** Poter collassare la colonna "Chiamata" (il listone giocatori a
+sinistra) con un bottone, per allargare la vista centrale durante l'asta.
 
-**Contesto — non è la stessa cosa di `GkPairingHint`.** `GkPairingHint`
-(`web/src/components/GkPairingHint.tsx`, uso in `AuctionDesktop.tsx` riga 748
-e `AuctionPhone.tsx` riga 95) è un consiglio di *accoppiata fra squadre
-diverse* per calendario (`gkPairingSuggestion`, calcolato in
-`AuctionMode.tsx` righe 420–422 da `gkPairingSuggestionFor`), mostrato sempre
-nella colonna "Io", **non** filtrato sul giocatore in chiamata: non va
-toccato, resta come consiglio separato. Quello richiesto qui è diverso: i
-portieri della **stessa squadra** del giocatore attualmente chiamato (per
-sapere se conviene puntare sul titolare sapendo chi fa da riserva, o evitare
-di duplicare spesa sullo stesso reparto della stessa squadra).
-
-Il pool giocatori completo è già in scope in `AuctionMode.tsx`: stato
-`players: Player[] | null` (riga 190), `selectedPlayer` (riga 376, il
-giocatore attualmente "in chiamata"). C'è già un pattern di confronto
-alternative-stesso-ruolo attivo per il giocatore selezionato (righe 488–498,
-`RankRow`/`compareSortValueFor`) — verifica se è generalizzabile (stesso
-ruolo E stessa squadra invece di stesso ruolo E ordinamento per valore) prima
-di scrivere un secondo filtro da zero.
+**Contesto.** `.auction-grid` (`web/src/index.css` riga 1358) è un grid a 3
+colonne fisso: `grid-template-columns: minmax(200px, 260px) minmax(0, 1fr)
+minmax(210px, 260px)` (righe 1361, ripetuto ridotto sotto 1180px riga 1368).
+La colonna 1 è `call-col` (`AuctionDesktop.tsx` righe 96–174: ricerca, filtro
+ruolo, ordinamento, lista `view.visiblePlayers`). Nessuno stato di
+collasso esiste oggi né in `AuctionDesktop.tsx` né in `AuctionMode.tsx`.
 
 **Lavoro.**
-- Deriva (in `AuctionMode.tsx`, vicino a dove già si calcola
-  `gkPairingSuggestion`/le alternative stesso ruolo) l'elenco dei portieri
-  della stessa squadra di `selectedPlayer` quando `selectedPlayer.ruolo ===
-  "P"`, esclusi acquistati o meno di 2 opzioni — con la valutazione
-  (`fair_value`/tier) di ciascuno per capire a colpo d'occhio se il secondo
-  portiere è "da tenere d'occhio" o ininfluente.
-- Nuovo componente (o sezione dentro un componente esistente vicino al
-  dettaglio del giocatore chiamato — `PlayerDetailPanel.tsx` è il posto
-  naturale se già mostra dati sul giocatore in chiamata, verifica prima di
-  crearne uno nuovo) che mostra: portieri stessa squadra (titolare/riserva
-  desumibile da tier/valutazione, non un campo "ruolo di squadra" che non
-  esiste nei dati), e sotto o accanto il consiglio esistente
-  `GkPairingHint` — due blocchi distinti, non fonderli in un unico messaggio
-  perché rispondono a domande diverse (stessa squadra vs. squadra
-  complementare).
-- Renderizza solo quando `selectedPlayer.ruolo === "P"`, sia in
-  `AuctionDesktop.tsx` sia in `AuctionPhone.tsx` (verifica come già
-  differenziano contenuti per ruolo, se lo fanno, per riusare il pattern).
+- Stato locale in `AuctionDesktop.tsx` (`useState<boolean>`, non serve in
+  `AuctionMode.tsx`/nella view: è puro stato di presentazione, non deriva da
+  dati d'asta) per il collasso, con un bottone (icona `‹›` o simile) nella
+  testata di `call-col`.
+- Da collassata, la colonna si riduce a una fascia stretta (larghezza fissa
+  piccola, es. 40–48px) con solo il bottone per riespandere — decidi se
+  mantenere il filtro ruolo/ricerca accessibile in quello stato ridotto o
+  nasconderli del tutto (probabile: nasconderli, l'utente riespande per
+  cercare). Aggiorna `grid-template-columns` di conseguenza (nuova classe
+  modificatore `.auction-grid--call-collapsed` o variabile CSS, non hardcoded
+  inline per non duplicare i due breakpoint esistenti).
+- Applica lo stesso pattern in `AuctionPhone.tsx` **solo se ha senso**: la
+  vista telefono usa già tab (`phone-tabs`/`phone-panel`, non colonne fisse)
+  — verifica se esiste già un modo di nascondere il listone lì prima di
+  aggiungerne uno ridondante; se le tab già risolvono il problema su mobile,
+  documenta nel piano perché P25 riguarda solo desktop.
 
-**Test.** Test del derivato "portieri stessa squadra" (fixture con più
-portieri per squadra, esclusione degli acquistati, caso squadra con un solo
-portiere nel pool → nessun secondo/terzo da mostrare). Test di rendering:
-compare solo quando il giocatore chiamato è un portiere, non per altri ruoli.
+**Test.** Test di rendering `AuctionDesktop`: stato espanso mostra
+`call-col` per intero (ricerca/filtri/lista); stato collassato la riduce e
+mostra il bottone di riespansione; click sul bottone alterna lo stato.
 
-**Accettazione.** Chiamando un portiere, senza cambiare schermata si vedono
-gli altri portieri della sua squadra (con la loro valutazione) e il
-consiglio di accoppiata già esistente, entrambi distinti e leggibili.
+**Accettazione.** In vista desktop, un bottone collassa/riespande il
+listone; da collassato la colonna centrale (giocatore in asta) guadagna
+spazio visibile.
 
 **Versioning.** `feat` → MINOR.
 
 ---
 
-## P22 — Export PDF della lista valutazioni (Gruppo B, 2/2 — dopo P23)
+## P26 — Verdetto compatto e barra fair value/target/panic accanto al nome
 
-**Obiettivo.** Esportare la tabella Valutazioni in PDF, replicando il layout
-del template fornito dall'utente.
+**Obiettivo.** Ridurre la dimensione del badge "Verdetto live" e spostare la
+barra (ladder) con fair value/target/max/panic vicino al nome del giocatore
+in chiamata, invece che come fascia separata sotto l'intero header.
 
-**Contesto — template allegato (`guida-asta-lega10-redesign.pdf`, 14
-pagine).** Struttura verificata pagina per pagina:
-- Intestazione: titolo "Guida Asta Fantacalcio {stagione}", sottotitolo
-  "{nome lega} · Budget {N} crediti · Valutazioni aggiornate al {data}", poi
-  4 indicatori (uno per ruolo P/D/C/A) con percentuale di riparto budget e
-  crediti indicativi (es. "46% ATTACCANTI · 460 crediti indicativi").
-- Legenda tag: badge colorati per situazione giocatore — Infortunio (rosa),
-  In forma (azzurro), Sottotono (grigio), Da verificare (grigio chiaro), più
-  un tag a parte "Verifica ruolo" (bordo, per ruolo listino diverso da
-  questa lista) — e la spiegazione di Target/Max/Tier.
-- Una sezione per ruolo (Portieri, Difensori, Centrocampisti, Attaccanti),
-  ognuna con titolo + conteggio (es. "Difensori (80)"), una riga "Scelte
-  top: {5 nomi}", poi una tabella con colonne # (numerazione che riparte da
-  1 a ogni sezione) / Giocatore / Squadra / Tier / Target / Max / Situazione
-  (badge) / Acquistato · Note (colonna vuota per scrivere a mano durante
-  l'asta).
-- Nessun logo/branding oltre al testo; impaginazione A4, una tabella per
-  pagina quando non ci sta tutta la sezione (la numerazione della sezione
-  continua sulla pagina successiva, l'intestazione di colonna si ripete).
-
-Nessun export esiste oggi nel codice (verificato: nessun riferimento a `pdf`
-in `web/src`/`server/src` fuori da `docs/`). Scegli una libreria di
-generazione PDF lato client (evita una dipendenza server-side pesante se non
-già presente — verifica `package.json` prima di aggiungerne una nuova) o
-lato server se la formattazione a più pagine con ripetizione header è più
-semplice da controllare lì; documenta la scelta nel piano prima di
-implementare, con il tradeoff (bundle size lato client vs. round-trip e
-carico lato server).
+**Contesto.** `.verdict-badge__text` è oggi `font: 800 20px/1.1` (`index.css`
+riga 1164), dentro `.verdict-badge` con padding `10px 16px` (riga 1153) —
+riduzione puramente CSS (dimensione font/padding), nessun dato da cambiare.
+La ladder (`.ladder` e classi correlate, `index.css` a partire dalla sezione
+badge/ladder — cerca `.ladder-zone`/`.ladder-tick-line`/`.ladder-marker`) è
+oggi renderizzata **sotto** il blocco nome+avatar+verdetto, come sezione a
+sé (`AuctionDesktop.tsx` righe 239–298, `AuctionPhone.tsx` righe 232–298),
+con `view.ladder` già calcolato in `AuctionMode.tsx` (zone, tick, marker —
+nessun dato nuovo da derivare).
 
 **Lavoro.**
-- Nuovo modulo di generazione (mappa dati Valutazioni → struttura del
-  template: intestazione, indicatori di riparto per ruolo dal budget di
-  lega reale — non i numeri di esempio del template, che erano per una lega
-  specifica —, sezioni per ruolo con numerazione che riparte, badge
-  situazione derivati dai tag/note già presenti in app — infortunio da dove
-  già lo sa l'app, es. `ProbableLineupBoard`/injury status se esiste un
-  campo equivalente, altrimenti dal campo `note` della valutazione —
-  **non inventare un campo nuovo se un segnale equivalente esiste già**,
-  verifica prima).
-- Bottone "Esporta PDF" in `ValuationsPage.tsx`, vicino agli altri controlli
-  di export/import esistenti (verifica pattern UI già in uso per import, per
-  coerenza di posizione/stile).
-- Il campo note (merge di scouting + ricerca incrociata, vedi
-  `PLAN.md` § Fase 10) va nella colonna "Acquistato · Note" **solo come testo
-  di riferimento stampato**, non deve occupare tutto lo spazio pensato per
-  scrivere a mano — tronca/abbrevia se necessario, o usa un carattere più
-  piccolo, verifica leggibilità a stampa.
+- Riduci `.verdict-badge__text`/`.verdict-badge` (font-size e padding) fino a
+  una dimensione compatibile con la nuova posizione accanto al nome, senza
+  perdere leggibilità del colore/tono (`--good`/`--fair`/`--over`/`--wait`
+  restano invariati, solo dimensione).
+- Sposta il markup della ladder da sezione sotto-header a un blocco più
+  stretto/orizzontale accanto al nome (`sel.nome_completo`/`h1.bid-name`,
+  `AuctionDesktop.tsx` righe 197–224) — probabilmente serve una variante più
+  compatta della ladder (meno padding verticale, tick label più piccole) più
+  che uno spostamento 1:1 del markup esistente: verifica leggibilità prima
+  di committare, la ladder ha diversi elementi assoluti posizionati per
+  percentuale che potrebbero sovrapporsi in uno spazio più stretto.
+- Applica la stessa riduzione/riposizionamento in `AuctionPhone.tsx` (la
+  ladder telefono ha già margini diversi, righe 232–298 — verifica se la
+  versione mobile ha già meno bisogno di questo intervento, essendo a
+  colonna singola).
 
-**Test.** Test del mapping dati → struttura documento (fixture con
-valutazioni miste, verifica sezioni per ruolo corrette, numerazione che
-riparte, indicatori di riparto calcolati sul budget reale della lega, non
-hardcoded). Se la libreria scelta lo permette in test automatico, verifica
-che il PDF generato abbia il numero di pagine/sezioni atteso; altrimenti
-verifica manuale con screenshot del PDF generato allegata al prompt di
-verifica.
+**Test.** Test di rendering: la ladder è presente vicino al nome (query sul
+DOM per posizione relativa, o snapshot) invece che nella vecchia posizione;
+verdetto invariato nei toni/colori, solo dimensione. Nessun nuovo dato da
+testare (puro riposizionamento/restyling).
 
-**Accettazione.** Dalla pagina Valutazioni si scarica un PDF con lo stesso
-layout del template (intestazione, indicatori di riparto, legenda, tabelle
-per ruolo con numerazione propria), popolato con i dati reali della lega
-corrente.
+**Accettazione.** Il verdetto occupa meno spazio visivo; la barra fair
+value/target/max/panic è leggibile accanto al nome del giocatore in
+chiamata, non più come fascia separata sotto tutto l'header.
+
+**Versioning.** `feat` → MINOR (nessun cambio di dati/contratto, solo UI).
+
+---
+
+## P27 — Riquadro compatto per le alternative, limitato a 5 e paginato
+
+**Obiettivo.** Sostituire la tabella "Alternative nello stesso ruolo" a
+piena larghezza sotto il giocatore con un riquadro compatto vicino al
+giocatore in chiamata, che mostra al massimo 5 righe per volta con
+paginazione.
+
+**Contesto — due richieste dell'utente unificate.** "Limitare a 5 e
+paginare" e "ridurre in un riquadro vicino al giocatore" descrivono la
+stessa superficie: la tabella `view.compareRows`
+(`AuctionDesktop.tsx` righe 401–753, `AuctionPhone.tsx` righe ~545–697+),
+oggi senza paginazione e a piena larghezza con 11+ colonne (base + stats
+opzionali + attributi opzionali, riga 529 `columnCount`), incluso il
+dettaglio espandibile per riga (`PlayerDetailPanel`, righe 729–744) e il
+link alla scomposizione punteggio (`ScoreBreakdownDialog`, righe 633–646,
+1046–1052).
+
+**Decisione da prendere nel piano, non qui.** Sostituire la tabella intera
+con un riquadro compatto perde colonne (stats/attributi/dettagli espansi)
+che oggi servono durante l'asta. Due strade, da scegliere e motivare prima
+di scrivere codice:
+1. Il riquadro compatto (nome, tier, fair value, target/max, Δ vs in asta —
+   le colonne essenziali per una decisione rapida durante la chiamata)
+   **sostituisce** la tabella come vista di default; le colonne
+   stats/attributi/dettaglio restano raggiungibili per singolo giocatore
+   (click → stesso `PlayerDetailPanel`/`ScoreBreakdownDialog` già esistenti,
+   non reinventarli) invece che sempre visibili in tabella.
+2. Il riquadro compatto **affianca** la tabella esistente come vista
+   rapida, e la tabella resta sotto per chi vuole il dettaglio completo.
+
+La 1 è coerente con l'obiettivo dichiarato ("riquadro vicino al giocatore",
+non "tabella più un riquadro") ed è la lettura più diretta della richiesta —
+ma va confermata nel piano prima di eliminare markup esistente.
+
+**Lavoro (assumendo l'opzione 1).**
+- Nuovo componente (es. `AlternativesPanel`), posizionato vicino a
+  `PlayerDetailPanel`/`SameTeamGoalkeepers` nel blocco del giocatore in
+  chiamata (`AuctionDesktop.tsx` righe 189–225), non più come sezione a
+  piena larghezza sotto (righe 401–753 da sostituire, non solo affiancare).
+- Stato di paginazione (`useState<number>` pagina corrente, reset a 0 quando
+  cambia `selectedPlayer.id` — verifica che serva un `useEffect` di reset o
+  se basta derivare la pagina da un `key` sul componente), 5 righe per
+  pagina da `view.compareRows` (già ordinate per `compareSortKey`, nessun
+  nuovo ordinamento da inventare).
+- Il controllo di ordinamento (`COMPARE_SORT_KEYS`, righe 33–50) resta,
+  adattato a un layout più stretto (es. select invece di riga di bottoni, se
+  lo spazio non basta).
+- Dettaglio per riga (stats/attributi/breakdown punteggio) raggiungibile con
+  lo stesso pattern "Dettagli" già in uso (righe 718–727), non perso.
+- Applica lo stesso riquadro in `AuctionPhone.tsx`, sostituendo la sezione
+  equivalente nel tab compare (righe ~545–697).
+
+**Test.** Test del componente: 5 righe per pagina anche con più di 5
+`compareRows`, paginazione avanti/indietro, reset pagina al cambio giocatore
+selezionato, 0 alternative → messaggio vuoto invece di riquadro rotto.
+
+**Accettazione.** Vicino al giocatore in chiamata, un riquadro compatto
+mostra le alternative dello stesso ruolo 5 per volta con paginazione, con
+accesso al dettaglio completo per singolo giocatore invariato rispetto ad
+oggi.
 
 **Versioning.** `feat` → MINOR.
 
 ---
 
-## P23 — Bottone "Segna come obiettivo" in Valutazioni (Gruppo B, 1/2)
+## P28 — Pannello avversari sotto il giocatore in chiamata
 
-**Obiettivo.** Nella tabella Valutazioni, poter segnare un giocatore come
-obiettivo (stellina o bottone dedicato), riusando la wishlist già esistente.
+**Obiettivo.** Spostare lo stato degli avversari (rosa, slot, crediti
+residui) dalla colonna "Io" a un pannello sempre visibile sotto il riquadro
+del giocatore in chiamata.
 
-**Contesto.** Il modello wishlist esiste già per intero lato API
-(`web/src/api/wishlist.ts`: `listWishlist`/`addToWishlist`/
-`removeFromWishlist`/`reorderWishlist`) ed è usato in asta
-(`AuctionMode.tsx`/`AuctionDesktop.tsx`/`AuctionPhone.tsx`), ma non è
-collegato a `ValuationsPage.tsx`/`MergedValuationRow.tsx` — nessun `import`
-di `wishlistApi` in nessuno dei due file. Il pattern da replicare è
-identico a quello già in uso per i giocatori trappola nello stesso file:
-stato `trapTagIds: Set<number>` + funzione `toggleTrap` in
-`ValuationsPage.tsx` (righe 53, 105–108), passati come prop
-`isTrap`/`onToggleTrap` a `MergedValuationRow` (righe 22–23 dell'interfaccia,
-bottone renderizzato righe 305–312).
+**Contesto.** Oggi lo stato avversari vive in due posti separati:
+`io-col` (`AuctionDesktop.tsx` righe 864–943: riepilogo per manager — nome,
+residuo, max bid sul giocatore corrente, slot liberi per ruolo — da
+`view.opponents`) e un dialog a parte (`OpponentRosterDialog.tsx`, aperto dal
+bottone "Rose avversari & crediti residui" riga 909, dati da
+`view.opponentRosterCards` — rosa completa per manager coi prezzi pagati).
+Entrambi derivati in `AuctionMode.tsx` (righe 453–458,
+`opponents`/`opponentRosterCardsView`), nessun dato nuovo da calcolare per
+questo prompt — solo dove/come si mostra.
 
 **Lavoro.**
-- In `ValuationsPage.tsx`: nuovo stato `wishlistIds: Set<number>`, caricato
-  con `wishlistApi.listWishlist` nello stesso `useEffect` che già carica
-  `trapTagIds` (o uno analogo, segui il pattern), e funzione `toggleWishlist
-  (playerId)` che chiama `addToWishlist`/`removeFromWishlist` a seconda
-  dello stato corrente — stesso schema di `toggleTrap`.
-- In `MergedValuationRowProps`: aggiungi `isTargeted: boolean` e
-  `onToggleTarget: () => void` (stesso schema di `isTrap`/`onToggleTrap`),
-  passati da `ValuationsPage.tsx` riga ~350 dove già passa `isTrap`.
-- Nel rendering della riga, aggiungi il bottone/stellina vicino al bottone
-  "Segna trappola" esistente (righe 305–312) ma visivamente distinto (icona
-  stella, non testo "Segna trappola" — sono due concetti diversi: trappola è
-  per gli avversari, obiettivo è per sé), con `aria-pressed={isTargeted}`
-  come già fa il bottone trappola.
+- Nuovo componente (es. `OpponentsBoard`), che riusa il markup/dati di
+  `OpponentRosterDialog.tsx` (card per manager: nome, residuo, max bid sul
+  corrente, slot per ruolo, rosa scrollabile coi prezzi) ma **inline** sotto
+  il blocco del giocatore in chiamata (`AuctionDesktop.tsx`, dopo il blocco
+  righe 189–298), non dentro un `Dialog`.
+- Il riepilogo oggi in `io-col` (righe 864–943) diventa ridondante col nuovo
+  pannello: **non duplicarlo**. Valuta se `io-col` deve perdere del tutto la
+  sezione "Avversari" (probabile, dato il punto successivo P30 che rimuove
+  anche il dialog) o tenere solo un conteggio minimo — decidilo nel piano,
+  non lasciare due fonti della stessa informazione a schermo.
+- `OpponentRosterDialog.tsx` **non va eliminato in questo prompt** (lo fa
+  P30, dopo aver verificato che il pannello lo copre per intero) — qui resta
+  come fallback se qualcosa nel nuovo pannello non copre un caso d'uso.
+- Applica lo stesso pannello in `AuctionPhone.tsx` (che ha già una sezione
+  "Avversari" collassabile, righe 373–409 — verifica se basta espanderla o
+  se serve lo stesso componente condiviso con desktop).
 
-**Test.** Test di `ValuationsPage` (interazione: click sulla stellina
-aggiunge/rimuove dalla wishlist, stato riflesso subito senza attendere un
-refresh completo — stesso comportamento ottimistico/di refresh già usato per
-`toggleTrap`, verifica quale sia e riusalo). Test di `MergedValuationRow`
-(rendering del bottone in stato attivo/inattivo).
+**Test.** Test di rendering: il pannello mostra tutti i manager di
+`view.opponents`/`view.opponentRosterCards` con gli stessi dati oggi nel
+dialog (fixture con più manager, verifica residuo/max/slot/rosa). Nessuna
+duplicazione visibile con `io-col` dopo la modifica.
 
-**Accettazione.** In Valutazioni, ogni riga ha un bottone per segnare il
-giocatore come obiettivo; lo stato è coerente con la wishlist già usata in
-asta (un giocatore segnato da Valutazioni compare in wishlist durante
-l'asta, e viceversa).
+**Accettazione.** Sotto il riquadro del giocatore in chiamata è sempre
+visibile lo stato completo degli avversari (rosa, slot, crediti residui),
+senza dover aprire un dialog.
 
 **Versioning.** `feat` → MINOR.
 
 ---
 
-## P24 — Nota di scouting visibile in asta, evidenziata se il giocatore è battuto (Gruppo C, 2/2 — dopo P21)
+## P29 — Drag&drop di un acquisto fra manager, o cancellazione diretta (dopo P28)
 
-**Obiettivo.** Durante la chiamata di un giocatore, mostrare la sua nota di
-scouting (oggi solo in Valutazioni) e metterla in evidenza quando il prezzo
-in asta lo porta fuori mercato.
+**Obiettivo.** Dal pannello avversari (P28), poter trascinare un giocatore
+acquistato da un manager a un altro, oppure cancellarne l'acquisto
+direttamente da lì.
 
-**Contesto — la soglia di "battuto" esiste già, non va inventata.** Il campo
-`note` della valutazione è modificabile in `MergedValuationRow.tsx` (righe
-277–284) ma non compare in nessun punto della Vista Asta
-(`AuctionDesktop.tsx`/`AuctionPhone.tsx`). La soglia "il giocatore sta
-venendo battuto" corrisponde già a un segnale esistente:
-`verdict()`/`verdictTone()` in `web/src/lib/auctionDerivations.ts` (righe
-74–90) restituisce `"Fuori mercato"` (tono di warning) quando `price >
-val.panic_price` — è il segnale su cui agganciare l'evidenza, non una soglia
-nuova. `priceNum` (il prezzo digitato durante la chiamata corrente) è già
-calcolato in `AuctionMode.tsx` riga 379 e già passato al calcolo del
-verdetto (riga 438).
+**Contesto — la cancellazione diretta esiste già, il riassegnamento no.**
+`web/src/api/purchases.ts` ha `deletePurchase(leagueId, playerId)` (già
+usato dal bottone 🗑 in "Ultime chiamate", `AuctionDesktop.tsx` righe
+1000–1008, `view.onDeleteCall`) — "cancellarne l'acquisto direttamente da
+lì" nel pannello P28 è lo stesso bottone, solo riposizionato dentro le righe
+rosa del nuovo pannello: **nessun nuovo endpoint per questa metà del
+prompt**.
+
+Il **riassegnamento** (drag&drop fra manager) non ha invece un endpoint
+lato server, ed esiste una decisione di design esplicita contro
+l'aggiungerne uno generico: il commento su `deletePurchaseByPlayer`
+(`server/src/db/purchases.ts` righe 67–70) dice testualmente *"Come
+`deleteLastPurchase`, ma per una chiamata qualsiasi: correzione esplicita e
+tracciabile di un errore [...] Nessun update, nessuna modifica di stato
+mutabile"* — e più sopra, sopra `deleteLastPurchase` (righe 53–56):
+*"Correcting a mistake is [...] never an update — so it goes through this
+dedicated deletion, not a general-purpose 'edit a purchase' endpoint."*
+Un drag&drop che sposta un acquisto da un manager all'altro **è** un edit di
+riga. Prima di scrivere codice, il piano deve scegliere esplicitamente fra:
+1. **Delete + insert lato client** (due chiamate esistenti,
+   `deletePurchase` poi `createPurchase` con lo stesso `player_id`/`prezzo`
+   e nuovo `manager_id`): nessun nuovo endpoint, coerente con la decisione
+   già presa nel codice, ma perde `ts` originale (il giocatore riassegnato
+   scivola in fondo al log per timestamp) e non è atomico (se la seconda
+   chiamata fallisce dopo che la prima è andata a buon fine, il giocatore
+   resta senza proprietario finché non si ricarica manualmente — da gestire
+   con un tentativo di rollback/retry visibile in UI, non silenzioso).
+2. **Nuovo endpoint `PATCH /purchases/:playerId`** che aggiorna solo
+   `manager_id`: atomico, preserva `ts`, ma contraddice esplicitamente la
+   decisione di design already in codice — va giustificato nel piano perché
+   il caso d'uso (correggere un'assegnazione sbagliata durante un'asta live)
+   è diverso da quello per cui la nota è stata scritta, e va aggiornato il
+   commento in `purchases.ts` per riflettere la nuova scelta, non lasciarlo
+   in contraddizione col codice.
+
+**Raccomandazione**: partire dall'opzione 1 (nessun cambio di schema/API,
+più veloce da verificare in un'asta reale) a meno che la perdita di `ts`
+originale si dimostri un problema concreto nell'uso.
 
 **Lavoro.**
-- Esponi la nota del giocatore chiamato (`selectedValuation.note` — verifica
-  il nome esatto del campo sulla valutazione già in scope in `AuctionMode.tsx`
-  vicino a `computeVerdict`) nella view passata a `AuctionDesktop.tsx`/
-  `AuctionPhone.tsx`, se non già presente.
-- Mostra la nota vicino al riquadro del giocatore in chiamata (non in un
-  dialog separato: deve essere leggibile senza click aggiuntivi durante
-  un'asta dal vivo). Se `note` è vuota/assente, non mostrare il blocco
-  (niente placeholder tipo "nessuna nota").
-- Quando `verdictTone(priceNum, selectedValuation) === "over"` (o
-  l'equivalente già usato per "Fuori mercato" — verifica il nome esatto
-  del tono restituito), applica uno stile di evidenza al blocco nota
-  (bordo/sfondo di warning, stesso linguaggio visivo già usato altrove per
-  "Fuori mercato" — non inventare un nuovo colore di warning).
+- Implementa il riassegnamento secondo l'opzione scelta nel piano.
+- Drag&drop nativo (HTML5 Drag and Drop API) sulle righe rosa dentro
+  `OpponentsBoard` (P28): giocatore trascinabile, manager target come drop
+  zone, feedback visivo di drag-over. Se il progetto non ha già un pattern
+  di drag&drop altrove, verifica compatibilità con la tastiera/mobile prima
+  di considerarlo l'unica via — la cancellazione diretta resta comunque
+  disponibile come alternativa più accessibile.
+- Vincoli da rispettare al drop: manager target non deve avere lo slot di
+  quel ruolo pieno (stesso controllo già usato per `managerCanBuy` nella
+  selezione "A chi" durante la chiamata, `AuctionDesktop.tsx` riga 339) —
+  riusalo, non duplicare la logica.
 
-**Test.** Test di rendering: nota assente → nessun blocco; nota presente,
-prezzo sotto panic price → nota visibile senza evidenza; prezzo sopra panic
-price → nota visibile con stile di evidenza. Verifica che il blocco compaia
-in entrambe `AuctionDesktop.tsx` e `AuctionPhone.tsx`.
+**Test.** Test dell'operazione di riassegnamento (fixture: sposta un
+acquisto da manager A a manager B, verifica che risulti sotto B e non più
+sotto A; tentativo di spostamento verso un manager a slot pieno per quel
+ruolo → rifiutato con messaggio, nessuna chiamata di rete eseguita). Se
+opzione 2: test dell'endpoint `PATCH` (manager inesistente, giocatore senza
+acquisto → 404, come già fanno gli altri endpoint purchases).
 
-**Accettazione.** Durante la chiamata di un giocatore con una nota di
-scouting, la nota è visibile senza azioni aggiuntive; se il prezzo inserito
-supera il `panic_price`, la nota è evidenziata con lo stesso linguaggio
-visivo già usato per "Fuori mercato".
+**Accettazione.** Dal pannello avversari, un giocatore acquistato può essere
+trascinato su un altro manager (con gli stessi vincoli di slot già validi in
+asta) oppure cancellato direttamente, senza uscire dal pannello.
 
-**Versioning.** `feat` → MINOR.
+**Versioning.** `feat` → MINOR se opzione 1 (nessun cambio di contratto
+API); `feat` → MINOR anche con opzione 2 (nuovo endpoint additivo, non
+sostituisce quelli esistenti) — non è breaking in nessuno dei due casi.
+
+---
+
+## P30 — Storico ridotto a un bottone "Log acquisti", rimozione del dialog avversari (dopo P28 e P29)
+
+**Obiettivo.** Conseguenza diretta di P28 e P29: con lo stato avversari
+sempre visibile sotto il giocatore e il riassegnamento/cancellazione
+possibili da lì, lo storico acquisti a piena vista e il dialog avversari
+separato non servono più nella forma attuale.
+
+**Contesto.** "Ultime chiamate" è oggi una sezione sempre visibile in
+`io-col` (`AuctionDesktop.tsx` righe 945–1012, `view.logRows`, con bottone
+"Annulla ultima" e cancellazione per riga). `OpponentRosterDialog.tsx` è
+aperto dal bottone in `io-col` riga 909-941 — reso ridondante da P28.
+
+**Lavoro.**
+- Sostituisci la sezione "Ultime chiamate" sempre visibile con un bottone
+  "Log acquisti" che apre un `Dialog` (riusa `components/ui/Dialog.tsx`,
+  stesso pattern di `OpponentRosterDialog`/`ScoreBreakdownDialog`) col
+  contenuto attuale (righe 964–1011: avatar, nome, manager, prezzo, Δ,
+  cancellazione per riga) — nessun dato perso, solo dietro un click invece
+  che sempre a schermo. "Annulla ultima" può restare come azione rapida
+  fuori dal dialog (bottone singolo, non l'intero log) se lo spazio in
+  `io-col` lo permette.
+- Rimuovi il bottone "Rose avversari & crediti residui" e l'uso di
+  `OpponentRosterDialog` da `AuctionDesktop.tsx` (righe 909–941, 1054–1061)
+  **solo dopo aver verificato** che `OpponentsBoard` (P28) copre davvero
+  tutti i dati che il dialog mostrava (rosa completa coi prezzi inclusa, non
+  solo il riepilogo) — se manca qualcosa, va aggiunto a `OpponentsBoard`
+  prima di eliminare il dialog, non lasciato scoperto.
+- Se `OpponentRosterDialog.tsx` non ha più nessun uso dopo questa modifica
+  (verifica con una ricerca nel repo, non a memoria), eliminalo insieme al
+  suo file di test — non lasciare codice morto.
+- Applica la stessa semplificazione in `AuctionPhone.tsx` se il tab
+  "Avversari"/dialog equivalente esiste ancora lì dopo P28.
+
+**Test.** Test di rendering: bottone "Log acquisti" apre il dialog col
+contenuto atteso, cancellazione riga funziona dentro il dialog. Se
+`OpponentRosterDialog` viene rimosso, verifica che la build/lint non abbiano
+riferimenti orfani (import inutilizzati, test che referenziano un
+componente eliminato).
+
+**Accettazione.** Lo storico acquisti è dietro un bottone "Log acquisti"
+invece che sempre a schermo; non esiste più un dialog avversari separato dal
+pannello introdotto in P28.
+
+**Versioning.** `fix`/`refactor` → PATCH se rimuove solo markup/dialog senza
+cambiare contratti pubblici; `feat` → MINOR se il bottone "Log acquisti" è
+considerato una funzionalità nuova più che una rifinitura — a discrezione di
+chi implementa, motivalo nel commit.

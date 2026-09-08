@@ -32,6 +32,26 @@ Regole vincolanti per lo sviluppo di questa repo. Non sono linee guida: sono req
 
 - `build` e `lint` devono passare prima di ogni commit.
 - Se build o lint sono rotti, NON committare. Prima si sistema, poi si committa.
+- Prima di ogni commit, verifica se la feature disallinea `PROMPTS.md`,
+  `PLAN.md`, `README.md` o `CHANGELOG.md` rispetto allo stato reale del
+  codice, e aggiornali nello stesso commit (o in un commit `docs` immediatamente
+  precedente). In particolare:
+  - `PROMPTS.md`: il prompt appena implementato passa da voce descritta per
+    intero a riferimento chiuso (fase chiusa + hash commit), come già fatto
+    per le fasi precedenti — non lasciarlo descritto come "da fare" a
+    lavoro fatto.
+  - `PLAN.md`: la fase in corso aggiorna il proprio stato (*in corso* →
+    *chiusa*) quando l'ultimo prompt del gruppo è implementato, e la sezione
+    "Traguardi di rilascio" guadagna la voce di versione corrispondente.
+  - `README.md`: la riga "Stato" in "Hosting online" riporta versione e data
+    correnti, non quelle dell'ultimo aggiornamento manuale.
+  - Se una feature introduce un'eccezione o una decisione che contraddice un
+    commento/invariante già scritto altrove nel codice (es. una nota che
+    dice esplicitamente "niente update, solo insert/delete"), il commento va
+    aggiornato o il piano deve giustificare esplicitamente perché resta
+    valido — non lasciare codice e commento in contraddizione.
+  - Non è richiesto un aggiornamento se la feature non cambia lo stato
+    descritto in questi file (es. un fix isolato non menzionato altrove).
 
 ## Commenti nel codice
 
