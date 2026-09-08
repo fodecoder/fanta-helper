@@ -335,10 +335,10 @@ fasi precedenti, quasi tutte convergono sugli stessi due file
 (`AuctionDesktop.tsx`, `AuctionPhone.tsx`): l'analisi di parallelizzabilità
 per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
 
-1. **Listone collassabile.** `call-col` (`AuctionDesktop.tsx` righe 96–174,
-   `index.css` riga 1361 `grid-template-columns: minmax(200px, 260px)
-   minmax(0, 1fr) minmax(210px, 260px)`) è sempre visibile a larghezza fissa.
-   Serve un bottone che la collassi per allargare `bid-col`.
+1. **Listone collassabile.** *(chiusa, `9b9c13c`, `v6.6.0`)* Bottone nella
+   testata di `call-col` che la collassa a 48px (nasconde ricerca/filtri/
+   lista), variabile CSS `--call-col-w` sulla classe modificatore
+   `.auction-grid--call-collapsed` per non duplicare i breakpoint esistenti.
 2. **Alternative limitate a 5 e paginate** + **alternative in un riquadro
    compatto vicino al giocatore** (due richieste, stessa superficie: la
    tabella `compareRows` oggi mostra tutte le righe libere senza paginazione,
@@ -367,9 +367,9 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    ridondante, e "Ultime chiamate" — oggi sempre visibile, righe 945–1012 —
    può diventare un bottone che apre il log completo).
 
-Prompt operativi: P25 (punto 1), P26 (punti 3+4), P27 (punti 2), P28 (punto
-5), P29 (punto 6, dopo P28), P30 (punto 7, dopo P28 e P29) — dettagli, note di
-implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
+Prompt operativi: P25 (punto 1, chiusa), P26 (punti 3+4), P27 (punti 2), P28
+(punto 5), P29 (punto 6, dopo P28), P30 (punto 7, dopo P28 e P29) — dettagli,
+note di implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
 
 ### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
 

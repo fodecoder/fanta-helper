@@ -75,45 +75,16 @@ assegnarlo a un secondo agente in parallelo agli altri cinque).
 
 ---
 
-## P25 — Listone collassabile
+## P25 — Listone collassabile *(chiusa, `9b9c13c`, `v6.6.0`)*
 
-**Obiettivo.** Poter collassare la colonna "Chiamata" (il listone giocatori a
-sinistra) con un bottone, per allargare la vista centrale durante l'asta.
-
-**Contesto.** `.auction-grid` (`web/src/index.css` riga 1358) è un grid a 3
-colonne fisso: `grid-template-columns: minmax(200px, 260px) minmax(0, 1fr)
-minmax(210px, 260px)` (righe 1361, ripetuto ridotto sotto 1180px riga 1368).
-La colonna 1 è `call-col` (`AuctionDesktop.tsx` righe 96–174: ricerca, filtro
-ruolo, ordinamento, lista `view.visiblePlayers`). Nessuno stato di
-collasso esiste oggi né in `AuctionDesktop.tsx` né in `AuctionMode.tsx`.
-
-**Lavoro.**
-- Stato locale in `AuctionDesktop.tsx` (`useState<boolean>`, non serve in
-  `AuctionMode.tsx`/nella view: è puro stato di presentazione, non deriva da
-  dati d'asta) per il collasso, con un bottone (icona `‹›` o simile) nella
-  testata di `call-col`.
-- Da collassata, la colonna si riduce a una fascia stretta (larghezza fissa
-  piccola, es. 40–48px) con solo il bottone per riespandere — decidi se
-  mantenere il filtro ruolo/ricerca accessibile in quello stato ridotto o
-  nasconderli del tutto (probabile: nasconderli, l'utente riespande per
-  cercare). Aggiorna `grid-template-columns` di conseguenza (nuova classe
-  modificatore `.auction-grid--call-collapsed` o variabile CSS, non hardcoded
-  inline per non duplicare i due breakpoint esistenti).
-- Applica lo stesso pattern in `AuctionPhone.tsx` **solo se ha senso**: la
-  vista telefono usa già tab (`phone-tabs`/`phone-panel`, non colonne fisse)
-  — verifica se esiste già un modo di nascondere il listone lì prima di
-  aggiungerne uno ridondante; se le tab già risolvono il problema su mobile,
-  documenta nel piano perché P25 riguarda solo desktop.
-
-**Test.** Test di rendering `AuctionDesktop`: stato espanso mostra
-`call-col` per intero (ricerca/filtri/lista); stato collassato la riduce e
-mostra il bottone di riespansione; click sul bottone alterna lo stato.
-
-**Accettazione.** In vista desktop, un bottone collassa/riespande il
-listone; da collassato la colonna centrale (giocatore in asta) guadagna
-spazio visibile.
-
-**Versioning.** `feat` → MINOR.
+Bottone nella testata di `call-col` che la collassa a una fascia stretta
+(48px, nascondendo ricerca/filtro ruolo/ordinamento/lista) per allargare
+`bid-col` durante l'asta. Variabile CSS `--call-col-w` su classe
+modificatore `.auction-grid--call-collapsed` per non duplicare i due
+breakpoint esistenti in `index.css`. `AuctionPhone.tsx` non toccato: le tab
+`lista`/`alternative`/`log` già nascondono il listone quando non attivo,
+nessuna aggiunta ridondante necessaria. Test in
+`AuctionMode.callCol.test.tsx`.
 
 ---
 
