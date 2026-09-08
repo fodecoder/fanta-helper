@@ -99,68 +99,20 @@ branch `claude/verdict-badge-ladder-layout-828b59`.
 
 ---
 
-## P27 — Riquadro compatto per le alternative, limitato a 5 e paginato
+## P27 — Riquadro compatto per le alternative, limitato a 5 e paginato *(chiuso)*
 
-**Obiettivo.** Sostituire la tabella "Alternative nello stesso ruolo" a
-piena larghezza sotto il giocatore con un riquadro compatto vicino al
-giocatore in chiamata, che mostra al massimo 5 righe per volta con
-paginazione.
-
-**Contesto — due richieste dell'utente unificate.** "Limitare a 5 e
-paginare" e "ridurre in un riquadro vicino al giocatore" descrivono la
-stessa superficie: la tabella `view.compareRows`
-(`AuctionDesktop.tsx` righe 401–753, `AuctionPhone.tsx` righe ~545–697+),
-oggi senza paginazione e a piena larghezza con 11+ colonne (base + stats
-opzionali + attributi opzionali, riga 529 `columnCount`), incluso il
-dettaglio espandibile per riga (`PlayerDetailPanel`, righe 729–744) e il
-link alla scomposizione punteggio (`ScoreBreakdownDialog`, righe 633–646,
-1046–1052).
-
-**Decisione da prendere nel piano, non qui.** Sostituire la tabella intera
-con un riquadro compatto perde colonne (stats/attributi/dettagli espansi)
-che oggi servono durante l'asta. Due strade, da scegliere e motivare prima
-di scrivere codice:
-1. Il riquadro compatto (nome, tier, fair value, target/max, Δ vs in asta —
-   le colonne essenziali per una decisione rapida durante la chiamata)
-   **sostituisce** la tabella come vista di default; le colonne
-   stats/attributi/dettaglio restano raggiungibili per singolo giocatore
-   (click → stesso `PlayerDetailPanel`/`ScoreBreakdownDialog` già esistenti,
-   non reinventarli) invece che sempre visibili in tabella.
-2. Il riquadro compatto **affianca** la tabella esistente come vista
-   rapida, e la tabella resta sotto per chi vuole il dettaglio completo.
-
-La 1 è coerente con l'obiettivo dichiarato ("riquadro vicino al giocatore",
-non "tabella più un riquadro") ed è la lettura più diretta della richiesta —
-ma va confermata nel piano prima di eliminare markup esistente.
-
-**Lavoro (assumendo l'opzione 1).**
-- Nuovo componente (es. `AlternativesPanel`), posizionato vicino a
-  `PlayerDetailPanel`/`SameTeamGoalkeepers` nel blocco del giocatore in
-  chiamata (`AuctionDesktop.tsx` righe 189–225), non più come sezione a
-  piena larghezza sotto (righe 401–753 da sostituire, non solo affiancare).
-- Stato di paginazione (`useState<number>` pagina corrente, reset a 0 quando
-  cambia `selectedPlayer.id` — verifica che serva un `useEffect` di reset o
-  se basta derivare la pagina da un `key` sul componente), 5 righe per
-  pagina da `view.compareRows` (già ordinate per `compareSortKey`, nessun
-  nuovo ordinamento da inventare).
-- Il controllo di ordinamento (`COMPARE_SORT_KEYS`, righe 33–50) resta,
-  adattato a un layout più stretto (es. select invece di riga di bottoni, se
-  lo spazio non basta).
-- Dettaglio per riga (stats/attributi/breakdown punteggio) raggiungibile con
-  lo stesso pattern "Dettagli" già in uso (righe 718–727), non perso.
-- Applica lo stesso riquadro in `AuctionPhone.tsx`, sostituendo la sezione
-  equivalente nel tab compare (righe ~545–697).
-
-**Test.** Test del componente: 5 righe per pagina anche con più di 5
-`compareRows`, paginazione avanti/indietro, reset pagina al cambio giocatore
-selezionato, 0 alternative → messaggio vuoto invece di riquadro rotto.
-
-**Accettazione.** Vicino al giocatore in chiamata, un riquadro compatto
-mostra le alternative dello stesso ruolo 5 per volta con paginazione, con
-accesso al dettaglio completo per singolo giocatore invariato rispetto ad
-oggi.
-
-**Versioning.** `feat` → MINOR.
+Scelta l'opzione 1: il nuovo componente `AlternativesPanel` **sostituisce** la
+tabella "Alternative nello stesso ruolo" a piena larghezza ed è reso accanto al
+giocatore in chiamata, dopo `PlayerDetailPanel` / `SameTeamGoalkeepers`. 5 righe
+per pagina con paginazione avanti/indietro sulle stesse 15 `compareRows`;
+ordinamento come `<select>`; reset paginazione al cambio giocatore/ordinamento
+via `key={`${selectedPlayer.id}:${compareSortKey}`}` sul componente (nessun
+`useEffect`). Dettaglio per riga ("Dettagli" → `PlayerDetailPanel`, score →
+`ScoreBreakdownDialog`) invariato; stesso riquadro nel tab "Alternative" della
+vista telefono. `COMPARE_SORT_KEYS`/`COMPARE_SORT_LABEL` e il tipo `CompareRow`
+spostati/condivisi in `auctionDerivations.ts`. Test in
+`web/src/components/AlternativesPanel.test.tsx`. Dettaglio in
+[CHANGELOG.md](./CHANGELOG.md) `[6.8.0]`.
 
 ---
 

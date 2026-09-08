@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.8.0] - 2026-09-08
+
+### Changed
+
+- **Alternative dello stesso ruolo in un riquadro compatto e paginato** (Fase
+  11, P27): la tabella a piena larghezza "Alternative nello stesso ruolo" sotto
+  il giocatore in chiamata è stata sostituita da un riquadro compatto
+  (`AlternativesPanel`) reso accanto al giocatore, subito dopo
+  `PlayerDetailPanel` / `SameTeamGoalkeepers`. Mostra 5 righe per volta con
+  paginazione avanti/indietro (sulle stesse 15 alternative di prima), il
+  controllo di ordinamento è ora un menù a tendina, e il dettaglio per singolo
+  giocatore (stats, attributi, scomposizione punteggio) resta raggiungibile
+  invariato via il toggle "Dettagli" e il link allo score. Stesso riquadro nel
+  tab "Alternative" della vista telefono (che guadagna così l'accesso alla
+  scomposizione punteggio, prima assente). Nessun cambiamento ai dati derivati.
+
 ## [6.7.0] - 2026-09-08
 
 ### Changed

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlternativesPanel } from "../../components/AlternativesPanel";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
@@ -13,7 +14,6 @@ import {
   lineupStatusFor,
   roleColor,
   setPieceRanksFor,
-  type CompareSortKey,
 } from "../../lib/auctionDerivations";
 import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
@@ -26,24 +26,6 @@ const SORT_LABEL: Record<PlayerSortKey, string> = {
 };
 const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
 
-const COMPARE_SORT_LABEL: Record<CompareSortKey, string> = {
-  fair_value: "Fair value",
-  target: "Target",
-  max_bid: "Max",
-  fm: "Fm",
-  fvm: "FVM",
-  qt_a: "Qt.A",
-  score: "Score",
-};
-const COMPARE_SORT_KEYS: CompareSortKey[] = [
-  "fair_value",
-  "target",
-  "max_bid",
-  "fm",
-  "fvm",
-  "qt_a",
-  "score",
-];
 const SHORT_LABEL: Record<string, string> = {
   Target: "TGT",
   "Fair value": "FV",
@@ -53,16 +35,8 @@ const SHORT_LABEL: Record<string, string> = {
 
 type Tab = "lista" | "alternative" | "log";
 
-// Il punteggio motore non è mai un intero: arrotondato per la lettura,
-// gli altri valori (fair value, target, Qt.A, FVM) restano interi as-is.
-function formatCompareValue(v: number | null): string {
-  if (v === null) return "—";
-  return Number.isInteger(v) ? String(v) : v.toFixed(2);
-}
-
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
-  const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const [opponentsOpen, setOpponentsOpen] = useState(false);
   const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
@@ -540,145 +514,17 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
         )}
 
         {tab === "alternative" && (
-          <div>
-            <div
-              style={{ padding: "12px 16px 6px", fontSize: 12, color: "var(--color-neutral-700)" }}
-            >
-              {sel
-                ? `${view.compareRows.length} libere · ordinate per ${COMPARE_SORT_LABEL[view.compareSortKey]}`
-                : "Nessun giocatore in asta."}
-            </div>
-            {sel && (
-              <div
-                className="seg"
-                role="group"
-                aria-label="Ordina alternative per"
-                style={{ margin: "0 16px 8px", flexWrap: "wrap" }}
-              >
-                {COMPARE_SORT_KEYS.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    className="seg-opt"
-                    aria-pressed={view.compareSortKey === k}
-                    onClick={() => view.onCompareSortKey(k)}
-                  >
-                    {COMPARE_SORT_LABEL[k]}
-                  </button>
-                ))}
-              </div>
+          <div style={{ padding: "12px 16px" }}>
+            {sel ? (
+              <AlternativesPanel
+                key={`${sel.id}:${view.compareSortKey}`}
+                view={view}
+              />
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--color-neutral-700)", margin: 0 }}>
+                Nessun giocatore in asta.
+              </p>
             )}
-            {view.compareRows.map(({ player, valuation, delta, tags, teamPref, displayScore }) => {
-              const expanded = expandedPlayerId === player.id;
-              return (
-                <div
-                  key={player.id}
-                  style={{
-                    borderBottom: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => view.onSelect(player.id)}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      background: "transparent",
-                      border: 0,
-                      padding: "11px 16px",
-                      cursor: "pointer",
-                      color: "var(--color-text)",
-                    }}
-                  >
-                    <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span
-                        style={{
-                          font: "600 11px/1 var(--font-heading)",
-                          color: "var(--color-accent-700)",
-                          width: 24,
-                        }}
-                      >
-                        {valuation?.tier ?? ""}
-                      </span>
-                      <span className="ellipsis" style={{ flex: 1, minWidth: 0, fontSize: 15 }}>
-                        {player.name}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--color-neutral-700)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
-                        }}
-                      >
-                        {player.team}
-                        <TeamPrefBadge pref={teamPref} variant="dot" />
-                      </span>
-                      <span
-                        className="num"
-                        style={{ fontWeight: 600, fontSize: 15, width: 38, textAlign: "right" }}
-                      >
-                        {view.compareSortKey === "score" && displayScore !== null
-                          ? displayScore.toFixed(1)
-                          : formatCompareValue(view.compareSortValueFor(player.id))}
-                      </span>
-                      <span
-                        className="num"
-                        style={{
-                          fontSize: 12,
-                          width: 40,
-                          textAlign: "right",
-                          color: delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
-                        }}
-                      >
-                        {delta === null ? "—" : formatDelta(delta)}
-                      </span>
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
-                      <span className="bar-track" style={{ flex: 1, height: 6 }}>
-                        <span
-                          className="bar-fill"
-                          style={{
-                            width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
-                            background: "var(--color-neutral-600)",
-                          }}
-                        />
-                      </span>
-                      <span
-                        style={{ fontSize: 11, color: "var(--color-neutral-700)" }}
-                        className="num"
-                      >
-                        max {valuation?.max_bid ?? "—"} · panic {valuation?.panic_price ?? "—"}
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ margin: "0 16px 10px", padding: "3px 10px", fontSize: 12 }}
-                    onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
-                  >
-                    {expanded ? "Chiudi" : "Dettagli"}
-                  </button>
-                  {expanded && (
-                    <div style={{ padding: "0 16px 10px" }}>
-                      <PlayerDetailPanel
-                        player={player}
-                        quotation={view.quotationFor(player.id)}
-                        fvmWeighted={view.weightedFvmFor(player.id)}
-                        seasonStats={view.seasonStatsById.get(player.id)}
-                        lineupStatus={lineupStatusFor(player, view.probableLineup)}
-                        setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
-                        tags={tags}
-                        attributes={view.attributesFor(player.id)}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </div>
         )}
 

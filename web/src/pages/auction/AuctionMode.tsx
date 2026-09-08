@@ -51,6 +51,7 @@ import {
   strongRoleAlerts,
   verdict as computeVerdict,
   verdictTone as computeVerdictTone,
+  type CompareRow,
   type CompareSortKey,
   type GkPairingSuggestion,
   type OpponentRosterCard,
@@ -74,18 +75,7 @@ export type PlayerSortKey = "valore" | "fvm" | "qt_a" | "qt_i";
 // affollare la tabella (se il ruolo ne ha meno disponibili, mostra tutte).
 const COMPARE_ROWS = 15;
 
-export interface CompareRow extends RankRow {
-  delta: number | null;
-  isCurrent: boolean;
-  quotation: QuotationRow | undefined;
-  seasonStats: PlayerLatestSeasonStats | undefined;
-  // `score` = score grezzo VORP (usato per l'ordinamento «per score»);
-  // `displayScore` = stesso score in scala 0–10 per ruolo (solo lettura).
-  score: number | null;
-  displayScore: number | null;
-  tags: PlayerTag[];
-  teamPref: "prefer" | "avoid" | null;
-}
+export type { CompareRow };
 
 // Modello di vista condiviso tra desktop e telefono: tutto derivato, nulla di
 // duplicato. Lo stato dell'asta resta funzione del log (purchases + state dal

@@ -3,8 +3,11 @@ import type {
   ManagerAuctionStatus,
   ManagerRoster,
   Player,
+  PlayerLatestSeasonStats,
+  PlayerTag,
   ProbableLineupEntry,
   ProbableLineupStato,
+  QuotationRow,
   Role,
   RoleSlotStatus,
   SetPieceTakerEntry,
@@ -380,7 +383,40 @@ export interface RankRow {
   valuation: ValuationWithPlayer | undefined;
 }
 
+export interface CompareRow extends RankRow {
+  delta: number | null;
+  isCurrent: boolean;
+  quotation: QuotationRow | undefined;
+  seasonStats: PlayerLatestSeasonStats | undefined;
+  // `score` = score grezzo VORP (usato per l'ordinamento «per score»);
+  // `displayScore` = stesso score in scala 0–10 per ruolo (solo lettura).
+  score: number | null;
+  displayScore: number | null;
+  tags: PlayerTag[];
+  teamPref: "prefer" | "avoid" | null;
+}
+
 export type CompareSortKey = "fair_value" | "target" | "max_bid" | "fm" | "fvm" | "qt_a" | "score";
+
+export const COMPARE_SORT_KEYS: CompareSortKey[] = [
+  "fair_value",
+  "target",
+  "max_bid",
+  "fm",
+  "fvm",
+  "qt_a",
+  "score",
+];
+
+export const COMPARE_SORT_LABEL: Record<CompareSortKey, string> = {
+  fair_value: "Fair value",
+  target: "Target",
+  max_bid: "Max",
+  fm: "Fm",
+  fvm: "FVM",
+  qt_a: "Qt.A",
+  score: "Score",
+};
 
 // Confronto per ruolo derivato client-side dai dati già scaricati (players +
 // valutazioni per-lega + log): stesso ruolo, non ancora acquistati, ordinati

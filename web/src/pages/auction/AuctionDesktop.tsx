@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
+import { AlternativesPanel } from "../../components/AlternativesPanel";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
 import { OpponentRosterDialog } from "./OpponentRosterDialog";
@@ -6,10 +7,7 @@ import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { ScoutingNote } from "../../components/ScoutingNote";
-import { ScoreBreakdownDialog } from "../../components/ScoreBreakdownDialog";
-import { InfoLabel } from "../../components/ui/InfoLabel";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
-import { COLUMN_GLOSSARY } from "../../lib/columnGlossary";
 import {
   ROLE_LABEL,
   deltaColor,
@@ -17,7 +15,6 @@ import {
   lineupStatusFor,
   roleColor,
   setPieceRanksFor,
-  type CompareSortKey,
 } from "../../lib/auctionDerivations";
 import type { AuctionView, PlayerSortKey, RoleFilter } from "./AuctionMode";
 
@@ -30,35 +27,11 @@ const SORT_LABEL: Record<PlayerSortKey, string> = {
 };
 const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
 
-const COMPARE_SORT_LABEL: Record<CompareSortKey, string> = {
-  fair_value: "Fair value",
-  target: "Target",
-  max_bid: "Max",
-  fm: "Fm",
-  fvm: "FVM",
-  qt_a: "Qt.A",
-  score: "Score",
-};
-const COMPARE_SORT_KEYS: CompareSortKey[] = [
-  "fair_value",
-  "target",
-  "max_bid",
-  "fm",
-  "fvm",
-  "qt_a",
-  "score",
-];
-
 export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
-  const showStats = view.enrichment?.performance.enabled === true;
-  const showAttributes = view.enrichment?.attributes.enabled === true;
-  const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
-  const [breakdownPlayerId, setBreakdownPlayerId] = useState<number | null>(null);
   const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const [callColCollapsed, setCallColCollapsed] = useState(false);
-  const breakdownRec = breakdownPlayerId === null ? undefined : view.recommendationFor(breakdownPlayerId);
 
   return (
     <div className="auction">
@@ -301,6 +274,10 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   {sel.ruolo === "P" && (
                     <SameTeamGoalkeepers goalkeepers={view.sameTeamGoalkeepers} />
                   )}
+                  <AlternativesPanel
+                    key={`${sel.id}:${view.compareSortKey}`}
+                    view={view}
+                  />
                 </div>
                 </div>
                 <div className={`verdict-badge verdict-badge--${view.verdictTone}`}>
@@ -412,362 +389,8 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               <h1 style={{ fontSize: 44, margin: "0 0 8px" }}>Nessun giocatore in asta</h1>
               <p style={{ maxWidth: "46ch", color: "var(--color-neutral-800)" }}>
                 Scrivi un nome nella colonna di sinistra, oppure premi ↓ per prendere il primo della
-                lista. Il confronto con le alternative dello stesso ruolo compare qui sotto.
+                lista. Il confronto con le alternative dello stesso ruolo compare accanto al giocatore.
               </p>
-            </div>
-          )}
-
-          {sel && (
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  marginBottom: 8,
-                }}
-              >
-                <h6 style={{ margin: 0, color: "var(--color-neutral-700)" }}>
-                  Alternative nello stesso ruolo — ancora libere
-                </h6>
-                <span className="text-muted" style={{ fontSize: 12 }}>
-                  {view.compareRows.length} libere · ordinate per{" "}
-                  {COMPARE_SORT_LABEL[view.compareSortKey]}
-                </span>
-              </div>
-              <div
-                className="seg"
-                role="group"
-                aria-label="Ordina alternative per"
-                style={{ marginBottom: 8, flexWrap: "wrap" }}
-              >
-                {COMPARE_SORT_KEYS.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    className="seg-opt"
-                    aria-pressed={view.compareSortKey === k}
-                    onClick={() => view.onCompareSortKey(k)}
-                  >
-                    {COMPARE_SORT_LABEL[k]}
-                  </button>
-                ))}
-              </div>
-              {showAttributes && (
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "var(--color-neutral-700)",
-                    margin: "4px 0",
-                    textAlign: "right",
-                  }}
-                >
-                  Ovr / Pot / Età / Val — Attributi EA FC —{" "}
-                  <a
-                    href="https://sofifa.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      color: "inherit",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
-                  >
-                    <img
-                      src="/sofifa-logo-small.png"
-                      alt=""
-                      style={{ height: 12, width: "auto" }}
-                    />
-                    SoFIFA
-                  </a>
-                </div>
-              )}
-              <div className="table-scroll">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Giocatore</th>
-                      <th>Squadra</th>
-                      <th>Tier</th>
-                      <th style={{ width: 150 }}>Fair value</th>
-                      <th style={{ textAlign: "right" }}>Target</th>
-                      <th style={{ textAlign: "right" }}>Max</th>
-                      <th style={{ textAlign: "right" }}>Panic</th>
-                      <th style={{ textAlign: "right" }}>
-                        <InfoLabel {...COLUMN_GLOSSARY.fm} />
-                      </th>
-                      <th style={{ textAlign: "right" }}>
-                        <InfoLabel {...COLUMN_GLOSSARY.score} />
-                      </th>
-                      <th style={{ textAlign: "right" }}>Δ vs in asta</th>
-                      {showStats && (
-                        <>
-                          <th style={{ textAlign: "right" }}>Min</th>
-                          <th style={{ textAlign: "right" }}>Gol</th>
-                          <th style={{ textAlign: "right" }}>Ass</th>
-                        </>
-                      )}
-                      {showAttributes && (
-                        <>
-                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
-                            Ovr
-                          </th>
-                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
-                            Pot
-                          </th>
-                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
-                            Età
-                          </th>
-                          <th style={{ textAlign: "right" }} title="Attributi EA FC — SoFIFA">
-                            Val
-                          </th>
-                        </>
-                      )}
-                      <th style={{ width: 90 }}>Dettagli</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {view.compareRows.map(
-                      ({
-                        player,
-                        valuation,
-                        delta,
-                        isCurrent,
-                        seasonStats,
-                        displayScore,
-                        tags,
-                        teamPref,
-                      }) => {
-                        const stats = view.enrichment?.performance.stats.find(
-                          (s) => s.player_id === player.id,
-                        );
-                        const attrs = view.attributesFor(player.id);
-                        const expanded = expandedPlayerId === player.id;
-                        const columnCount = 11 + (showStats ? 3 : 0) + (showAttributes ? 4 : 0);
-                        return (
-                          <Fragment key={player.id}>
-                            <tr
-                              style={
-                                isCurrent
-                                  ? {
-                                      background:
-                                        "color-mix(in srgb, var(--color-accent) 12%, transparent)",
-                                    }
-                                  : undefined
-                              }
-                            >
-                              <td style={{ whiteSpace: "nowrap" }}>
-                                <span className="player-name-cell">
-                                  <PlayerAvatar
-                                    name={player.nome_completo ?? player.name}
-                                    team={player.team}
-                                    ruolo={player.ruolo}
-                                    image_url={player.image_url}
-                                    size="sm"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => view.onSelect(player.id)}
-                                    style={{
-                                      border: 0,
-                                      background: "transparent",
-                                      padding: 0,
-                                      font: "inherit",
-                                      fontWeight: isCurrent ? 600 : 400,
-                                      color: isCurrent
-                                        ? "var(--color-text)"
-                                        : "var(--color-accent-700)",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    {player.nome_completo ?? player.name}
-                                  </button>
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                                >
-                                  {player.team}
-                                  <TeamPrefBadge pref={teamPref} variant="dot" />
-                                </span>
-                              </td>
-                              <td style={{ fontWeight: 600, color: "var(--color-accent-700)" }}>
-                                {valuation?.tier ?? "—"}
-                                {tags.length > 0 && (
-                                  <span style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                                    {tags.map((t) => (
-                                      <span
-                                        key={t.id}
-                                        className={t.id === "trappola" ? "tag tag-accent-2" : "tag tag-neutral"}
-                                        style={{ fontWeight: 400 }}
-                                      >
-                                        {t.label}
-                                      </span>
-                                    ))}
-                                  </span>
-                                )}
-                              </td>
-                              <td>
-                                <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                  <span className="bar-track" style={{ flex: 1, height: 7 }}>
-                                    <span
-                                      className="bar-fill"
-                                      style={{
-                                        width: `${Math.round(((valuation?.fair_value ?? 0) / view.compareMaxFv) * 100)}%`,
-                                        background: isCurrent
-                                          ? "var(--color-accent)"
-                                          : "var(--color-neutral-600)",
-                                      }}
-                                    />
-                                  </span>
-                                  <span
-                                    className="num"
-                                    style={{ fontWeight: 600, width: 32, textAlign: "right" }}
-                                  >
-                                    {valuation?.fair_value ?? "—"}
-                                  </span>
-                                </span>
-                              </td>
-                              <td className="num" style={{ textAlign: "right" }}>
-                                {valuation?.target ?? "—"}
-                              </td>
-                              <td className="num" style={{ textAlign: "right" }}>
-                                {valuation?.max_bid ?? "—"}
-                              </td>
-                              <td
-                                className="num"
-                                style={{ textAlign: "right", color: "var(--color-neutral-700)" }}
-                              >
-                                {valuation?.panic_price ?? "—"}
-                              </td>
-                              <td
-                                className="num"
-                                style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                              >
-                                {seasonStats?.fm ?? "—"}
-                              </td>
-                              <td className="num" style={{ textAlign: "right" }}>
-                                {displayScore === null ? (
-                                  <span style={{ color: "var(--color-neutral-800)" }}>—</span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="info-label__more"
-                                    style={{ color: "var(--color-neutral-800)", fontWeight: 600 }}
-                                    onClick={() => setBreakdownPlayerId(player.id)}
-                                    title="Scomposizione punteggio"
-                                  >
-                                    {displayScore.toFixed(1)}
-                                  </button>
-                                )}
-                              </td>
-                              <td
-                                className="num"
-                                style={{
-                                  textAlign: "right",
-                                  fontWeight: 600,
-                                  color:
-                                    delta === null ? "var(--color-neutral-700)" : deltaColor(delta),
-                                }}
-                              >
-                                {isCurrent ? "—" : delta === null ? "—" : formatDelta(delta)}
-                              </td>
-                              {showStats && (
-                                <>
-                                  <td
-                                    className="num"
-                                    style={{
-                                      textAlign: "right",
-                                      color: "var(--color-neutral-800)",
-                                    }}
-                                  >
-                                    {stats?.minutes ?? "—"}
-                                  </td>
-                                  <td
-                                    className="num"
-                                    style={{
-                                      textAlign: "right",
-                                      color: "var(--color-neutral-800)",
-                                    }}
-                                  >
-                                    {stats?.goals ?? "—"}
-                                  </td>
-                                  <td
-                                    className="num"
-                                    style={{
-                                      textAlign: "right",
-                                      color: "var(--color-neutral-800)",
-                                    }}
-                                  >
-                                    {stats?.assists ?? "—"}
-                                  </td>
-                                </>
-                              )}
-                              {showAttributes && (
-                                <>
-                                  <td
-                                    className="num"
-                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                  >
-                                    {attrs?.overall ?? "—"}
-                                  </td>
-                                  <td
-                                    className="num"
-                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                  >
-                                    {attrs?.potential ?? "—"}
-                                  </td>
-                                  <td
-                                    className="num"
-                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                  >
-                                    {attrs?.age ?? "—"}
-                                  </td>
-                                  <td
-                                    className="num"
-                                    style={{ textAlign: "right", color: "var(--color-neutral-800)" }}
-                                  >
-                                    {attrs?.value ?? "—"}
-                                  </td>
-                                </>
-                              )}
-                              <td style={{ textAlign: "right" }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: "3px 10px", fontSize: 12 }}
-                                  onClick={() => setExpandedPlayerId(expanded ? null : player.id)}
-                                >
-                                  {expanded ? "Chiudi" : "Dettagli"}
-                                </button>
-                              </td>
-                            </tr>
-                            {expanded && (
-                              <tr>
-                                <td colSpan={columnCount} style={{ padding: 0 }}>
-                                  <PlayerDetailPanel
-                                    player={player}
-                                    quotation={view.quotationFor(player.id)}
-                                    fvmWeighted={view.weightedFvmFor(player.id)}
-                                    seasonStats={view.seasonStatsById.get(player.id)}
-                                    lineupStatus={lineupStatusFor(player, view.probableLineup)}
-                                    setPieceRanks={setPieceRanksFor(player, view.setPieceTakers)}
-                                    tags={tags}
-                                    attributes={view.attributesFor(player.id)}
-                                  />
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      },
-                    )}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
         </section>
@@ -1061,14 +684,6 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           </div>
         </aside>
       </div>
-
-      {breakdownRec && (
-        <ScoreBreakdownDialog
-          player={breakdownRec}
-          normalizedScore={view.normalizedScoreFor(breakdownRec.player_id)}
-          onClose={() => setBreakdownPlayerId(null)}
-        />
-      )}
 
       {opponentsDialogOpen && (
         <OpponentRosterDialog

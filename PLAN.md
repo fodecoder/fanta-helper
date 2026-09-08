@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.7.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.8.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -340,11 +340,12 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    lista), variabile CSS `--call-col-w` sulla classe modificatore
    `.auction-grid--call-collapsed` per non duplicare i breakpoint esistenti.
 2. **Alternative limitate a 5 e paginate** + **alternative in un riquadro
-   compatto vicino al giocatore** (due richieste, stessa superficie: la
-   tabella `compareRows` oggi mostra tutte le righe libere senza paginazione,
-   `AuctionDesktop.tsx` righe 468–751). Da unificare in un unico componente
-   compatto, posizionato vicino a `PlayerDetailPanel`/`SameTeamGoalkeepers`
-   invece che come tabella a piena larghezza sotto.
+   compatto vicino al giocatore.** ✅ *(P27, v6.8.0)* — nuovo componente
+   `AlternativesPanel` che sostituisce la tabella a piena larghezza: reso
+   accanto al giocatore dopo `PlayerDetailPanel`/`SameTeamGoalkeepers`, 5 righe
+   per pagina con paginazione, ordinamento come `<select>`, dettaglio per riga
+   e scomposizione punteggio invariati. Stesso riquadro nel tab "Alternative"
+   della vista telefono.
 3. **Barra fair value/target/panic vicino al nome del giocatore.** ✅ *(P26,
    v6.7.0)* — la `.ladder` è ora resa in variante `.ladder--compact` subito
    sotto il nome del giocatore in chiamata (desktop e phone), non più come
@@ -437,3 +438,6 @@ dell'app:
   collassabile in vista desktop.
 - `v6.7.0` — Fase 11: P26 — verdetto compatto e barra fair value/target/max
   bid/panic resa accanto al nome del giocatore in chiamata.
+- `v6.8.0` — Fase 11: P27 — alternative dello stesso ruolo in un riquadro
+  compatto e paginato (`AlternativesPanel`) accanto al giocatore in chiamata,
+  al posto della tabella a piena larghezza.
