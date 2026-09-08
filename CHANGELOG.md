@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.0] - 2026-09-08
+
+### Changed
+
+- **Header collassato di `AlternativesPanel` più visibile**: da collassato
+  l'intestazione "Alternative nello stesso ruolo — ancora libere" è resa come
+  barra con sfondo e bordo accent, riconoscibile come toggle; da aperta resta
+  discreta.
+- **Rose avversarie non più scrollabili**: rimossi `max-height` e
+  `overflow-y: auto` da `.opp-roster-scroll` in `OpponentsBoard`, così tutti i
+  giocatori di ogni rosa sono visibili subito senza scroll interno.
+
 ## [6.12.0] - 2026-09-08
 
 ### Added

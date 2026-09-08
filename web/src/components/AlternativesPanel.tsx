@@ -85,14 +85,27 @@ export function AlternativesPanel({ view }: AlternativesPanelProps) {
           gap: 12,
           flexWrap: "wrap",
           width: "100%",
-          border: 0,
-          background: "transparent",
-          padding: 0,
           cursor: "pointer",
           textAlign: "left",
+          // Da collassato è l'unico aggancio visibile del riquadro: barra
+          // riconoscibile come toggle. Da aperto torna discreto per non
+          // competere con la griglia dei nomi.
+          border: collapsed
+            ? "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)"
+            : "0",
+          background: collapsed
+            ? "color-mix(in srgb, var(--color-accent) 8%, transparent)"
+            : "transparent",
+          borderRadius: collapsed ? "var(--radius-sm)" : 0,
+          padding: collapsed ? "6px 10px" : 0,
         }}
       >
-        <h6 style={{ margin: 0, color: "var(--color-neutral-700)" }}>
+        <h6
+          style={{
+            margin: 0,
+            color: collapsed ? "var(--color-accent-700)" : "var(--color-neutral-700)",
+          }}
+        >
           {collapsed ? "›" : "⌄"} Alternative nello stesso ruolo — ancora libere
         </h6>
         <span className="text-muted" style={{ fontSize: 12 }}>

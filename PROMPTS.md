@@ -259,3 +259,18 @@ rifiuto se supera il residuo), `AuctionMode.opponents.test.tsx` aggiornato
 (avviso "giocatori forti" ora dietro il badge). Scelto `feat` → MINOR: nuova
 superficie UI (edit crediti, badge avvisi), nessuna rottura di contratto.
 Dettaglio in [CHANGELOG.md](./CHANGELOG.md) `[6.12.0]`.
+
+## Rifiniture post-Fase 11 *(chiuse, `v7.0.0`)*
+
+Due correzioni UX sulla colonna Asta, dall'uso reale:
+
+1. Header collassato di `AlternativesPanel` reso visibile: da collassato il
+   `<button>` toggle "Alternative nello stesso ruolo — ancora libere" è una
+   barra con sfondo/bordo accent e `h6` in `--color-accent-700`; da aperto
+   resta discreto (stile invariato).
+2. Rose avversarie non più scrollabili: rimossi `max-height: 180px` e
+   `overflow-y: auto` da `.opp-roster-scroll` (`web/src/index.css`), così tutti
+   i giocatori di ogni rosa in `OpponentsBoard` sono visibili subito.
+
+Nessuna modifica ai test (nessuna asserzione su `max-height` o sullo stile
+dell'header). Passaggio di versione a `7.0.0` richiesto esplicitamente.

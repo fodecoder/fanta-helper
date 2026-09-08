@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.12.0`. Fasi 0–11 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v7.0.0`. Fasi 0–11 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -41,6 +41,11 @@ Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 > sono quasi mai file-disjoint (convergono quasi tutti su
 > `AuctionDesktop.tsx`/`AuctionPhone.tsx`): la nota di parallelizzabilità è
 > nella sezione dedicata di `PROMPTS.md`, non qui.
+>
+> **Rifiniture post-Fase 11 (`v7.0.0`)**: due correzioni UX sulla colonna Asta
+> — header collassato di `AlternativesPanel` reso visibile come barra toggle,
+> rose avversarie in `OpponentsBoard` senza più scroll interno (`max-height`
+> rimosso). Passaggio di versione a `7.0.0` richiesto esplicitamente.
 
 ## Fase 8 — Correzioni post-asta reale  *(chiusa)*
 
@@ -478,3 +483,6 @@ dell'app:
   di soli nomi; rosa avversari ordinata per ruolo con crediti modificabili;
   rosa "Io" per ruolo; avvisi come badge lampeggiante con toast al posto del
   testo sotto il prezzo.
+- `v7.0.0` — rifiniture post-Fase 11: header collassato di `AlternativesPanel`
+  reso visibile come barra toggle; rose avversarie senza scroll interno
+  (`max-height` rimosso da `.opp-roster-scroll`).
