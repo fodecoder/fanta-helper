@@ -401,6 +401,9 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               cards={view.opponentRosterCards}
               calledRole={sel?.ruolo ?? null}
               imageUrlFor={view.playerImageFor}
+              onDeletePurchase={view.onDeletePurchase}
+              onReassignPurchase={view.onReassignPurchase}
+              reassignError={view.reassignError}
             />
           </div>
         </section>

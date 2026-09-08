@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.10.0] - 2026-09-08
+
+### Added
+
+- **Riassegnamento e cancellazione di un acquisto dal pannello avversari** (Fase
+  11, P29): nel `OpponentsBoard` inline sotto il giocatore in chiamata, le righe
+  della rosa di ogni avversario sono ora trascinabili (HTML5 Drag and Drop
+  nativo, nessuna dipendenza) su un altro avversario per riassegnare l'acquisto,
+  con feedback visivo di drag-over sulla card di destinazione. Il riassegnamento
+  usa le chiamate esistenti `deletePurchase` + `createPurchase` (nessun nuovo
+  endpoint, log `purchase` sempre immutabile — si perde però il `ts` originale e
+  l'operazione non è atomica: se l'insert sul nuovo manager fallisce si tenta il
+  ripristino sull'originale e l'errore è sempre visibile). Al drop si verifica
+  che il manager di destinazione non abbia lo slot di quel ruolo già pieno,
+  riusando il nuovo helper condiviso `roleSlotFree` (estratto da `managerCanBuy`).
+  Ogni riga rosa ha inoltre un bottone 🗑 per cancellare l'acquisto direttamente
+  da lì (stesso flusso del 🗑 in "Ultime chiamate"), disponibile anche su
+  telefono come alternativa accessibile al drag&drop.
+
 ## [6.9.0] - 2026-09-08
 
 ### Changed

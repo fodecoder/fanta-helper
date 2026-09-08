@@ -142,78 +142,32 @@ duplicazione in `io-col`, pannello condiviso su telefono). Dettaglio in
 
 ---
 
-## P29 — Drag&drop di un acquisto fra manager, o cancellazione diretta (dopo P28)
+## P29 — Drag&drop di un acquisto fra manager, o cancellazione diretta *(chiuso, `v6.10.0`)*
 
-**Obiettivo.** Dal pannello avversari (P28), poter trascinare un giocatore
-acquistato da un manager a un altro, oppure cancellarne l'acquisto
-direttamente da lì.
+Scelta l'**opzione 1** (delete + insert lato client): nessun nuovo endpoint,
+coerente con la decisione "mai un update, solo delete tracciata" già in
+`server/src/db/purchases.ts` — quel commento resta valido. Costi accettati: il
+`ts` originale si perde (il giocatore riassegnato scivola in fondo al log) e
+l'operazione non è atomica.
 
-**Contesto — la cancellazione diretta esiste già, il riassegnamento no.**
-`web/src/api/purchases.ts` ha `deletePurchase(leagueId, playerId)` (già
-usato dal bottone 🗑 in "Ultime chiamate", `AuctionDesktop.tsx` righe
-1000–1008, `view.onDeleteCall`) — "cancellarne l'acquisto direttamente da
-lì" nel pannello P28 è lo stesso bottone, solo riposizionato dentro le righe
-rosa del nuovo pannello: **nessun nuovo endpoint per questa metà del
-prompt**.
+`OpponentsBoard` (`web/src/pages/auction/OpponentsBoard.tsx`) guadagna tre prop
+opzionali: `onDeletePurchase`, `onReassignPurchase`, `reassignError`. Le righe
+rosa `.opp-roster-row` sono `draggable` (HTML5 Drag and Drop nativo, nessuna
+dipendenza) quando `onReassignPurchase` è passata; ogni `.opp-card` avversario è
+drop zone con feedback `.opp-card--dragover`. Al drop `onReassignPurchase`
+(`AuctionMode.tsx`) verifica lo slot del ruolo sul manager di destinazione con il
+nuovo helper condiviso `roleSlotFree` (`auctionDerivations.ts`, ora usato anche
+da `managerCanBuy`), poi `deletePurchase` + `createPurchase`; se l'insert
+fallisce tenta il ripristino sul manager originale e mostra sempre un errore
+visibile, mai silenzioso. Il bottone 🗑 (`.opp-roster-del`, stile clonato da
+`.log-del`) riusa `onDeleteCall` ed è l'alternativa accessibile su tastiera e
+telefono (dove il drag&drop non è passato). Desktop riceve tutte e tre le prop,
+telefono solo `onDeletePurchase`.
 
-Il **riassegnamento** (drag&drop fra manager) non ha invece un endpoint
-lato server, ed esiste una decisione di design esplicita contro
-l'aggiungerne uno generico: il commento su `deletePurchaseByPlayer`
-(`server/src/db/purchases.ts` righe 67–70) dice testualmente *"Come
-`deleteLastPurchase`, ma per una chiamata qualsiasi: correzione esplicita e
-tracciabile di un errore [...] Nessun update, nessuna modifica di stato
-mutabile"* — e più sopra, sopra `deleteLastPurchase` (righe 53–56):
-*"Correcting a mistake is [...] never an update — so it goes through this
-dedicated deletion, not a general-purpose 'edit a purchase' endpoint."*
-Un drag&drop che sposta un acquisto da un manager all'altro **è** un edit di
-riga. Prima di scrivere codice, il piano deve scegliere esplicitamente fra:
-1. **Delete + insert lato client** (due chiamate esistenti,
-   `deletePurchase` poi `createPurchase` con lo stesso `player_id`/`prezzo`
-   e nuovo `manager_id`): nessun nuovo endpoint, coerente con la decisione
-   già presa nel codice, ma perde `ts` originale (il giocatore riassegnato
-   scivola in fondo al log per timestamp) e non è atomico (se la seconda
-   chiamata fallisce dopo che la prima è andata a buon fine, il giocatore
-   resta senza proprietario finché non si ricarica manualmente — da gestire
-   con un tentativo di rollback/retry visibile in UI, non silenzioso).
-2. **Nuovo endpoint `PATCH /purchases/:playerId`** che aggiorna solo
-   `manager_id`: atomico, preserva `ts`, ma contraddice esplicitamente la
-   decisione di design already in codice — va giustificato nel piano perché
-   il caso d'uso (correggere un'assegnazione sbagliata durante un'asta live)
-   è diverso da quello per cui la nota è stata scritta, e va aggiornato il
-   commento in `purchases.ts` per riflettere la nuova scelta, non lasciarlo
-   in contraddizione col codice.
-
-**Raccomandazione**: partire dall'opzione 1 (nessun cambio di schema/API,
-più veloce da verificare in un'asta reale) a meno che la perdita di `ts`
-originale si dimostri un problema concreto nell'uso.
-
-**Lavoro.**
-- Implementa il riassegnamento secondo l'opzione scelta nel piano.
-- Drag&drop nativo (HTML5 Drag and Drop API) sulle righe rosa dentro
-  `OpponentsBoard` (P28): giocatore trascinabile, manager target come drop
-  zone, feedback visivo di drag-over. Se il progetto non ha già un pattern
-  di drag&drop altrove, verifica compatibilità con la tastiera/mobile prima
-  di considerarlo l'unica via — la cancellazione diretta resta comunque
-  disponibile come alternativa più accessibile.
-- Vincoli da rispettare al drop: manager target non deve avere lo slot di
-  quel ruolo pieno (stesso controllo già usato per `managerCanBuy` nella
-  selezione "A chi" durante la chiamata, `AuctionDesktop.tsx` riga 339) —
-  riusalo, non duplicare la logica.
-
-**Test.** Test dell'operazione di riassegnamento (fixture: sposta un
-acquisto da manager A a manager B, verifica che risulti sotto B e non più
-sotto A; tentativo di spostamento verso un manager a slot pieno per quel
-ruolo → rifiutato con messaggio, nessuna chiamata di rete eseguita). Se
-opzione 2: test dell'endpoint `PATCH` (manager inesistente, giocatore senza
-acquisto → 404, come già fanno gli altri endpoint purchases).
-
-**Accettazione.** Dal pannello avversari, un giocatore acquistato può essere
-trascinato su un altro manager (con gli stessi vincoli di slot già validi in
-asta) oppure cancellato direttamente, senza uscire dal pannello.
-
-**Versioning.** `feat` → MINOR se opzione 1 (nessun cambio di contratto
-API); `feat` → MINOR anche con opzione 2 (nuovo endpoint additivo, non
-sostituisce quelli esistenti) — non è breaking in nessuno dei due casi.
+Test in `AuctionMode.reassign.test.tsx` (riassegnamento A→B con delete+insert,
+drop su slot pieno rifiutato senza chiamate di rete, rollback sull'originale se
+l'insert fallisce, 🗑 che cancella). Dettaglio in
+[CHANGELOG.md](./CHANGELOG.md) `[6.10.0]`.
 
 ---
 

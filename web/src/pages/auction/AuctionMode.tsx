@@ -48,6 +48,7 @@ import {
   opponentSummaries,
   rankSameRole,
   roleBudgetImpact,
+  roleSlotFree,
   strongRoleAlerts,
   verdict as computeVerdict,
   verdictTone as computeVerdictTone,
@@ -177,6 +178,17 @@ export interface AuctionView {
   onToggleWishlist: (playerId: number) => void;
   onUndo: () => void;
   onDeleteCall: (playerId: number) => void;
+  // Pannello avversari (P29): cancella un acquisto dalle righe rosa, o riassegna
+  // un acquisto a un altro manager via drag&drop.
+  onDeletePurchase: (playerId: number) => void;
+  onReassignPurchase: (
+    playerId: number,
+    prezzo: number,
+    ruolo: Role,
+    fromManagerId: number,
+    toManagerId: number,
+  ) => void;
+  reassignError: string | null;
 }
 
 export function AuctionMode({ league, onExit }: AuctionModeProps) {
@@ -203,6 +215,7 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   const [sortKey, setSortKey] = useState<PlayerSortKey>("valore");
   const [compareSortKey, setCompareSortKey] = useState<CompareSortKey>("fair_value");
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [reassignError, setReassignError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
   const isPhone = useMediaQuery(MOBILE_QUERY);
@@ -389,10 +402,8 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
   // si blocca nulla.
   const managerCanBuy = useCallback(
     (managerId: number): boolean => {
-      const status = statusByManagerId.get(managerId);
-      if (!status || !selectedPlayer) return true;
-      const slot = status.slots.find((s) => s.ruolo === selectedPlayer.ruolo);
-      return slot ? slot.free > 0 : true;
+      if (!selectedPlayer) return true;
+      return roleSlotFree(statusByManagerId.get(managerId), selectedPlayer.ruolo);
     },
     [statusByManagerId, selectedPlayer],
   );
@@ -698,6 +709,59 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     [league.id],
   );
 
+  // Riassegnamento di un acquisto da un manager all'altro. Il log `purchase` non
+  // ha un update (vedi server/src/db/purchases.ts): si fa delete + insert. Non è
+  // atomico, quindi se l'insert sul nuovo manager fallisce si tenta il ripristino
+  // sull'originale e l'errore è sempre visibile, mai silenzioso. Il `ts` originale
+  // si perde: il giocatore riassegnato scivola in fondo al log.
+  const onReassignPurchase = useCallback(
+    async (
+      playerId: number,
+      prezzo: number,
+      ruolo: Role,
+      fromManagerId: number,
+      toManagerId: number,
+    ) => {
+      if (fromManagerId === toManagerId) return;
+      if (!roleSlotFree(statusByManagerId.get(toManagerId), ruolo)) {
+        setReassignError("Il manager di destinazione ha gli slot di questo ruolo già pieni.");
+        return;
+      }
+      setReassignError(null);
+      try {
+        await purchasesApi.deletePurchase(league.id, playerId);
+      } catch {
+        setReassignError("Riassegnamento non riuscito: l'acquisto è rimasto invariato.");
+        return;
+      }
+      try {
+        await purchasesApi.createPurchase(league.id, {
+          player_id: playerId,
+          manager_id: toManagerId,
+          prezzo,
+        });
+      } catch {
+        try {
+          await purchasesApi.createPurchase(league.id, {
+            player_id: playerId,
+            manager_id: fromManagerId,
+            prezzo,
+          });
+          setReassignError(
+            "Riassegnamento non riuscito: acquisto ripristinato sul manager originale.",
+          );
+        } catch {
+          setReassignError(
+            "Riassegnamento non riuscito e ripristino fallito: riassegna il giocatore a mano.",
+          );
+        }
+      } finally {
+        refresh();
+      }
+    },
+    [league.id, statusByManagerId],
+  );
+
   // Tastiera: ↑/↓ selezione, Invio assegna, Esc esce.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -796,6 +860,10 @@ export function AuctionMode({ league, onExit }: AuctionModeProps) {
     onToggleWishlist: (id) => void onToggleWishlist(id),
     onUndo: () => void onUndo(),
     onDeleteCall: (id) => void onDeleteCall(id),
+    onDeletePurchase: (id) => void onDeleteCall(id),
+    onReassignPurchase: (playerId, prezzo, ruolo, fromManagerId, toManagerId) =>
+      void onReassignPurchase(playerId, prezzo, ruolo, fromManagerId, toManagerId),
+    reassignError,
   };
 
   return isPhone ? <AuctionPhone view={view} /> : <AuctionDesktop view={view} />;

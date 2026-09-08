@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.8.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.10.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -359,10 +359,12 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    sezione resta collassabile ma usa lo stesso pannello. `OpponentRosterDialog`
    ridotto a wrapper di `OpponentsBoard`, conservato come fallback fino a P30.
 6. **Drag&drop dei giocatori fra manager, o cancellazione diretta
-   dell'acquisto da lì.** Non esiste oggi un endpoint per riassegnare un
-   acquisto: `web/src/api/purchases.ts` ha solo `createPurchase`,
-   `deletePurchase(playerId)`, `deleteLastPurchase` — nessun `updatePurchase`.
-   Dipende dal punto 5 (serve una griglia manager visibile su cui trascinare).
+   dell'acquisto da lì.** ✅ *(P29, v6.10.0)* — righe rosa di `OpponentsBoard`
+   trascinabili (HTML5 Drag and Drop nativo) su un'altra card avversario;
+   riassegnamento via `deletePurchase` + `createPurchase` (nessun nuovo
+   endpoint, log immutabile, rollback visibile se l'insert fallisce), vincolo
+   slot col nuovo helper condiviso `roleSlotFree`; bottone 🗑 per riga come
+   alternativa accessibile (anche su telefono).
 7. **Storico ridotto a un bottone "Log acquisti"** + **rimozione del dialog
    avversari** (conseguenza diretta dei punti 5 e 6: se lo stato avversari è
    sempre visibile sotto il giocatore, `OpponentRosterDialog.tsx` diventa
@@ -370,7 +372,7 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    può diventare un bottone che apre il log completo).
 
 Prompt operativi: P25 (punto 1, chiusa), P26 (punti 3+4), P27 (punti 2), P28
-(punto 5), P29 (punto 6, dopo P28), P30 (punto 7, dopo P28 e P29) — dettagli,
+(punto 5), P29 (punto 6, chiusa), P30 (punto 7, dopo P28 e P29) — dettagli,
 note di implementazione e gruppi paralleli in [PROMPTS.md](./PROMPTS.md).
 
 ### Ricalibrazione valutazioni 07/09/2026 (dati, non codice)
@@ -445,3 +447,6 @@ dell'app:
 - `v6.9.0` — Fase 11: P28 — pannello avversari (`OpponentsBoard`) sempre
   visibile sotto il giocatore in chiamata; stato avversari rimosso dalla
   colonna "Io".
+- `v6.10.0` — Fase 11: P29 — riassegnamento drag&drop di un acquisto fra
+  avversari (delete + insert, nessun nuovo endpoint) e cancellazione diretta
+  dalle righe del pannello avversari.

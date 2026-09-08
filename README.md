@@ -173,7 +173,7 @@ Tre servizi indipendenti: database (Neon), backend (Render), frontend
 (Cloudflare Pages). Ordine consigliato: **Neon → Render → Cloudflare Pages**,
 perché ognuno fornisce un valore di configurazione al successivo.
 
-**Stato (2026-09-08, `v6.9.0`).** **In produzione**: Neon + Render + Cloudflare
+**Stato (2026-09-08, `v6.10.0`).** **In produzione**: Neon + Render + Cloudflare
 Pages attivi, app funzionante end-to-end. Fasi 0–10 complete (multiutente,
 chat, tag, preferenze per-utente, sessione mobile, redesign "sportsbook",
 import listone posizionale, occasioni/trappole, budget in percentuale e per

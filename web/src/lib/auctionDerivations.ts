@@ -171,6 +171,18 @@ function totalFreeSlots(status: ManagerAuctionStatus): number {
   return status.slots.reduce((sum, slot) => sum + Math.max(slot.free, 0), 0);
 }
 
+// Il manager ha ancora uno slot libero per `ruolo`? Senza status caricato non si
+// blocca nulla. Usato sia dal vincolo "A chi" durante la chiamata sia dal
+// riassegnamento drag&drop di un acquisto fra manager (P29).
+export function roleSlotFree(
+  status: ManagerAuctionStatus | undefined,
+  ruolo: Role,
+): boolean {
+  if (!status) return true;
+  const slot = status.slots.find((s) => s.ruolo === ruolo);
+  return slot ? slot.free > 0 : true;
+}
+
 // Effetto dell'acquisto sul manager selezionato: oltre il max bid rettificato o
 // slot ruolo pieni (magenta), altrimenti quanto resterebbe per slot.
 export function impact(

@@ -357,6 +357,7 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                     cards={view.opponentRosterCards}
                     calledRole={sel?.ruolo ?? null}
                     imageUrlFor={view.playerImageFor}
+                    onDeletePurchase={view.onDeletePurchase}
                   />
                 </div>
               )}
