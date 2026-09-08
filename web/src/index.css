@@ -574,6 +574,21 @@ select.input {
   border-bottom: 1px solid var(--color-neutral-100);
 }
 
+/* — pannello avversari inline sotto il giocatore in chiamata (asta) — */
+.bid-opponents {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-divider);
+}
+.bid-opponents__title {
+  margin: 0 0 10px;
+  color: var(--color-neutral-700);
+}
+/* nella colonna centrale le card possono stare più strette del dialog */
+.bid-opponents .opp-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
 /* — info label (tooltip sigle + dettagli colonne calcolate) — */
 .info-label {
   display: inline-flex;

@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.9.0] - 2026-09-08
+
+### Changed
+
+- **Pannello avversari sempre visibile sotto il giocatore in chiamata** (Fase
+  11, P28): lo stato completo di ogni avversario (residuo, max bid sul giocatore
+  in chiamata, uso degli slot per ruolo, rosa acquistata coi prezzi pagati) è
+  ora reso da un nuovo componente `OpponentsBoard` inline in fondo alla colonna
+  centrale dell'asta desktop, sempre visibile anche senza un giocatore in
+  chiamata. Il riepilogo avversari nella colonna "Io" e il relativo bottone
+  "Rose avversari & crediti residui" sono stati rimossi (nessuna doppia fonte a
+  schermo). Nella vista telefono la sezione "Avversari" resta collassabile ma
+  usa lo stesso pannello. Il dialog `OpponentRosterDialog` è conservato come
+  fallback (riusa `OpponentsBoard`) finché P30 non lo rimuove. Nessun
+  cambiamento ai dati derivati.
+
 ## [6.8.0] - 2026-09-08
 
 ### Changed

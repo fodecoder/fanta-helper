@@ -116,50 +116,29 @@ spostati/condivisi in `auctionDerivations.ts`. Test in
 
 ---
 
-## P28 — Pannello avversari sotto il giocatore in chiamata
+## P28 — Pannello avversari sotto il giocatore in chiamata *(chiuso, `v6.9.0`)*
 
-**Obiettivo.** Spostare lo stato degli avversari (rosa, slot, crediti
-residui) dalla colonna "Io" a un pannello sempre visibile sotto il riquadro
-del giocatore in chiamata.
+Nuovo componente `OpponentsBoard` (`web/src/pages/auction/OpponentsBoard.tsx`):
+estrae il corpo di `OpponentRosterDialog` (grid `.opp-card` — nome, residuo,
+max bid sul corrente, slot `used/total` per ruolo, rosa scrollabile coi prezzi)
+in un componente riusabile. Reso inline in fondo a `section.bid-col`
+(`AuctionDesktop.tsx`), **fuori** dal ternario `sel` → sempre visibile anche
+senza giocatore in chiamata (`maxOnCurrent` = `adjustedMaxBid`). Contenitore
+`.bid-opponents` + titolo `.bid-opponents__title` in `index.css`, con
+`.opp-grid` più stretta nella colonna centrale.
 
-**Contesto.** Oggi lo stato avversari vive in due posti separati:
-`io-col` (`AuctionDesktop.tsx` righe 864–943: riepilogo per manager — nome,
-residuo, max bid sul giocatore corrente, slot liberi per ruolo — da
-`view.opponents`) e un dialog a parte (`OpponentRosterDialog.tsx`, aperto dal
-bottone "Rose avversari & crediti residui" riga 909, dati da
-`view.opponentRosterCards` — rosa completa per manager coi prezzi pagati).
-Entrambi derivati in `AuctionMode.tsx` (righe 453–458,
-`opponents`/`opponentRosterCardsView`), nessun dato nuovo da calcolare per
-questo prompt — solo dove/come si mostra.
+La sezione "Avversari" della `io-col` (lista `view.opponents` + bottone "Rose
+avversari & crediti residui") è **rimossa del tutto**: unica fonte a schermo il
+nuovo pannello. In `AuctionPhone.tsx` la sezione "Avversari (N)" resta
+collassabile (default chiuso) ma il contenuto inline è sostituito da
+`<OpponentsBoard>`; via il bottone "Vedi rose complete & crediti".
 
-**Lavoro.**
-- Nuovo componente (es. `OpponentsBoard`), che riusa il markup/dati di
-  `OpponentRosterDialog.tsx` (card per manager: nome, residuo, max bid sul
-  corrente, slot per ruolo, rosa scrollabile coi prezzi) ma **inline** sotto
-  il blocco del giocatore in chiamata (`AuctionDesktop.tsx`, dopo il blocco
-  righe 189–298), non dentro un `Dialog`.
-- Il riepilogo oggi in `io-col` (righe 864–943) diventa ridondante col nuovo
-  pannello: **non duplicarlo**. Valuta se `io-col` deve perdere del tutto la
-  sezione "Avversari" (probabile, dato il punto successivo P30 che rimuove
-  anche il dialog) o tenere solo un conteggio minimo — decidilo nel piano,
-  non lasciare due fonti della stessa informazione a schermo.
-- `OpponentRosterDialog.tsx` **non va eliminato in questo prompt** (lo fa
-  P30, dopo aver verificato che il pannello lo copre per intero) — qui resta
-  come fallback se qualcosa nel nuovo pannello non copre un caso d'uso.
-- Applica lo stesso pannello in `AuctionPhone.tsx` (che ha già una sezione
-  "Avversari" collassabile, righe 373–409 — verifica se basta espanderla o
-  se serve lo stesso componente condiviso con desktop).
-
-**Test.** Test di rendering: il pannello mostra tutti i manager di
-`view.opponents`/`view.opponentRosterCards` con gli stessi dati oggi nel
-dialog (fixture con più manager, verifica residuo/max/slot/rosa). Nessuna
-duplicazione visibile con `io-col` dopo la modifica.
-
-**Accettazione.** Sotto il riquadro del giocatore in chiamata è sempre
-visibile lo stato completo degli avversari (rosa, slot, crediti residui),
-senza dover aprire un dialog.
-
-**Versioning.** `feat` → MINOR.
+`OpponentRosterDialog` **non eliminato** (lo fa P30): ora è un wrapper sottile
+che rende `<OpponentsBoard>` dentro `<Dialog>`, conservato come fallback anche
+se non più aperto da alcun bottone. Test in `AuctionMode.opponents.test.tsx`
+(pannello desktop coi dati del dialog, visibilità senza chiamata, assenza di
+duplicazione in `io-col`, pannello condiviso su telefono). Dettaglio in
+[CHANGELOG.md](./CHANGELOG.md) `[6.9.0]`.
 
 ---
 

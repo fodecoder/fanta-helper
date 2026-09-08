@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type {
   League,
@@ -144,12 +144,86 @@ async function callStriker() {
 }
 
 describe("Vista Asta — pannello avversari contestuale", () => {
-  it("mostra residuo e max spendibile dell'avversario sul giocatore in chiamata", async () => {
+  async function oppCard(name: string): Promise<HTMLElement> {
+    // Il nome dell'avversario compare anche come chip "A chi": si filtrano solo
+    // le occorrenze dentro una .opp-card del pannello OpponentsBoard.
+    await screen.findByRole("button", { name: /Test Bomber/ });
+    const card = Array.from(document.querySelectorAll<HTMLElement>(".opp-card")).find((c) =>
+      within(c).queryAllByText(name).length > 0,
+    );
+    if (!card) throw new Error(`card avversario "${name}" non trovata`);
+    return card;
+  }
+
+  it("mostra residuo, max bid, slot e rosa dell'avversario nel pannello sotto il giocatore", async () => {
+    stubApis([
+      {
+        managerId: 2,
+        managerName: "Rivale",
+        isOwner: false,
+        players: [{ player_id: 9, name: "Big A", ruolo: "A", prezzo: 120, tier: "Top", tags: [] }],
+      },
+    ]);
+    render(<AuctionMode league={league()} onExit={vi.fn()} />);
+    await callStriker();
+    const card = await oppCard("Rivale");
+    expect(within(card).getByText("300")).toBeInTheDocument();
+    expect(within(card).getByText("residuo")).toBeInTheDocument();
+    expect(within(card).getByText("280")).toBeInTheDocument();
+    expect(within(card).getByText("max bid")).toBeInTheDocument();
+    expect(within(card).getByText("max attaccante")).toBeInTheDocument();
+    // slot ruolo A: 2 usati su 6 (free 4)
+    expect(within(card).getByText("2/6")).toBeInTheDocument();
+    expect(within(card).getByText("Big A")).toBeInTheDocument();
+    expect(within(card).getByText("120")).toBeInTheDocument();
+  });
+
+  it("il pannello avversari è visibile anche senza giocatore in chiamata", async () => {
+    stubApis([{ managerId: 2, managerName: "Rivale", isOwner: false, players: [] }]);
+    render(<AuctionMode league={league()} onExit={vi.fn()} />);
+    const card = await oppCard("Rivale");
+    expect(within(card).getByText("300")).toBeInTheDocument();
+    expect(within(card).getByText("280")).toBeInTheDocument();
+    expect(within(card).getByText("max su corrente")).toBeInTheDocument();
+  });
+
+  it("lo stato avversari non è più duplicato nella colonna Io", async () => {
     stubApis([{ managerId: 2, managerName: "Rivale", isOwner: false, players: [] }]);
     render(<AuctionMode league={league()} onExit={vi.fn()} />);
     await callStriker();
-    expect(await screen.findByText("res 300")).toBeInTheDocument();
-    expect(screen.getByText("max 280")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Rose avversari/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("su telefono la sezione Avversari collassabile mostra lo stesso pannello", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    stubApis([
+      {
+        managerId: 2,
+        managerName: "Rivale",
+        isOwner: false,
+        players: [{ player_id: 9, name: "Big A", ruolo: "A", prezzo: 120, tier: "Top", tags: [] }],
+      },
+    ]);
+    render(<AuctionMode league={league()} onExit={vi.fn()} />);
+    await callStriker();
+    await userEvent.click(await screen.findByRole("button", { name: /Avversari \(1\)/ }));
+    const card = await oppCard("Rivale");
+    expect(within(card).getByText("Big A")).toBeInTheDocument();
+    expect(within(card).getByText("120")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Vedi rose complete/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("segnala quando un avversario ha già preso giocatori forti nel ruolo", async () => {

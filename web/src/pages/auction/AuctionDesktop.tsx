@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlternativesPanel } from "../../components/AlternativesPanel";
 import { GkPairingHint } from "../../components/GkPairingHint";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
-import { OpponentRosterDialog } from "./OpponentRosterDialog";
+import { OpponentsBoard } from "./OpponentsBoard";
 import { ModifierWarning } from "../../components/ModifierWarning";
 import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
@@ -30,7 +30,6 @@ const SORT_KEYS: PlayerSortKey[] = ["valore", "fvm", "qt_a", "qt_i"];
 export function AuctionDesktop({ view }: { view: AuctionView }) {
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
-  const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const [callColCollapsed, setCallColCollapsed] = useState(false);
 
   return (
@@ -393,6 +392,17 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
               </p>
             </div>
           )}
+
+          <div className="bid-opponents">
+            <h6 className="bid-opponents__title">
+              Avversari{sel ? ` · max su ${sel.nome_completo ?? sel.name}` : ""}
+            </h6>
+            <OpponentsBoard
+              cards={view.opponentRosterCards}
+              calledRole={sel?.ruolo ?? null}
+              imageUrlFor={view.playerImageFor}
+            />
+          </div>
         </section>
 
         {/* Colonna 3 — io */}
@@ -504,87 +514,6 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           )}
 
           <div>
-            <h6 style={{ margin: "0 0 10px", color: "var(--color-neutral-700)" }}>
-              Avversari{sel ? ` · max su ${sel.nome_completo ?? sel.name}` : ""}
-            </h6>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {view.opponents.map((o) => (
-                <div key={o.managerId} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      gap: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
-                      {o.name}
-                    </span>
-                    <span className="num" style={{ color: "var(--color-neutral-800)" }}>
-                      res {o.residuo}
-                    </span>
-                    <span className="num" style={{ fontWeight: 600 }}>
-                      max {o.maxOnCurrent}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {o.freeSlots.map((s) => (
-                      <span
-                        key={s.ruolo}
-                        style={{ fontSize: 11, color: "var(--color-neutral-700)" }}
-                        className="num"
-                      >
-                        <span style={{ color: roleColor(s.ruolo), fontWeight: 600 }}>{s.ruolo}</span>{" "}
-                        {Math.max(s.free, 0)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {view.opponents.length === 0 && (
-                <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                  Nessun avversario.
-                </span>
-              )}
-            </div>
-            {view.opponentRosterCards.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setOpponentsDialogOpen(true)}
-                style={{
-                  marginTop: 12,
-                  width: "100%",
-                  padding: 11,
-                  border: 0,
-                  borderRadius: "var(--radius-md)",
-                  background: "#0b0e14",
-                  color: "#fff",
-                  font: "700 13px var(--font-heading)",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                Rose avversari &amp; crediti residui
-                <span
-                  className="num"
-                  style={{
-                    fontSize: 11,
-                    background: "var(--color-accent)",
-                    padding: "2px 7px",
-                    borderRadius: 6,
-                  }}
-                >
-                  {view.opponentRosterCards.length}
-                </span>
-              </button>
-            )}
-          </div>
-
-          <div>
             <div
               style={{
                 display: "flex",
@@ -684,15 +613,6 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
           </div>
         </aside>
       </div>
-
-      {opponentsDialogOpen && (
-        <OpponentRosterDialog
-          cards={view.opponentRosterCards}
-          calledRole={sel?.ruolo ?? null}
-          imageUrlFor={view.playerImageFor}
-          onClose={() => setOpponentsDialogOpen(false)}
-        />
-      )}
     </div>
   );
 }

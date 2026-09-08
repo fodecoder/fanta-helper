@@ -7,7 +7,7 @@ import { PlayerDetailPanel } from "../../components/PlayerDetailPanel";
 import { SameTeamGoalkeepers } from "../../components/SameTeamGoalkeepers";
 import { ScoutingNote } from "../../components/ScoutingNote";
 import { TeamPrefBadge } from "../../components/ui/TeamPrefBadge";
-import { OpponentRosterDialog } from "./OpponentRosterDialog";
+import { OpponentsBoard } from "./OpponentsBoard";
 import {
   deltaColor,
   formatDelta,
@@ -38,7 +38,6 @@ type Tab = "lista" | "alternative" | "log";
 export function AuctionPhone({ view }: { view: AuctionView }) {
   const [tab, setTab] = useState<Tab>("lista");
   const [opponentsOpen, setOpponentsOpen] = useState(false);
-  const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
   const { selectedPlayer: sel, selectedValuation: val, me } = view;
   const freeSlots = me ? me.slots.reduce((s, x) => s + Math.max(x.free, 0), 0) : 0;
   const selectedManagerName =
@@ -353,51 +352,12 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                 {opponentsOpen ? "▾" : "▸"} Avversari ({view.opponents.length})
               </button>
               {opponentsOpen && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
-                  {view.opponents.map((o) => (
-                    <div key={o.managerId} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 13 }}>
-                        <span className="ellipsis" style={{ flex: 1, minWidth: 0 }}>
-                          {o.name}
-                        </span>
-                        <span className="num" style={{ color: "var(--color-neutral-800)" }}>
-                          res {o.residuo}
-                        </span>
-                        <span className="num" style={{ fontWeight: 600 }}>
-                          max {o.maxOnCurrent}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {o.freeSlots.map((s) => (
-                          <span
-                            key={s.ruolo}
-                            className="num"
-                            style={{ fontSize: 11, color: "var(--color-neutral-700)" }}
-                          >
-                            <span style={{ color: roleColor(s.ruolo), fontWeight: 600 }}>
-                              {s.ruolo}
-                            </span>{" "}
-                            {Math.max(s.free, 0)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  {view.opponents.length === 0 && (
-                    <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                      Nessun avversario.
-                    </span>
-                  )}
-                  {view.opponentRosterCards.length > 0 && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-block"
-                      style={{ minHeight: 40 }}
-                      onClick={() => setOpponentsDialogOpen(true)}
-                    >
-                      Vedi rose complete &amp; crediti
-                    </button>
-                  )}
+                <div style={{ marginTop: 8 }}>
+                  <OpponentsBoard
+                    cards={view.opponentRosterCards}
+                    calledRole={sel?.ruolo ?? null}
+                    imageUrlFor={view.playerImageFor}
+                  />
                 </div>
               )}
             </div>
@@ -593,15 +553,6 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
           </div>
         )}
       </div>
-
-      {opponentsDialogOpen && (
-        <OpponentRosterDialog
-          cards={view.opponentRosterCards}
-          calledRole={sel?.ruolo ?? null}
-          imageUrlFor={view.playerImageFor}
-          onClose={() => setOpponentsDialogOpen(false)}
-        />
-      )}
     </div>
   );
 }

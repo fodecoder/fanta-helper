@@ -352,11 +352,12 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    fascia sotto l'intero header.
 4. **Verdetto più piccolo.** ✅ *(P26, v6.7.0)* — `.verdict-badge__text`
    ridotto a `800 13px` e padding del badge ridotto; toni/glow invariati.
-5. **Stato avversari sotto il calciatore in asta.** Oggi è nella colonna "Io"
-   (`AuctionDesktop.tsx` righe 864–943, dati da `view.opponents`/
-   `view.opponentRosterCards`, derivati in `AuctionMode.tsx` righe 453–458) e
-   in un dialog separato (`OpponentRosterDialog.tsx`). Da spostare come
-   pannello sempre visibile sotto il riquadro del giocatore chiamato.
+5. **Stato avversari sotto il calciatore in asta.** ✅ *(P28, v6.9.0)* — nuovo
+   componente `OpponentsBoard` reso inline in fondo a `section.bid-col`, sempre
+   visibile anche senza giocatore in chiamata; sezione "Avversari" e bottone
+   "Rose avversari & crediti residui" rimossi dalla `io-col`; su telefono la
+   sezione resta collassabile ma usa lo stesso pannello. `OpponentRosterDialog`
+   ridotto a wrapper di `OpponentsBoard`, conservato come fallback fino a P30.
 6. **Drag&drop dei giocatori fra manager, o cancellazione diretta
    dell'acquisto da lì.** Non esiste oggi un endpoint per riassegnare un
    acquisto: `web/src/api/purchases.ts` ha solo `createPurchase`,
@@ -441,3 +442,6 @@ dell'app:
 - `v6.8.0` — Fase 11: P27 — alternative dello stesso ruolo in un riquadro
   compatto e paginato (`AlternativesPanel`) accanto al giocatore in chiamata,
   al posto della tabella a piena larghezza.
+- `v6.9.0` — Fase 11: P28 — pannello avversari (`OpponentsBoard`) sempre
+  visibile sotto il giocatore in chiamata; stato avversari rimosso dalla
+  colonna "Io".
