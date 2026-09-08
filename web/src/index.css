@@ -1149,19 +1149,19 @@ select.input {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  padding: 10px 16px;
+  gap: 1px;
+  padding: 5px 10px;
   border-radius: var(--radius-md);
   text-align: right;
 }
 .verdict-badge__kicker {
-  font: 700 10px/1 var(--font-heading);
+  font: 700 9px/1 var(--font-heading);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.7;
 }
 .verdict-badge__text {
-  font: 800 20px/1.1 var(--font-heading);
+  font: 800 13px/1.15 var(--font-heading);
 }
 .verdict-badge--good {
   color: var(--color-success-700);
@@ -1559,6 +1559,23 @@ select.input {
   transform: translateX(-50%);
   font: 600 20px/1 var(--font-heading);
   font-variant-numeric: tabular-nums;
+}
+
+/* variante compatta: ladder resa accanto al nome invece che come fascia */
+.bid-name-ladder {
+  max-width: 460px;
+  margin: 18px 0 30px;
+}
+.ladder--compact .ladder-label {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+.ladder--compact .ladder-value {
+  font-size: 10px;
+}
+.ladder--compact .ladder-price {
+  font: 600 14px/1 var(--font-heading);
+  bottom: 10px;
 }
 
 .bid-price-row {

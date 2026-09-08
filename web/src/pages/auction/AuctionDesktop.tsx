@@ -223,6 +223,68 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                     {val &&
                       ` · tier ${val.tier} · fair value ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
                   </span>
+                  {view.ladder && (
+                    <div className="bid-name-ladder">
+                      <div className="ladder ladder--compact" data-testid="price-ladder">
+                        <span
+                          className="ladder-zone ladder-zone--fv"
+                          style={{
+                            left: `${view.ladder.fvZone.left}%`,
+                            width: `${view.ladder.fvZone.width}%`,
+                          }}
+                        />
+                        <span
+                          className="ladder-zone ladder-zone--over"
+                          style={{
+                            left: `${view.ladder.overZone.left}%`,
+                            width: `${view.ladder.overZone.width}%`,
+                          }}
+                        />
+                        {view.ladder.ticks.map((t) => {
+                          const row = t.row === 1 ? 22 : 0;
+                          return (
+                            <span
+                              key={t.key}
+                              style={{ position: "absolute", top: 0, left: `${t.pct}%` }}
+                            >
+                              <span
+                                className="ladder-tick-line"
+                                style={{
+                                  width: t.accent ? 2 : 1,
+                                  height: 12 + row,
+                                  background: t.accent
+                                    ? "var(--color-accent)"
+                                    : "var(--color-neutral-600)",
+                                }}
+                              />
+                              <span className="ladder-label" style={{ top: 10 + row }}>
+                                {t.label}
+                              </span>
+                              <span className="ladder-value" style={{ top: 21 + row }}>
+                                {t.value}
+                              </span>
+                            </span>
+                          );
+                        })}
+                        {view.ladder.markerPct !== null && (
+                          <span
+                            className="ladder-marker"
+                            style={{
+                              left: `${view.ladder.markerPct}%`,
+                              background: view.verdict.color,
+                            }}
+                          >
+                            <span
+                              className="ladder-price"
+                              style={{ color: view.verdict.color }}
+                            >
+                              {view.priceNum ?? "—"}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <TeamPrefBadge pref={view.teamPrefFor(sel.id)} variant="banner" />
                   </div>
@@ -252,67 +314,6 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
                   note={view.selectedNote}
                   highlighted={view.verdictTone === "over"}
                 />
-              )}
-
-              {view.ladder && (
-                <div style={{ padding: "26px 0 6px" }}>
-                  <div className="ladder">
-                    <span
-                      className="ladder-zone ladder-zone--fv"
-                      style={{
-                        left: `${view.ladder.fvZone.left}%`,
-                        width: `${view.ladder.fvZone.width}%`,
-                      }}
-                    />
-                    <span
-                      className="ladder-zone ladder-zone--over"
-                      style={{
-                        left: `${view.ladder.overZone.left}%`,
-                        width: `${view.ladder.overZone.width}%`,
-                      }}
-                    />
-                    {view.ladder.ticks.map((t) => {
-                      const row = t.row === 1 ? 34 : 0;
-                      return (
-                        <span
-                          key={t.key}
-                          style={{ position: "absolute", top: 0, left: `${t.pct}%` }}
-                        >
-                          <span
-                            className="ladder-tick-line"
-                            style={{
-                              width: t.accent ? 2 : 1,
-                              height: 14 + row,
-                              background: t.accent
-                                ? "var(--color-accent)"
-                                : "var(--color-neutral-600)",
-                            }}
-                          />
-                          <span className="ladder-label" style={{ top: 12 + row }}>
-                            {t.label}
-                          </span>
-                          <span className="ladder-value" style={{ top: 26 + row }}>
-                            {t.value}
-                          </span>
-                        </span>
-                      );
-                    })}
-                    {view.ladder.markerPct !== null && (
-                      <span
-                        className="ladder-marker"
-                        style={{
-                          left: `${view.ladder.markerPct}%`,
-                          background: view.verdict.color,
-                        }}
-                      >
-                        <span className="ladder-price" style={{ color: view.verdict.color }}>
-                          {view.priceNum ?? "—"}
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ height: 44 }} />
-                </div>
               )}
 
               <div className="bid-price-row">

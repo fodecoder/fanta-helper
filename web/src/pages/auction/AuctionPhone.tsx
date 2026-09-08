@@ -214,23 +214,12 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
               {val &&
                 ` · tier ${val.tier} · fv ${val.fair_value} · target ${val.target} · panic ${val.panic_price}`}
             </div>
-            <TeamPrefBadge pref={view.teamPrefFor(sel.id)} variant="banner" />
-            <PlayerDetailPanel
-              player={sel}
-              quotation={view.quotationFor(sel.id)}
-              fvmWeighted={view.weightedFvmFor(sel.id)}
-              seasonStats={view.seasonStatsById.get(sel.id)}
-              lineupStatus={lineupStatusFor(sel, view.probableLineup)}
-              setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
-              tags={view.tagsFor(sel.id)}
-              attributes={view.attributesFor(sel.id)}
-            />
-            {sel.ruolo === "P" && (
-              <SameTeamGoalkeepers goalkeepers={view.sameTeamGoalkeepers} />
-            )}
-
             {view.ladder && (
-              <div className="ladder" style={{ margin: "30px 16px 58px 6px" }}>
+              <div
+                className="ladder ladder--compact"
+                data-testid="price-ladder"
+                style={{ margin: "20px 12px 34px 4px" }}
+              >
                 <span
                   className="ladder-zone ladder-zone--fv"
                   style={{
@@ -246,21 +235,21 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                   }}
                 />
                 {view.ladder.ticks.map((t) => {
-                  const row = t.row === 1 ? 30 : 0;
+                  const row = t.row === 1 ? 20 : 0;
                   return (
                     <span key={t.key} style={{ position: "absolute", top: 0, left: `${t.pct}%` }}>
                       <span
                         className="ladder-tick-line"
                         style={{
                           width: t.accent ? 2 : 1,
-                          height: 12 + row,
+                          height: 11 + row,
                           background: t.accent ? "var(--color-accent)" : "var(--color-neutral-600)",
                         }}
                       />
-                      <span className="ladder-label" style={{ top: 10 + row }}>
+                      <span className="ladder-label" style={{ top: 9 + row }}>
                         {SHORT_LABEL[t.label] ?? t.label}
                       </span>
-                      <span className="ladder-value" style={{ top: 22 + row }}>
+                      <span className="ladder-value" style={{ top: 18 + row }}>
                         {t.value}
                       </span>
                     </span>
@@ -271,20 +260,34 @@ export function AuctionPhone({ view }: { view: AuctionView }) {
                     className="ladder-marker"
                     style={{
                       left: `${view.ladder.markerPct}%`,
-                      height: 30,
-                      top: -14,
+                      height: 24,
+                      top: -11,
                       background: view.verdict.color,
                     }}
                   >
                     <span
                       className="ladder-price"
-                      style={{ bottom: 12, fontSize: 17, color: view.verdict.color }}
+                      style={{ bottom: 10, fontSize: 13, color: view.verdict.color }}
                     >
                       {view.priceNum ?? "—"}
                     </span>
                   </span>
                 )}
               </div>
+            )}
+            <TeamPrefBadge pref={view.teamPrefFor(sel.id)} variant="banner" />
+            <PlayerDetailPanel
+              player={sel}
+              quotation={view.quotationFor(sel.id)}
+              fvmWeighted={view.weightedFvmFor(sel.id)}
+              seasonStats={view.seasonStatsById.get(sel.id)}
+              lineupStatus={lineupStatusFor(sel, view.probableLineup)}
+              setPieceRanks={setPieceRanksFor(sel, view.setPieceTakers)}
+              tags={view.tagsFor(sel.id)}
+              attributes={view.attributesFor(sel.id)}
+            />
+            {sel.ruolo === "P" && (
+              <SameTeamGoalkeepers goalkeepers={view.sameTeamGoalkeepers} />
             )}
 
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

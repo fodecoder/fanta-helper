@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.7.0] - 2026-09-08
+
+### Changed
+
+- **Verdetto live più compatto e barra prezzi accanto al nome** (Fase 11, P26):
+  il badge "Verdetto live" è stato rimpicciolito (font e padding ridotti, toni e
+  glow invariati) e la barra fair value / target / max bid / panic (`.ladder`)
+  non è più una fascia sotto l'intero header: ora è resa subito sotto il nome
+  del giocatore in chiamata, in una variante più stretta e compatta (label e
+  valori dei tick più piccoli). Vale sia per la vista desktop sia per quella
+  telefono. Nessun cambiamento ai dati o al verdetto derivato.
+
 ## [6.6.0] - 2026-09-08
 
 ### Added

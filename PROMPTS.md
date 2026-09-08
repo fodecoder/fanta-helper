@@ -88,49 +88,14 @@ nessuna aggiunta ridondante necessaria. Test in
 
 ---
 
-## P26 — Verdetto compatto e barra fair value/target/panic accanto al nome
+## P26 — Verdetto compatto e barra fair value/target/panic accanto al nome *(chiuso)*
 
-**Obiettivo.** Ridurre la dimensione del badge "Verdetto live" e spostare la
-barra (ladder) con fair value/target/max/panic vicino al nome del giocatore
-in chiamata, invece che come fascia separata sotto l'intero header.
-
-**Contesto.** `.verdict-badge__text` è oggi `font: 800 20px/1.1` (`index.css`
-riga 1164), dentro `.verdict-badge` con padding `10px 16px` (riga 1153) —
-riduzione puramente CSS (dimensione font/padding), nessun dato da cambiare.
-La ladder (`.ladder` e classi correlate, `index.css` a partire dalla sezione
-badge/ladder — cerca `.ladder-zone`/`.ladder-tick-line`/`.ladder-marker`) è
-oggi renderizzata **sotto** il blocco nome+avatar+verdetto, come sezione a
-sé (`AuctionDesktop.tsx` righe 239–298, `AuctionPhone.tsx` righe 232–298),
-con `view.ladder` già calcolato in `AuctionMode.tsx` (zone, tick, marker —
-nessun dato nuovo da derivare).
-
-**Lavoro.**
-- Riduci `.verdict-badge__text`/`.verdict-badge` (font-size e padding) fino a
-  una dimensione compatibile con la nuova posizione accanto al nome, senza
-  perdere leggibilità del colore/tono (`--good`/`--fair`/`--over`/`--wait`
-  restano invariati, solo dimensione).
-- Sposta il markup della ladder da sezione sotto-header a un blocco più
-  stretto/orizzontale accanto al nome (`sel.nome_completo`/`h1.bid-name`,
-  `AuctionDesktop.tsx` righe 197–224) — probabilmente serve una variante più
-  compatta della ladder (meno padding verticale, tick label più piccole) più
-  che uno spostamento 1:1 del markup esistente: verifica leggibilità prima
-  di committare, la ladder ha diversi elementi assoluti posizionati per
-  percentuale che potrebbero sovrapporsi in uno spazio più stretto.
-- Applica la stessa riduzione/riposizionamento in `AuctionPhone.tsx` (la
-  ladder telefono ha già margini diversi, righe 232–298 — verifica se la
-  versione mobile ha già meno bisogno di questo intervento, essendo a
-  colonna singola).
-
-**Test.** Test di rendering: la ladder è presente vicino al nome (query sul
-DOM per posizione relativa, o snapshot) invece che nella vecchia posizione;
-verdetto invariato nei toni/colori, solo dimensione. Nessun nuovo dato da
-testare (puro riposizionamento/restyling).
-
-**Accettazione.** Il verdetto occupa meno spazio visivo; la barra fair
-value/target/max/panic è leggibile accanto al nome del giocatore in
-chiamata, non più come fascia separata sotto tutto l'header.
-
-**Versioning.** `feat` → MINOR (nessun cambio di dati/contratto, solo UI).
+Badge "Verdetto live" rimpicciolito (font/padding, toni e glow invariati) e
+ladder fair value/target/max bid/panic spostata da fascia sotto-header a
+blocco compatto (`.ladder--compact`) subito sotto il nome del giocatore in
+chiamata, desktop e telefono. Solo UI, nessun cambio di dati o di verdetto
+derivato. Dettaglio in [CHANGELOG.md](./CHANGELOG.md) `[6.7.0]`; commit sul
+branch `claude/verdict-badge-ladder-layout-828b59`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Fasi ordinate, dalla più vecchia alla più recente. Storico compatto in fondo.
 
-> Stato al 2026-09-08 — `v6.5.2`. Fasi 0–10 sono **complete**: scaffolding, MVP,
+> Stato al 2026-09-08 — `v6.7.0`. Fasi 0–10 sono **complete**: scaffolding, MVP,
 > engine di consiglio su valore relativo alla lega, dati storici Serie A,
 > redesign Broadsheet poi "sportsbook", multiutente (login, personalizzazione,
 > chat), sessione mobile, le 9 correzioni della Fase 8 (palette ruolo, import
@@ -345,12 +345,12 @@ per gruppo è in `PROMPTS.md`, qui solo il contenuto verificato sul codice.
    `AuctionDesktop.tsx` righe 468–751). Da unificare in un unico componente
    compatto, posizionato vicino a `PlayerDetailPanel`/`SameTeamGoalkeepers`
    invece che come tabella a piena larghezza sotto.
-3. **Barra fair value/target/panic vicino al nome del giocatore.** Oggi è
-   `.ladder` (righe 239–298 desktop, 232–298 phone), renderizzata sotto
-   l'intero blocco header invece che accanto al nome.
-4. **Verdetto più piccolo.** `.verdict-badge__text` è `800 20px` (`index.css`
-   riga 1164), va ridotto — nessun dato mancante, solo CSS + eventuale
-   riduzione di padding.
+3. **Barra fair value/target/panic vicino al nome del giocatore.** ✅ *(P26,
+   v6.7.0)* — la `.ladder` è ora resa in variante `.ladder--compact` subito
+   sotto il nome del giocatore in chiamata (desktop e phone), non più come
+   fascia sotto l'intero header.
+4. **Verdetto più piccolo.** ✅ *(P26, v6.7.0)* — `.verdict-badge__text`
+   ridotto a `800 13px` e padding del badge ridotto; toni/glow invariati.
 5. **Stato avversari sotto il calciatore in asta.** Oggi è nella colonna "Io"
    (`AuctionDesktop.tsx` righe 864–943, dati da `view.opponents`/
    `view.opponentRosterCards`, derivati in `AuctionMode.tsx` righe 453–458) e
@@ -433,3 +433,7 @@ dell'app:
 - `v6.0.0` — **BREAKING**: import probabili formazioni/rigoristi/punizioni
   via JSON incollato dall'utente, al posto di screenshot + estrazione Claude;
   rimossi gli endpoint di estrazione automatica.
+- `v6.6.0` — Fase 11 (restyling Asta) avviata: P25 — colonna "Chiamata"
+  collassabile in vista desktop.
+- `v6.7.0` — Fase 11: P26 — verdetto compatto e barra fair value/target/max
+  bid/panic resa accanto al nome del giocatore in chiamata.
