@@ -57,6 +57,7 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(null);
   const [breakdownPlayerId, setBreakdownPlayerId] = useState<number | null>(null);
   const [opponentsDialogOpen, setOpponentsDialogOpen] = useState(false);
+  const [callColCollapsed, setCallColCollapsed] = useState(false);
   const breakdownRec = breakdownPlayerId === null ? undefined : view.recommendationFor(breakdownPlayerId);
 
   return (
@@ -93,84 +94,101 @@ export function AuctionDesktop({ view }: { view: AuctionView }) {
         />
       </header>
 
-      <div className="auction-grid">
+      <div className={callColCollapsed ? "auction-grid auction-grid--call-collapsed" : "auction-grid"}>
         {/* Colonna 1 — chiamata */}
-        <section className="call-col">
-          <h6 style={{ margin: 0, color: "var(--color-neutral-700)" }}>
-            Chiamata · {view.availableCount} liberi
-          </h6>
-          <input
-            autoFocus
-            className="input"
-            style={{ fontSize: 16 }}
-            placeholder="nome o squadra"
-            value={view.query}
-            onChange={(e) => view.onQuery(e.target.value)}
-          />
-          <div className="seg" role="group" aria-label="Filtro ruolo">
-            {ROLE_FILTERS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                className="seg-opt"
-                style={{ flex: 1 }}
-                aria-pressed={view.roleFilter === r}
-                onClick={() => view.onRoleFilter(r)}
-              >
-                {r === "tutti" ? "Tutti" : r}
-              </button>
-            ))}
+        <section className={callColCollapsed ? "call-col call-col--collapsed" : "call-col"}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            {!callColCollapsed && (
+              <h6 style={{ margin: 0, color: "var(--color-neutral-700)" }}>
+                Chiamata · {view.availableCount} liberi
+              </h6>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              aria-expanded={!callColCollapsed}
+              aria-label={callColCollapsed ? "Espandi colonna chiamata" : "Comprimi colonna chiamata"}
+              onClick={() => setCallColCollapsed((v) => !v)}
+            >
+              {callColCollapsed ? "›" : "‹"}
+            </button>
           </div>
-          <div className="seg" role="group" aria-label="Ordina per">
-            {SORT_KEYS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                className="seg-opt"
-                style={{ flex: 1 }}
-                aria-pressed={view.sortKey === k}
-                onClick={() => view.onSortKey(k)}
-              >
-                {SORT_LABEL[k]}
-              </button>
-            ))}
-          </div>
-          <ul className="call-list">
-            {view.visiblePlayers.map((p) => {
-              const on = p.id === sel?.id;
-              const starred = view.wishlistPlayerIds.has(p.id);
-              const pv = view.valuationFor(p.id);
-              return (
-                <li className="call-row" key={p.id}>
+          {!callColCollapsed && (
+            <>
+              <input
+                autoFocus
+                className="input"
+                style={{ fontSize: 16 }}
+                placeholder="nome o squadra"
+                value={view.query}
+                onChange={(e) => view.onQuery(e.target.value)}
+              />
+              <div className="seg" role="group" aria-label="Filtro ruolo">
+                {ROLE_FILTERS.map((r) => (
                   <button
+                    key={r}
                     type="button"
-                    className={on ? "call-pick call-pick--on" : "call-pick"}
-                    onClick={() => view.onSelect(p.id)}
+                    className="seg-opt"
+                    style={{ flex: 1 }}
+                    aria-pressed={view.roleFilter === r}
+                    onClick={() => view.onRoleFilter(r)}
                   >
-                    <span
-                      className={on ? "call-mark call-mark--on" : "call-mark"}
-                      style={{ background: roleColor(p.ruolo) }}
-                    />
-                    <span className="call-tier">{pv?.tier ?? ""}</span>
-                    <span className="call-name-cell">
-                      <span className="call-name ellipsis">{p.name}</span>
-                      <span className="call-team ellipsis">{p.team}</span>
-                    </span>
-                    <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
-                    <span className="call-fv">{view.sortValueFor(p.id) ?? "—"}</span>
+                    {r === "tutti" ? "Tutti" : r}
                   </button>
+                ))}
+              </div>
+              <div className="seg" role="group" aria-label="Ordina per">
+                {SORT_KEYS.map((k) => (
                   <button
+                    key={k}
                     type="button"
-                    className={starred ? "star-btn star-btn--on" : "star-btn"}
-                    title="Obiettivo d'asta"
-                    onClick={() => view.onToggleWishlist(p.id)}
+                    className="seg-opt"
+                    style={{ flex: 1 }}
+                    aria-pressed={view.sortKey === k}
+                    onClick={() => view.onSortKey(k)}
                   >
-                    {starred ? "★" : "☆"}
+                    {SORT_LABEL[k]}
                   </button>
-                </li>
-              );
-            })}
-          </ul>
+                ))}
+              </div>
+              <ul className="call-list">
+                {view.visiblePlayers.map((p) => {
+                  const on = p.id === sel?.id;
+                  const starred = view.wishlistPlayerIds.has(p.id);
+                  const pv = view.valuationFor(p.id);
+                  return (
+                    <li className="call-row" key={p.id}>
+                      <button
+                        type="button"
+                        className={on ? "call-pick call-pick--on" : "call-pick"}
+                        onClick={() => view.onSelect(p.id)}
+                      >
+                        <span
+                          className={on ? "call-mark call-mark--on" : "call-mark"}
+                          style={{ background: roleColor(p.ruolo) }}
+                        />
+                        <span className="call-tier">{pv?.tier ?? ""}</span>
+                        <span className="call-name-cell">
+                          <span className="call-name ellipsis">{p.name}</span>
+                          <span className="call-team ellipsis">{p.team}</span>
+                        </span>
+                        <TeamPrefBadge pref={view.teamPrefFor(p.id)} variant="dot" />
+                        <span className="call-fv">{view.sortValueFor(p.id) ?? "—"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={starred ? "star-btn star-btn--on" : "star-btn"}
+                        title="Obiettivo d'asta"
+                        onClick={() => view.onToggleWishlist(p.id)}
+                      >
+                        {starred ? "★" : "☆"}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
         </section>
 
         {/* Colonna 2 — in asta */}

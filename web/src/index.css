@@ -1358,16 +1358,24 @@ select.input {
 .auction-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) minmax(210px, 260px);
+  --call-col-w: minmax(200px, 260px);
+  grid-template-columns: var(--call-col-w) minmax(0, 1fr) minmax(210px, 260px);
   gap: 24px;
   padding: 22px 30px 30px;
   align-items: stretch;
 }
+.auction-grid.auction-grid--call-collapsed {
+  --call-col-w: 48px;
+}
 @media (max-width: 1180px) {
   .auction-grid {
-    grid-template-columns: minmax(180px, 230px) minmax(0, 1fr) minmax(190px, 230px);
+    --call-col-w: minmax(180px, 230px);
+    grid-template-columns: var(--call-col-w) minmax(0, 1fr) minmax(190px, 230px);
     gap: 16px;
     padding: 18px 18px 24px;
+  }
+  .auction-grid.auction-grid--call-collapsed {
+    --call-col-w: 48px;
   }
 }
 
@@ -1385,6 +1393,10 @@ select.input {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+.call-col--collapsed {
+  padding: 18px 4px;
+  align-items: center;
 }
 .call-list {
   list-style: none;
