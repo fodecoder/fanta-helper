@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.1.0] - 2026-09-10
+
+### Changed
+
+- **Import rose CSV a due fasi**: la vecchia route unica `POST .../roster-exchange/import`
+  è sostituita da `POST .../import/preview` e `POST .../import/commit`. La preview
+  parsa i blocchi del CSV e propone per ogni nome squadra il manager di lega più
+  simile per nome (coefficiente di Sørensen–Dice sui bigrammi, nessuna dipendenza
+  esterna); nella pagina "Rose" l'utente conferma o corregge il mapping blocco →
+  manager prima di eseguire l'import. Il commit risolve il manager dal mapping, non
+  più dal confronto per nome: un blocco senza manager associato scarta solo le sue
+  righe (motivo "blocco non mappato a un manager") invece di far fallire l'intero
+  import, mentre un mapping che assegna lo stesso manager a due blocchi è rifiutato
+  con 400 prima di qualsiasi scrittura. Parsing dei blocchi, match giocatore per
+  `fanta_id`, transazione e ricostruzione del log `purchase` invariati.
+
 ## [7.0.0] - 2026-09-08
 
 ### Changed

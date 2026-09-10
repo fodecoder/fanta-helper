@@ -486,3 +486,6 @@ dell'app:
 - `v7.0.0` — rifiniture post-Fase 11: header collassato di `AlternativesPanel`
   reso visibile come barra toggle; rose avversarie senza scroll interno
   (`max-height` rimosso da `.opp-roster-scroll`).
+- `v7.1.0` — import rose CSV: flusso preview+commit con mapping manuale dei
+  blocchi ai manager di lega (suggerimento iniziale per somiglianza nome,
+  Dice sui bigrammi), niente più fallimento tutto-o-niente sui nomi squadra.

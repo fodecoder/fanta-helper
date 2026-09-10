@@ -1,5 +1,12 @@
-import { useRef, useState } from "react";
-import type { League, RosterExportResult, RosterImportReport } from "@fanta-helper/shared";
+import { useEffect, useRef, useState } from "react";
+import type {
+  League,
+  Manager,
+  RosterExportResult,
+  RosterImportPreviewResult,
+  RosterImportReport,
+} from "@fanta-helper/shared";
+import { listManagers } from "../api/managers";
 import * as rosterExchangeApi from "../api/rosterExchange";
 import { RosterExchangeApiError } from "../api/rosterExchange";
 import { PageMasthead } from "../components/shell/PageMasthead";
@@ -10,16 +17,35 @@ interface RosterExchangePageProps {
   calls: number | null;
 }
 
+type ImportPhase = "idle" | "preview" | "report";
+
 export function RosterExchangePage({ league, calls }: RosterExchangePageProps) {
   const [exportResult, setExportResult] = useState<RosterExportResult | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const [file, setFile] = useState<File | null>(null);
+  const [managers, setManagers] = useState<Manager[]>([]);
+
+  const [phase, setPhase] = useState<ImportPhase>("idle");
+  const [csv, setCsv] = useState("");
+  const [preview, setPreview] = useState<RosterImportPreviewResult | null>(null);
+  // csvTeamName → managerId scelto ("" = non ancora scelto). Deriva l'unica
+  // fonte di verità del mapping inviato al commit.
+  const [mapping, setMapping] = useState<Record<string, number | "">>({});
   const [importReport, setImportReport] = useState<RosterImportReport | null>(null);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    listManagers(league.id, ctrl.signal)
+      .then(setManagers)
+      .catch(() => {
+        if (!ctrl.signal.aborted) setManagers([]);
+      });
+    return () => ctrl.abort();
+  }, [league.id]);
 
   function errorMessage(err: unknown): string {
     return err instanceof RosterExchangeApiError
@@ -49,25 +75,80 @@ export function RosterExchangePage({ league, calls }: RosterExchangePageProps) {
     }
   }
 
-  async function handleImport() {
-    if (!file) {
-      setImportError("seleziona un file CSV");
-      return;
-    }
+  function resetImport() {
+    setPhase("idle");
+    setCsv("");
+    setPreview(null);
+    setMapping({});
+    setImportReport(null);
+    setImportError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleFileSelected(file: File | null) {
     setImportError(null);
     setImportReport(null);
+    setPreview(null);
+    setMapping({});
+    if (!file) {
+      setPhase("idle");
+      setCsv("");
+      return;
+    }
     setImporting(true);
     try {
-      const csvText = await file.text();
-      setImportReport(await rosterExchangeApi.importRosterCsv(league.id, csvText));
-      setFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      const text = await file.text();
+      const result = await rosterExchangeApi.previewRosterImportCsv(league.id, text);
+      setCsv(text);
+      setPreview(result);
+      setMapping(
+        Object.fromEntries(
+          result.blocks.map((b) => [b.csvTeamName, b.suggestedManagerId ?? ""]),
+        ),
+      );
+      setPhase("preview");
+    } catch (err) {
+      setImportError(errorMessage(err));
+      setPhase("idle");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleCommit() {
+    if (!preview) return;
+    setImportError(null);
+    setImporting(true);
+    try {
+      const entries = Object.entries(mapping).filter(
+        (entry): entry is [string, number] => typeof entry[1] === "number",
+      );
+      const report = await rosterExchangeApi.commitRosterImport(league.id, {
+        csv,
+        mapping: Object.fromEntries(entries),
+      });
+      setImportReport(report);
+      setPhase("report");
     } catch (err) {
       setImportError(errorMessage(err));
     } finally {
       setImporting(false);
     }
   }
+
+  const blocks = preview?.blocks ?? [];
+  const missingSelection = blocks.some((b) => mapping[b.csvTeamName] === "" || mapping[b.csvTeamName] === undefined);
+  const duplicateManagerIds = new Set<number>();
+  {
+    const seen = new Set<number>();
+    for (const b of blocks) {
+      const id = mapping[b.csvTeamName];
+      if (typeof id !== "number") continue;
+      if (seen.has(id)) duplicateManagerIds.add(id);
+      seen.add(id);
+    }
+  }
+  const hasDuplicate = duplicateManagerIds.size > 0;
 
   return (
     <>
@@ -141,32 +222,109 @@ export function RosterExchangePage({ league, calls }: RosterExchangePageProps) {
               style={{ padding: 6 }}
               type="file"
               accept=".csv,text/csv"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              disabled={importing}
+              onChange={(e) => void handleFileSelected(e.target.files?.[0] ?? null)}
             />
           </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void handleImport()}
-            disabled={importing}
-          >
-            {importing ? "Import in corso…" : "Sostituisci rose da CSV"}
-          </button>
+          {phase !== "idle" && (
+            <button type="button" className="btn" onClick={resetImport} disabled={importing}>
+              Ricomincia
+            </button>
+          )}
         </div>
 
         {importError && <StatusMessage kind="error">{importError}</StatusMessage>}
 
-        {importReport && (
+        {phase === "preview" && preview && (
+          <div>
+            <p style={{ marginBottom: 12, color: "var(--color-neutral-700)" }}>
+              Associa ogni blocco del CSV a un manager della lega. Il suggerimento è precompilato per
+              somiglianza di nome: correggilo dove serve. Ogni manager può ricevere un solo blocco.
+            </p>
+
+            {blocks.length === 0 && (
+              <StatusMessage kind="error">Nessun blocco trovato nel file.</StatusMessage>
+            )}
+
+            {hasDuplicate && (
+              <StatusMessage kind="error">
+                Un manager è associato a più di un blocco: correggi le selezioni evidenziate.
+              </StatusMessage>
+            )}
+
+            {blocks.length > 0 && (
+              <table className="table" style={{ maxWidth: 820, marginTop: 6 }}>
+                <thead>
+                  <tr>
+                    <th>Squadra CSV</th>
+                    <th style={{ textAlign: "right" }}>Righe</th>
+                    <th>Manager di lega</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blocks.map((block) => {
+                    const selected = mapping[block.csvTeamName] ?? "";
+                    const isDup = typeof selected === "number" && duplicateManagerIds.has(selected);
+                    return (
+                      <tr key={block.csvTeamName}>
+                        <td>{block.csvTeamName === "" ? "—" : block.csvTeamName}</td>
+                        <td className="num" style={{ textAlign: "right" }}>
+                          {block.rowCount}
+                        </td>
+                        <td>
+                          <select
+                            className="input"
+                            style={{
+                              padding: 6,
+                              borderColor: isDup ? "var(--color-accent-2-700)" : undefined,
+                            }}
+                            value={selected === "" ? "" : String(selected)}
+                            onChange={(e) =>
+                              setMapping((prev) => ({
+                                ...prev,
+                                [block.csvTeamName]:
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                              }))
+                            }
+                          >
+                            <option value="">— scegli —</option>
+                            {managers.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ marginTop: 16 }}
+              onClick={() => void handleCommit()}
+              disabled={importing || blocks.length === 0 || missingSelection || hasDuplicate}
+            >
+              {importing ? "Import in corso…" : "Conferma import"}
+            </button>
+          </div>
+        )}
+
+        {phase === "report" && importReport && (
           <div>
             <div style={{ display: "flex", gap: 44, marginBottom: 26 }}>
               <ReportFigure label="Importate" value={importReport.imported} />
               <ReportFigure label="Scartate" value={importReport.discarded.length} warn />
-              <ReportFigure label="Manager sconosciuti" value={importReport.unknownManagers.length} warn />
+              <ReportFigure label="Blocchi non mappati" value={importReport.unknownManagers.length} warn />
             </div>
 
             {importReport.unknownManagers.length > 0 && (
               <p style={{ marginBottom: 18, color: "var(--color-accent-2-700)" }}>
-                Manager non trovati nella lega: {importReport.unknownManagers.join(", ")}
+                Blocchi CSV senza manager associato: {importReport.unknownManagers.join(", ")}
               </p>
             )}
 
@@ -175,7 +333,7 @@ export function RosterExchangePage({ league, calls }: RosterExchangePageProps) {
                 <thead>
                   <tr>
                     <th style={{ textAlign: "right" }}>Riga</th>
-                    <th>Manager</th>
+                    <th>Squadra CSV</th>
                     <th>Fanta ID</th>
                     <th>Prezzo</th>
                     <th>Motivo</th>

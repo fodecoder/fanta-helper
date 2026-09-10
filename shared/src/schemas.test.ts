@@ -36,6 +36,8 @@ import {
   rosterExportResultSchema,
   discardedRosterRowSchema,
   rosterImportReportSchema,
+  rosterImportPreviewResultSchema,
+  rosterImportCommitRequestSchema,
 } from "./rosterExchange";
 import {
   setPieceTakerEntrySchema,
@@ -241,6 +243,13 @@ describe("rosterExchange", () => {
     rosterExportResultSchema.parse({ csv: "a,b", rowCount: 1, unresolved: [] });
     discardedRosterRowSchema.parse({ row: 1, managerName: "Io", fantaId: "1", prezzo: "10", reason: "r" });
     rosterImportReportSchema.parse({ imported: 1, discarded: [], unknownManagers: [] });
+    rosterImportPreviewResultSchema.parse({
+      blocks: [
+        { csvTeamName: "Rossi FC", rowCount: 2, suggestedManagerId: 3, suggestedManagerName: "Io" },
+        { csvTeamName: "XYZ", rowCount: 1, suggestedManagerId: null, suggestedManagerName: null },
+      ],
+    });
+    rosterImportCommitRequestSchema.parse({ csv: "a,1,2", mapping: { "Rossi FC": 3 } });
   });
 });
 

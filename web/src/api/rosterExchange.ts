@@ -1,4 +1,9 @@
-import type { RosterExportResult, RosterImportReport } from "@fanta-helper/shared";
+import type {
+  RosterExportResult,
+  RosterImportCommitRequest,
+  RosterImportPreviewResult,
+  RosterImportReport,
+} from "@fanta-helper/shared";
 import { apiFetch } from "./http";
 
 function baseUrl(leagueId: number): string {
@@ -31,10 +36,24 @@ export function exportRoster(leagueId: number, signal?: AbortSignal): Promise<Ro
   );
 }
 
-export function importRosterCsv(leagueId: number, csvText: string): Promise<RosterImportReport> {
-  return apiFetch(`${baseUrl(leagueId)}/import`, {
+export function previewRosterImportCsv(
+  leagueId: number,
+  csvText: string,
+): Promise<RosterImportPreviewResult> {
+  return apiFetch(`${baseUrl(leagueId)}/import/preview`, {
     method: "POST",
     headers: { "Content-Type": "text/csv" },
     body: csvText,
+  }).then((res) => handle<RosterImportPreviewResult>(res));
+}
+
+export function commitRosterImport(
+  leagueId: number,
+  body: RosterImportCommitRequest,
+): Promise<RosterImportReport> {
+  return apiFetch(`${baseUrl(leagueId)}/import/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   }).then((res) => handle<RosterImportReport>(res));
 }
